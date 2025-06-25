@@ -600,9 +600,16 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                           )}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1 flex items-center justify-between">
-                          <span>{food.calories} cal • {food.protein}g protein</span>
+                          {food.realisticCalories ? (
+                            <span>
+                              <span className="font-medium text-green-600 dark:text-green-400">{food.realisticCalories} cal</span> 
+                              <span className="text-gray-400 dark:text-gray-500"> ({food.smartQuantity} {food.smartUnit})</span> • {food.protein}g protein
+                            </span>
+                          ) : (
+                            <span>{food.calories} cal • {food.protein}g protein</span>
+                          )}
                           <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full">
-                            {getIntelligentUnits(food).unit}
+                            {food.smartUnit || getIntelligentUnits(food).unit}
                           </span>
                         </div>
                       </div>
@@ -620,7 +627,16 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
               <div>
                 <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100">{selectedFood.name}</h3>
                 <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                  Base: {selectedFood.calories} cal per {selectedFood.portionSize}
+                  {selectedFood.realisticCalories ? (
+                    <>
+                      <span className="text-green-600 dark:text-green-400 font-bold">{selectedFood.realisticCalories} cal</span> 
+                      <span className="text-gray-500"> for {selectedFood.smartQuantity} {selectedFood.smartUnit}</span>
+                      <br />
+                      <span className="text-xs">Base: {selectedFood.calories} cal per {selectedFood.portionSize}</span>
+                    </>
+                  ) : (
+                    <>Base: {selectedFood.calories} cal per {selectedFood.portionSize}</>
+                  )}
                 </div>
               </div>
               <Badge variant="outline" className="bg-white/50">{selectedFood.category}</Badge>
@@ -633,8 +649,18 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Smart Suggestion</span>
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                Recommended: <span className="font-medium">{quantity} {unit}</span> - 
-                {getIntelligentUnits(selectedFood).reasoning}
+                {selectedFood.portionExplanation ? (
+                  <>
+                    <span className="font-medium">{selectedFood.portionExplanation}</span>
+                    <br />
+                    <span className="text-xs italic">Smart portion size for realistic tracking</span>
+                  </>
+                ) : (
+                  <>
+                    Recommended: <span className="font-medium">{quantity} {unit}</span> - 
+                    {getIntelligentUnits(selectedFood).reasoning}
+                  </>
+                )}
               </div>
             </div>
             

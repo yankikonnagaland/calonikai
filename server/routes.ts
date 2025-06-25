@@ -325,7 +325,7 @@ async function searchFoodDirectly(query: string) {
 async function getSmartUnitSelection(
   foodName: string,
   category: string = "",
-): Promise<{ unit: string; unitOptions: string[] }> {
+): Promise<{ unit: string; unitOptions: string[]; quantity: number }> {
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -333,32 +333,159 @@ async function getSmartUnitSelection(
         {
           role: "system",
           content:
-            "You are a nutrition expert. Suggest the best unit and unit options for food portions. Return JSON with 'unit' (recommended) and 'unitOptions' (array of 3-4 options).",
+            "You are a nutrition expert specializing in realistic portion calculations. Return JSON with 'unit' (with exact ml/g amounts), 'unitOptions' (array with sizes), and 'quantity' (realistic default quantity for typical consumption).",
         },
         {
           role: "user",
-          content: `For food "${foodName}" in category "${category}", what's the best serving unit? Consider if it's countable (pieces), liquid (cups), or portion-based (small/medium/large).`,
+          content: `For "${foodName}" in category "${category}", determine:
+1. Best default unit with exact measurements (e.g., "can (500ml)", "medium portion (150g)")
+2. Unit options with realistic sizes 
+3. Default quantity for typical consumption
+
+Examples:
+- Beer: unit="can (500ml)", quantity=1 (because 1 can = 500ml = 5x the 100ml database value)
+- Rice: unit="medium portion (150g)", quantity=1 (because 1 portion = 150g = 1.5x the 100g database value)
+- Apple: unit="medium (120g)", quantity=1 (because 1 apple = 120g = 1.2x the 100g database value)
+
+Return JSON: {"unit": "exact_unit_with_size", "unitOptions": ["option1", "option2", "option3"], "quantity": realistic_number}`,
         },
       ],
       response_format: { type: "json_object" },
-      max_tokens: 200,
+      max_tokens: 300,
     });
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
+    const fallback = getLocalUnitSelection(foodName, category);
+    
     return {
-      unit: result.unit || getLocalUnitSelection(foodName, category).unit,
-      unitOptions:
-        result.unitOptions ||
-        getLocalUnitSelection(foodName, category).unitOptions,
+      unit: result.unit || fallback.unit,
+      unitOptions: result.unitOptions || fallback.unitOptions,
+      quantity: result.quantity || getDefaultQuantityForFood(foodName, category),
     };
   } catch (error) {
     console.error("Smart unit selection error:", error);
-    return getLocalUnitSelection(foodName, category);
+    const fallback = getLocalUnitSelection(foodName, category);
+    return {
+      ...fallback,
+      quantity: getDefaultQuantityForFood(foodName, category),
+    };
   }
+}
+
+// Calculate realistic default quantity based on food type
+function getDefaultQuantityForFood(foodName: string, category: string = ""): number {
+  const lowerFood = foodName.toLowerCase();
+  const lowerCategory = category.toLowerCase();
+
+  // Beverages - account for realistic serving sizes
+  if (lowerFood.includes("beer")) {
+    if (lowerFood.includes("can")) return 5; // 500ml = 5x 100ml
+    if (lowerFood.includes("bottle")) return 3.3; // 330ml = 3.3x 100ml
+    if (lowerFood.includes("pint")) return 5.68; // 568ml = 5.68x 100ml
+    return 2.5; // Default glass 250ml = 2.5x 100ml
+  }
+
+  if (lowerFood.includes("wine")) return 1.5; // 150ml glass = 1.5x 100ml
+  if (lowerFood.includes("juice") || lowerFood.includes("soda")) return 2.5; // 250ml = 2.5x 100ml
+  if (lowerFood.includes("tea") || lowerFood.includes("coffee")) return 2; // 200ml = 2x 100ml
+
+  // Food portions
+  if (lowerFood.includes("rice") || lowerFood.includes("pasta") || lowerFood.includes("curry")) {
+    return 1.5; // Medium portion 150g = 1.5x 100g
+  }
+
+  if (lowerFood.includes("bread") || lowerFood.includes("roti")) {
+    return 0.5; // One slice/piece ~50g = 0.5x 100g
+  }
+
+  if (lowerFood.includes("apple") || lowerFood.includes("banana")) {
+    return 1.2; // Medium fruit ~120g = 1.2x 100g
+  }
+
+  if (lowerFood.includes("chicken") || lowerFood.includes("fish")) {
+    return 1.2; // Serving portion ~120g = 1.2x 100g
+  }
+
+  // Default multiplier for realistic portions
+  return 1;
+}
+
+// Calculate accurate nutrition values based on realistic portion sizes
+function calculatePortionNutrition(food: any, unit: string, quantity: number) {
+  let multiplier = quantity;
+  
+  // Extract weight/volume from unit descriptions and calculate multiplier
+  const unitLower = unit.toLowerCase();
+  
+  // Beer and alcohol portion calculations
+  if (unitLower.includes('can') && unitLower.includes('500ml')) multiplier = quantity * 5;
+  else if (unitLower.includes('bottle') && unitLower.includes('330ml')) multiplier = quantity * 3.3;
+  else if (unitLower.includes('pint') && unitLower.includes('568ml')) multiplier = quantity * 5.68;
+  else if (unitLower.includes('glass') && unitLower.includes('250ml')) multiplier = quantity * 2.5;
+  
+  // Food portion calculations
+  else if (unitLower.includes('150g')) multiplier = quantity * 1.5; // Medium portion
+  else if (unitLower.includes('100g')) multiplier = quantity * 1; // Standard portion
+  else if (unitLower.includes('200g')) multiplier = quantity * 2; // Large portion
+  else if (unitLower.includes('50g')) multiplier = quantity * 0.5; // Small portion
+  else if (unitLower.includes('120g')) multiplier = quantity * 1.2; // Medium fruit/item
+  else if (unitLower.includes('80g')) multiplier = quantity * 0.8; // Small item
+  else if (unitLower.includes('180g')) multiplier = quantity * 1.8; // Large item
+  
+  // Beverage calculations
+  else if (unitLower.includes('cup') && unitLower.includes('250ml')) multiplier = quantity * 2.5;
+  else if (unitLower.includes('200ml')) multiplier = quantity * 2;
+  else if (unitLower.includes('350ml')) multiplier = quantity * 3.5;
+  else if (unitLower.includes('500ml')) multiplier = quantity * 5;
+  
+  // Pack size calculations
+  else if (unitLower.includes('30g')) multiplier = quantity * 0.3; // Small pack
+  else if (unitLower.includes('50g')) multiplier = quantity * 0.5; // Medium pack
+  
+  // General unit calculations for backward compatibility
+  else if (unitLower.includes('slice')) multiplier = quantity * 0.6;
+  else if (unitLower.includes('piece') || unitLower.includes('pieces')) {
+    // Context-sensitive piece calculations
+    if (food.name.toLowerCase().includes('bread') || food.name.toLowerCase().includes('roti')) {
+      multiplier = quantity * 0.5; // Bread slice ~50g
+    } else if (food.name.toLowerCase().includes('fruit') || food.name.toLowerCase().includes('apple') || food.name.toLowerCase().includes('banana')) {
+      multiplier = quantity * 1.2; // Medium fruit ~120g
+    } else {
+      multiplier = quantity * 0.8; // Default piece size
+    }
+  }
+  else if (unitLower.includes('small portion')) multiplier = quantity * 0.7;
+  else if (unitLower.includes('medium portion')) multiplier = quantity * 1.5;
+  else if (unitLower.includes('large portion')) multiplier = quantity * 2;
+  else if (unitLower.includes('small') && !unitLower.includes('pack')) multiplier = quantity * 0.7;
+  else if (unitLower.includes('medium') && !unitLower.includes('pack')) multiplier = quantity * 1;
+  else if (unitLower.includes('large') && !unitLower.includes('pack')) multiplier = quantity * 1.5;
+  
+  return {
+    calories: Math.round(food.calories * multiplier),
+    protein: Math.round((food.protein * multiplier) * 10) / 10,
+    carbs: Math.round((food.carbs * multiplier) * 10) / 10,
+    fat: Math.round((food.fat * multiplier) * 10) / 10,
+    multiplier: Math.round(multiplier * 100) / 100
+  };
 }
 
 function getLocalUnitSelection(foodName: string, category: string = "") {
   const name = foodName.toLowerCase();
+
+  // Beer and alcoholic beverages - realistic serving sizes
+  if (name.includes("beer") || name.includes("wine") || name.includes("alcohol")) {
+    if (name.includes("can") || name.includes("bottle")) {
+      return {
+        unit: "can (500ml)",
+        unitOptions: ["can (500ml)", "bottle (330ml)", "pint (568ml)", "glass (250ml)", "ml"],
+      };
+    }
+    return {
+      unit: "glass (250ml)",
+      unitOptions: ["glass (250ml)", "can (500ml)", "bottle (330ml)", "pint (568ml)", "ml"],
+    };
+  }
 
   // Beverages and liquids
   if (
@@ -370,7 +497,10 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
     name.includes("lassi") ||
     name.includes("shake")
   ) {
-    return { unit: "cup", unitOptions: ["cup", "glass", "bottle", "ml"] };
+    return { 
+      unit: "cup (250ml)", 
+      unitOptions: ["cup (250ml)", "glass (200ml)", "bottle (500ml)", "small cup (150ml)", "large cup (350ml)"] 
+    };
   }
 
   // Rice and curry dishes
@@ -381,8 +511,8 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
     name.includes("biryani")
   ) {
     return {
-      unit: "medium portion",
-      unitOptions: ["small portion", "medium portion", "large portion", "bowl"],
+      unit: "medium portion (150g)",
+      unitOptions: ["small portion (100g)", "medium portion (150g)", "large portion (200g)", "bowl", "grams"],
     };
   }
 
@@ -399,14 +529,14 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
   ) {
     return {
       unit: "pieces",
-      unitOptions: ["pieces", "small", "medium", "large"],
+      unitOptions: ["pieces", "small (80g)", "medium (120g)", "large (180g)", "grams"],
     };
   }
 
   // Default
   return {
-    unit: "medium",
-    unitOptions: ["pieces", "grams", "small", "medium", "large"],
+    unit: "medium (100g)",
+    unitOptions: ["pieces", "grams", "small (80g)", "medium (100g)", "large (150g)"],
   };
 }
 
@@ -516,6 +646,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Smart unit suggestion endpoint with intelligent portion calculation
+  app.post("/api/smart-unit", async (req, res) => {
+    try {
+      const { foodName, category, food } = req.body;
+      
+      if (!foodName) {
+        return res.status(400).json({ message: "Food name is required" });
+      }
+      
+      const smartUnits = await getSmartUnitSelection(foodName, category || "");
+      
+      // If food data is provided, calculate accurate nutrition for the recommended portion
+      if (food) {
+        const portionNutrition = calculatePortionNutrition(food, smartUnits.unit, smartUnits.quantity);
+        res.json({
+          ...smartUnits,
+          recommendedNutrition: portionNutrition,
+          explanation: `Showing calories for ${smartUnits.quantity} ${smartUnits.unit} (realistic portion size)`
+        });
+      } else {
+        res.json(smartUnits);
+      }
+    } catch (error) {
+      console.error("Smart unit selection error:", error);
+      res.status(500).json({ message: "Failed to get smart unit suggestions" });
+    }
+  });
+
   app.get("/api/foods/search", async (req, res) => {
     try {
       const validation = searchFoodsSchema.safeParse(req.query);
@@ -547,7 +705,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         foods = [createFallbackFood(query)];
       }
 
-      res.json(foods);
+      // Enhance each food with intelligent portion suggestions
+      const enhancedFoods = await Promise.all(foods.map(async (food) => {
+        try {
+          const smartUnits = await getSmartUnitSelection(food.name, food.category);
+          const portionNutrition = calculatePortionNutrition(food, smartUnits.unit, smartUnits.quantity);
+          
+          return {
+            ...food,
+            smartUnit: smartUnits.unit,
+            smartQuantity: smartUnits.quantity,
+            smartUnitOptions: smartUnits.unitOptions,
+            realisticCalories: portionNutrition.calories,
+            realisticProtein: portionNutrition.protein,
+            realisticCarbs: portionNutrition.carbs,
+            realisticFat: portionNutrition.fat,
+            portionMultiplier: portionNutrition.multiplier,
+            portionExplanation: `${smartUnits.quantity} ${smartUnits.unit} contains ${portionNutrition.calories} calories`
+          };
+        } catch (error) {
+          console.warn(`Failed to enhance food ${food.name}:`, error);
+          return food;
+        }
+      }));
+
+      res.json(enhancedFoods);
     } catch (error) {
       console.error("Search route error:", error);
       res.json([createFallbackFood("unknown food")]);
