@@ -438,8 +438,13 @@ function calculatePortionNutrition(food: any, unit: string, quantity: number) {
   // Extract weight/volume from unit descriptions and calculate multiplier
   const unitLower = unit.toLowerCase();
   
+  // For beverages with ml units, calculate proper multiplier based on volume
+  if (unitLower === 'ml' || unit === 'ml') {
+    // For raw ml units, divide by 100 to get the multiplier (since base is per 100ml)
+    multiplier = quantity / 100;
+  }
   // Beer and alcohol portion calculations (enhanced pattern matching)
-  if (unitLower.includes('can') && unitLower.includes('500ml')) multiplier = quantity * 5;
+  else if (unitLower.includes('can') && unitLower.includes('500ml')) multiplier = quantity * 5;
   else if (unitLower.includes('bottle') && unitLower.includes('650ml')) multiplier = quantity * 6.5;
   else if (unitLower.includes('bottle') && unitLower.includes('500ml')) multiplier = quantity * 5;
   else if (unitLower.includes('bottle') && unitLower.includes('330ml')) multiplier = quantity * 3.3;

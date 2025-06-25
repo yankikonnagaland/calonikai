@@ -212,6 +212,7 @@ export default function MealSummary({
       "tablespoon": 0.1,
       "teaspoon": 0.03,
       "gram": 0.01, // Per gram vs 100g base
+      "ml": 0.01, // Per ml vs 100ml base (CRITICAL FIX for beer calories)
     };
 
     // Food-specific adjustments
