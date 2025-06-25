@@ -449,7 +449,10 @@ export default function FoodCamera({ sessionId, selectedDate, onFoodDetected, on
       // Ensure the ID is in the AI food range (>= 2100000000)
       const hashId = 2100000000 + (baseHash % 1000000);
 
-      // Store the AI food in the database first
+      // Get intelligent unit selection for this food
+      const intelligentUnit = getIntelligentUnitForFood(detectedFood.name);
+
+      // Store the AI food in the database first with intelligent unit
       await apiRequest("POST", "/api/ai-food", {
         id: hashId,
         name: detectedFood.name,
@@ -457,17 +460,17 @@ export default function FoodCamera({ sessionId, selectedDate, onFoodDetected, on
         protein: detectedFood.protein,
         carbs: detectedFood.carbs,
         fat: detectedFood.fat,
-        portionSize: detectedFood.estimatedQuantity || "1 serving",
+        portionSize: intelligentUnit.unit,
         category: "AI Detected",
-        defaultUnit: "serving"
+        defaultUnit: intelligentUnit.unit
       });
 
-      // Add to meal using mutation
+      // Add to meal using intelligent unit selection
       return new Promise((resolve, reject) => {
         addMealMutation.mutate({
           foodId: hashId,
-          quantity: 1,
-          unit: "serving",
+          quantity: intelligentUnit.quantity,
+          unit: intelligentUnit.unit,
           sessionId,
           date: selectedDate
         }, {
@@ -487,6 +490,190 @@ export default function FoodCamera({ sessionId, selectedDate, onFoodDetected, on
     }
   };
 
+  // Enhanced nutrition multiplier calculation with food-specific intelligence (same as FoodSearch)
+  const getUnitMultiplier = (unit: string, food: any) => {
+    const unitLower = unit.toLowerCase();
+    const name = food.name.toLowerCase();
+    
+    // Water always has 0 calories regardless of unit or quantity
+    if (name.includes("water")) {
+      return 0;
+    }
+    
+    // PRIORITY 1: Extract volume/weight from unit descriptions for accurate calculations
+    
+    // VOLUME-BASED UNITS (for beverages) - Extract ml and calculate based on 100ml base
+    const mlMatch = unitLower.match(/(\d+)ml/);
+    if (mlMatch) {
+      const mlAmount = parseInt(mlMatch[1]);
+      console.log(`AI Camera - Volume calculation: ${mlAmount}ml = ${mlAmount/100}x multiplier`);
+      return mlAmount / 100; // Base nutrition is per 100ml
+    }
+    
+    // WEIGHT-BASED UNITS (for solid foods) - Extract grams and calculate based on 100g base
+    const gMatch = unitLower.match(/(\d+)g\)/);
+    if (gMatch) {
+      const gAmount = parseInt(gMatch[1]);
+      console.log(`AI Camera - Weight calculation: ${gAmount}g = ${gAmount/100}x multiplier`);
+      return gAmount / 100; // Base nutrition is per 100g
+    }
+    
+    // PRIORITY 2: Predefined specific beverage units (fallback for common descriptions)
+    if (unitLower.includes("glass (250ml)")) return 2.5; // 250ml = 2.5 x 100ml
+    if (unitLower.includes("bottle (500ml)")) return 5.0; // 500ml = 5 x 100ml
+    if (unitLower.includes("bottle (650ml)")) return 6.5; // 650ml = 6.5 x 100ml
+    if (unitLower.includes("bottle (330ml)")) return 3.3; // 330ml = 3.3 x 100ml
+    if (unitLower.includes("can (330ml)")) return 3.3; // 330ml = 3.3 x 100ml
+    if (unitLower.includes("cup (240ml)")) return 2.4; // 240ml = 2.4 x 100ml
+    
+    // PRIORITY 3: General unit patterns (when specific volume/weight not found)
+    const baseMultipliers: Record<string, number> = {
+      // Standard portions
+      "serving": 1.0,
+      "half serving": 0.5,
+      "quarter": 0.25,
+      
+      // Size variations
+      "small": 0.7,
+      "medium": 1.0,
+      "large": 1.4,
+      "extra large": 1.8,
+      
+      // Piece-based
+      "piece": 0.8,
+      "slice": 0.6,
+      "scoop": 0.5,
+      
+      // Volume-based (generic)
+      "cup": 2.4, // Standard cup 240ml
+      "glass": 2.5, // Standard glass 250ml
+      "bowl": 2.0, // Standard bowl 200ml
+      "bottle": 5.0, // Standard bottle 500ml
+      "can": 3.3, // Standard can 330ml
+      
+      // Portion descriptions
+      "small portion": 0.7,
+      "medium portion": 1.0,
+      "large portion": 1.5,
+      "handful": 0.3,
+      
+      // Measurement units
+      "tablespoon": 0.15,
+      "teaspoon": 0.05,
+      "ml": 0.01,
+    };
+
+    // Get base multiplier
+    let multiplier = baseMultipliers[unit] || 1.0;
+    
+    // BEVERAGES - Enhanced volume-based calculations
+    if (food.category?.toLowerCase().includes("beverage") || name.match(/\b(cola|coke|pepsi|sprite|beer|juice|tea|coffee|milk|lassi)\b/)) {
+      // For beverages, use volume-based multipliers if specific ml not found
+      if (unitLower.includes("glass") && !mlMatch) multiplier = 2.5; // 250ml standard
+      if (unitLower.includes("bottle") && !mlMatch) multiplier = 5.0; // 500ml standard  
+      if (unitLower.includes("can") && !mlMatch) multiplier = 3.3; // 330ml standard
+      if (unitLower.includes("cup") && !mlMatch) multiplier = 2.4; // 240ml standard
+    }
+    
+    console.log(`AI Camera - Unit multiplier for ${name} - ${unit}: ${multiplier}`);
+    return Math.max(0.01, multiplier); // Ensure minimum multiplier
+  };
+
+  // Get intelligent unit selection for AI detected foods (same logic as FoodSearch)
+  const getIntelligentUnitForFood = (foodName: string) => {
+    const name = foodName.toLowerCase();
+    
+    // 1. BEVERAGES - Enhanced with realistic volumes
+    if (name.match(/\b(tea|coffee|chai|latte|cappuccino|espresso)\b/)) {
+      return { unit: "cup (240ml)", quantity: 1 };
+    }
+    
+    if (name.match(/\b(beer|lager|ale)\b/)) {
+      return { unit: "bottle (650ml)", quantity: 1 };
+    }
+    
+    if (name.match(/\b(cola|coke|pepsi|sprite|soda|soft drink)\b/)) {
+      return { unit: "can (330ml)", quantity: 1 };
+    }
+    
+    if (name.match(/\b(juice|lassi|smoothie|milkshake)\b/)) {
+      return { unit: "glass (250ml)", quantity: 1 };
+    }
+    
+    if (name.match(/\b(milk|water)\b/)) {
+      return { unit: "glass (250ml)", quantity: 1 };
+    }
+    
+    // 2. RICE & GRAIN DISHES
+    if (name.match(/\b(rice|biryani|pulao|pilaf)\b/)) {
+      const isSpecialRice = name.match(/\b(biryani|pulao|pilaf)\b/);
+      return { 
+        unit: isSpecialRice ? "medium portion (200g)" : "medium portion (150g)", 
+        quantity: 1 
+      };
+    }
+    
+    // 3. CURRIES & LIQUID DISHES
+    if (name.match(/\b(curry|dal|daal|soup|stew|gravy|sambhar|rasam|kadhi)\b/)) {
+      const isDal = name.match(/\b(dal|daal)\b/);
+      if (isDal) {
+        return { unit: "medium bowl (200g)", quantity: 1 };
+      } else {
+        return { unit: "serving (150g)", quantity: 1 };
+      }
+    }
+    
+    // 4. BREAD & FLATBREADS
+    if (name.match(/\b(roti|chapati|naan|bread|toast|paratha|puri|kulcha|dosa|uttapam|idli|vada)\b/)) {
+      if (name.match(/\b(roti|chapati)\b/)) {
+        return { unit: "medium roti (50g)", quantity: 2 };
+      } else if (name.match(/\b(naan|paratha)\b/)) {
+        return { unit: "piece (80g)", quantity: 1 };
+      } else if (name.match(/\b(idli)\b/)) {
+        return { unit: "piece (30g)", quantity: 3 };
+      } else {
+        return { unit: "piece", quantity: 1 };
+      }
+    }
+    
+    // 5. FRUITS
+    if (name.match(/\b(apple|orange|banana|mango|grapes|berries|fruit)\b/)) {
+      if (name.includes("grapes") || name.includes("berries")) {
+        return { unit: "handful", quantity: 1 };
+      } else {
+        return { unit: "medium piece", quantity: 1 };
+      }
+    }
+    
+    // 6. VEGETABLES
+    if (name.match(/\b(potato|onion|tomato|carrot|vegetable|sabzi)\b/)) {
+      return { unit: "serving (100g)", quantity: 1 };
+    }
+    
+    // 7. SNACKS & FRIED FOODS
+    if (name.match(/\b(samosa|pakora|vada|chips|biscuit|cookie|namkeen|snack)\b/)) {
+      if (name.includes("chips")) {
+        return { unit: "small pack", quantity: 1 };
+      } else {
+        return { unit: "piece", quantity: 2 };
+      }
+    }
+    
+    // 8. SWEETS & DESSERTS
+    if (name.match(/\b(sweet|laddu|gulab jamun|rasgulla|cake|ice cream|dessert)\b/)) {
+      if (name.includes("ice cream")) {
+        return { unit: "scoop", quantity: 1 };
+      } else if (name.includes("cake")) {
+        return { unit: "slice", quantity: 1 };
+      } else {
+        return { unit: "piece", quantity: 1 };
+      }
+    }
+    
+    // Default intelligent suggestion
+    return { unit: "serving (100g)", quantity: 1 };
+  };
+
   const addDetectedFoodsToMeal = async (foods: any[]) => {
     try {
       let addedCount = 0;
@@ -501,8 +688,12 @@ export default function FoodCamera({ sessionId, selectedDate, onFoodDetected, on
         // Ensure the ID is in the AI food range (>= 2100000000)
         const hashId = 2100000000 + (baseHash % 1000000);
 
+        // Get intelligent unit selection for this food
+        const intelligentUnit = getIntelligentUnitForFood(detectedFood.name);
+        console.log(`AI Camera - Intelligent unit for ${detectedFood.name}:`, intelligentUnit);
+
         try {
-          // Store the AI food in the database first
+          // Store the AI food in the database first with intelligent unit
           await apiRequest("POST", "/api/ai-food", {
             id: hashId,
             name: detectedFood.name,
@@ -510,20 +701,27 @@ export default function FoodCamera({ sessionId, selectedDate, onFoodDetected, on
             protein: detectedFood.protein,
             carbs: detectedFood.carbs,
             fat: detectedFood.fat,
-            portionSize: detectedFood.estimatedQuantity || "1 serving",
+            portionSize: intelligentUnit.unit,
             category: "AI Detected",
-            defaultUnit: "serving"
+            defaultUnit: intelligentUnit.unit
           });
 
           // Wait for food to be stored, then add to meal
           await new Promise(resolve => setTimeout(resolve, 100));
 
-          // Add to meal and wait for completion
+          // Add to meal with intelligent unit selection and calculated nutrition
+          const unitMultiplier = getUnitMultiplier(intelligentUnit.unit, {
+            name: detectedFood.name,
+            category: "AI Detected"
+          });
+          
+          console.log(`AI Camera - Adding ${detectedFood.name} with unit: ${intelligentUnit.unit}, quantity: ${intelligentUnit.quantity}, multiplier: ${unitMultiplier}`);
+          
           await new Promise((resolve, reject) => {
             addMealMutation.mutate({
               foodId: hashId,
-              quantity: 1,
-              unit: "serving",
+              quantity: intelligentUnit.quantity,
+              unit: intelligentUnit.unit,
               sessionId,
               date: selectedDate
             }, {
