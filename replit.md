@@ -323,6 +323,18 @@ The application follows a client-server architecture with clear separation of co
 - Added loading timeout protection (8 seconds) with user feedback
 - Performance-optimized modal opening with immediate instance creation
 
+**June 25, 2025 - Smart Food Portioning & Nutrition Logic Engine:**
+- Created comprehensive JSON-based nutrition engine for intelligent portion recommendations
+- Engine provides accurate portion units, weights/volumes, and scaled calorie/macro calculations
+- Supports Indian food defaults: dal 200g bowl, rice 150g portion, roti 50g piece, biryani 200g portion
+- Alcoholic beverages: beer 650ml bottle (Kingfisher), wine 150ml glass, spirits 30ml shot
+- Soft drinks: 500ml bottle for Coke/Pepsi, 250ml glass for juices, 240ml cup for tea/coffee
+- Indian breads: roti 50g, naan 80g, idli 30g (3 pieces), dosa 100g piece
+- Fruits with realistic weights: apple/orange 180g, banana 120g, mango 200g
+- API endpoint /api/nutrition-engine accepts JSON input and returns portion recommendations
+- Integrated smart nutrition engine with existing food search for enhanced accuracy
+- Engine uses cultural eating patterns and typical serving sizes for better user experience
+
 **June 25, 2025 - Enhanced Intelligent Unit Selection System:**
 - Completely revamped intelligent unit selection to match latest calculation methods
 - Beer now defaults to "bottle (650ml)" with options for 330ml, 500ml, and 650ml bottles
