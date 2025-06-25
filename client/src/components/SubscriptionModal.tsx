@@ -273,7 +273,8 @@ function RazorpayCheckout({ onSuccess }: { onSuccess: () => void }) {
           animation: false, // Disable animations to reduce performance overhead
           confirm_close: false,
           escape: true,
-          backdrop_close: true,
+          backdrop_close: false, // Prevent accidental backdrop closing
+          focus_input: true, // Ensure input focus
         },
         retry: {
           enabled: true,
@@ -284,29 +285,41 @@ function RazorpayCheckout({ onSuccess }: { onSuccess: () => void }) {
 
       // Create and open Razorpay instance with aggressive performance optimization
       try {
-        // Create instance immediately but defer opening
+        // Create instance immediately
         razorpayInstanceRef.current = new (window as any).Razorpay(options);
         
-        // Use multiple performance strategies
-        const openWithOptimization = () => {
-          // Yield to browser to prevent blocking
-          if ('scheduler' in window && 'postTask' in (window as any).scheduler) {
-            (window as any).scheduler.postTask(() => {
-              razorpayInstanceRef.current.open();
-            }, { priority: 'user-blocking' });
-          } else if ('requestIdleCallback' in window) {
-            requestIdleCallback(() => {
-              razorpayInstanceRef.current.open();
-            }, { timeout: 500 });
-          } else {
-            setTimeout(() => {
-              razorpayInstanceRef.current.open();
-            }, 16); // Next frame
+        // Open immediately and ensure focus
+        razorpayInstanceRef.current.open();
+        
+        // Force focus and interaction after modal opens
+        setTimeout(() => {
+          // Try to focus the modal iframe
+          const razorpayModal = document.querySelector('[data-checkout]') || 
+                               document.querySelector('iframe[src*="razorpay"]') ||
+                               document.querySelector('.razorpay-checkout-frame');
+          
+          if (razorpayModal) {
+            // Simulate a click to activate the modal properly
+            const clickEvent = new MouseEvent('click', {
+              view: window,
+              bubbles: true,
+              cancelable: true
+            });
+            razorpayModal.dispatchEvent(clickEvent);
+            
+            // Try to focus the modal
+            if (razorpayModal instanceof HTMLElement) {
+              razorpayModal.focus();
+            }
           }
-        };
-
-        // Immediate opening for better UX
-        openWithOptimization();
+          
+          // Alternative: simulate background click to activate modal
+          const backdrop = document.querySelector('.razorpay-backdrop') ||
+                          document.querySelector('[data-checkout-backdrop]');
+          if (backdrop && backdrop instanceof HTMLElement) {
+            backdrop.click();
+          }
+        }, 200);
         
       } catch (rzpError) {
         console.error("Razorpay initialization error:", rzpError);

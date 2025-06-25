@@ -19,6 +19,22 @@
 iframe[src*="razorpay"] {
   will-change: contents;
   contain: strict;
+  pointer-events: auto !important;
+  user-select: auto !important;
+}
+
+/* Ensure Razorpay modal is fully interactive */
+.razorpay-checkout-frame,
+[data-checkout],
+.razorpay-container {
+  pointer-events: auto !important;
+  z-index: 9999 !important;
+  position: fixed !important;
+}
+
+/* Fix modal interaction issues */
+.razorpay-backdrop {
+  pointer-events: auto !important;
 }
 
 :root {
