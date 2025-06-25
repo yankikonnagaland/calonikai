@@ -1327,13 +1327,148 @@ Powered by Calonik.ai 🚀
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div className="text-center">
                           <span className="text-blue-600 font-medium">
-                            {Math.round((item.food?.calories || 0) * (item.quantity || 1))}
+                            {(() => {
+                              // Use the same multiplier logic as MealSummary to ensure consistency
+                              const getMultiplier = (unit: string, food: any) => {
+                                const unitLower = unit.toLowerCase();
+                                const name = food.name.toLowerCase();
+                                
+                                // Water always has 0 calories regardless of unit or quantity
+                                if (name.includes("water")) {
+                                  return 0;
+                                }
+                                
+                                // PRIORITY 1: Extract volume/weight from unit descriptions for accurate calculations
+                                
+                                // VOLUME-BASED UNITS (for beverages) - Extract ml and calculate based on 100ml base
+                                const mlMatch = unitLower.match(/(\d+)ml/);
+                                if (mlMatch) {
+                                  const mlAmount = parseInt(mlMatch[1]);
+                                  return mlAmount / 100; // Base nutrition is per 100ml
+                                }
+                                
+                                // WEIGHT-BASED UNITS (for solid foods) - Extract grams and calculate based on 100g base
+                                const gMatch = unitLower.match(/(\d+)g\)/);
+                                if (gMatch) {
+                                  const gAmount = parseInt(gMatch[1]);
+                                  return gAmount / 100; // Base nutrition is per 100g
+                                }
+                                
+                                // PRIORITY 2: Predefined specific beverage units (fallback for common descriptions)
+                                if (unitLower.includes("glass (250ml)")) return 2.5; // 250ml = 2.5 x 100ml
+                                if (unitLower.includes("bottle (500ml)")) return 5.0; // 500ml = 5 x 100ml
+                                if (unitLower.includes("bottle (650ml)")) return 6.5; // 650ml = 6.5 x 100ml
+                                if (unitLower.includes("bottle (330ml)")) return 3.3; // 330ml = 3.3 x 100ml
+                                if (unitLower.includes("can (330ml)")) return 3.3; // 330ml = 3.3 x 100ml
+                                if (unitLower.includes("cup (240ml)")) return 2.4; // 240ml = 2.4 x 100ml
+                                
+                                // NUTS & TRAIL MIXES - Enhanced piece-based calculations
+                                if (name.match(/\b(nuts|nut|trail|mix|almond|cashew|peanut|walnut|pistachio|mixed nuts)\b/)) {
+                                  // For nuts, "piece" should be much smaller than handful
+                                  if (unitLower.includes("piece")) {
+                                    // Single nuts are very small portions compared to base 100g
+                                    if (name.includes("cashew")) return 0.015; // ~1.5g per cashew
+                                    else if (name.includes("almond")) return 0.012; // ~1.2g per almond  
+                                    else if (name.includes("peanut")) return 0.008; // ~0.8g per peanut
+                                    else if (name.includes("walnut")) return 0.025; // ~2.5g per walnut half
+                                    else return 0.015; // Default for mixed nuts
+                                  }
+                                }
+                                
+                                // PRIORITY 3: General unit patterns
+                                const unitMultipliers: Record<string, number> = {
+                                  // Standard portions
+                                  "serving": 1.0,
+                                  "half serving": 0.5,
+                                  "quarter": 0.25,
+                                  
+                                  // Size variations
+                                  "small": 0.7,
+                                  "medium": 1.0,
+                                  "large": 1.4,
+                                  "extra large": 1.8,
+                                  
+                                  // Piece-based
+                                  "piece": 0.8,
+                                  "slice": 0.6,
+                                  "scoop": 0.5,
+                                  
+                                  // Volume-based (generic)
+                                  "cup": 2.4, // Standard cup 240ml
+                                  "glass": 2.5, // Standard glass 250ml
+                                  "bowl": 2.0, // Standard bowl 200ml
+                                  "bottle": 5.0, // Standard bottle 500ml
+                                  "can": 3.3, // Standard can 330ml
+                                  
+                                  // Portion descriptions
+                                  "small portion": 0.7,
+                                  "medium portion": 1.0,
+                                  "large portion": 1.5,
+                                  "handful": 0.3,
+                                  
+                                  // Measurement units
+                                  "tablespoon": 0.15,
+                                  "teaspoon": 0.05,
+                                  "ml": 0.01,
+                                  "gram": 0.01, // 1 gram = 1% of 100g base
+                                  "g": 0.01,
+                                };
+                                
+                                // Food-specific adjustments
+                                if (food.category === "snacks" && unit === "piece") {
+                                  return 0.5; // Individual snacks are smaller
+                                }
+                                if (food.category === "beverages" && unit === "cup") {
+                                  return 1.0; // Beverages are typically per cup
+                                }
+                                if (food.name.toLowerCase().includes("cake") && unit === "slice") {
+                                  return 0.8; // Cake slice is reasonable portion
+                                }
+                                if (food.name.toLowerCase().includes("pizza") && unit === "slice") {
+                                  return 0.3; // Pizza slice is smaller than whole
+                                }
+                                
+                                return unitMultipliers[unit] || 1.0;
+                              };
+                              
+                              const multiplier = getMultiplier(item.unit, item.food);
+                              return Math.round((item.food?.calories || 0) * (item.quantity || 1) * multiplier);
+                            })()}
                           </span>
                           <p className="text-xs text-gray-500">cal</p>
                         </div>
                         <div className="text-center">
                           <span className="text-green-600 font-medium">
-                            {Math.round((item.food?.protein || 0) * (item.quantity || 1))}g
+                            {(() => {
+                              // Use the same multiplier logic for protein as well
+                              const getMultiplier = (unit: string, food: any) => {
+                                const unitLower = unit.toLowerCase();
+                                const name = food.name.toLowerCase();
+                                
+                                // NUTS & TRAIL MIXES - Enhanced piece-based calculations
+                                if (name.match(/\b(nuts|nut|trail|mix|almond|cashew|peanut|walnut|pistachio|mixed nuts)\b/)) {
+                                  if (unitLower.includes("piece")) {
+                                    if (name.includes("cashew")) return 0.015;
+                                    else if (name.includes("almond")) return 0.012;
+                                    else if (name.includes("peanut")) return 0.008;
+                                    else if (name.includes("walnut")) return 0.025;
+                                    else return 0.015;
+                                  }
+                                }
+                                
+                                const unitMultipliers: Record<string, number> = {
+                                  "serving": 1.0, "piece": 0.8, "slice": 0.6, "cup": 2.4, "glass": 2.5,
+                                  "bowl": 2.0, "bottle": 5.0, "can": 3.3, "small portion": 0.7,
+                                  "medium portion": 1.0, "large portion": 1.5, "handful": 0.3,
+                                  "tablespoon": 0.15, "teaspoon": 0.05, "ml": 0.01, "gram": 0.01, "g": 0.01,
+                                };
+                                
+                                return unitMultipliers[unit] || 1.0;
+                              };
+                              
+                              const multiplier = getMultiplier(item.unit, item.food);
+                              return Math.round((item.food?.protein || 0) * (item.quantity || 1) * multiplier);
+                            })()}g
                           </span>
                           <p className="text-xs text-gray-500">protein</p>
                         </div>
