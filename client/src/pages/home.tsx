@@ -170,9 +170,7 @@ export default function Home() {
                       <Utensils className="w-6 h-6 mr-3 text-primary" />
                       Food Tracker
                     </CardTitle>
-                    <p className="text-muted-foreground">
-                      Track your daily nutrition intake for {format(selectedDate, 'MMM dd, yyyy')}
-                    </p>
+                    
                   </div>
                   
                   {/* Date Selector */}
