@@ -518,10 +518,41 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
 
   // Enhanced nutrition multiplier calculation with food-specific intelligence
   const getUnitMultiplier = (unit: string, food: Food) => {
+    const unitLower = unit.toLowerCase();
     const name = food.name.toLowerCase();
-    const category = food.category?.toLowerCase() || "";
     
-    // Base multipliers for common units
+    // Water always has 0 calories regardless of unit or quantity
+    if (name.includes("water")) {
+      return 0;
+    }
+    
+    // PRIORITY 1: Extract volume/weight from unit descriptions for accurate calculations
+    
+    // VOLUME-BASED UNITS (for beverages) - Extract ml and calculate based on 100ml base
+    const mlMatch = unitLower.match(/(\d+)ml/);
+    if (mlMatch) {
+      const mlAmount = parseInt(mlMatch[1]);
+      console.log(`Volume calculation: ${mlAmount}ml = ${mlAmount/100}x multiplier`);
+      return mlAmount / 100; // Base nutrition is per 100ml
+    }
+    
+    // WEIGHT-BASED UNITS (for solid foods) - Extract grams and calculate based on 100g base
+    const gMatch = unitLower.match(/(\d+)g\)/);
+    if (gMatch) {
+      const gAmount = parseInt(gMatch[1]);
+      console.log(`Weight calculation: ${gAmount}g = ${gAmount/100}x multiplier`);
+      return gAmount / 100; // Base nutrition is per 100g
+    }
+    
+    // PRIORITY 2: Predefined specific beverage units (fallback for common descriptions)
+    if (unitLower.includes("glass (250ml)")) return 2.5; // 250ml = 2.5 x 100ml
+    if (unitLower.includes("bottle (500ml)")) return 5.0; // 500ml = 5 x 100ml
+    if (unitLower.includes("bottle (650ml)")) return 6.5; // 650ml = 6.5 x 100ml
+    if (unitLower.includes("bottle (330ml)")) return 3.3; // 330ml = 3.3 x 100ml
+    if (unitLower.includes("can (330ml)")) return 3.3; // 330ml = 3.3 x 100ml
+    if (unitLower.includes("cup (240ml)")) return 2.4; // 240ml = 2.4 x 100ml
+    
+    // PRIORITY 3: General unit patterns (when specific volume/weight not found)
     const baseMultipliers: Record<string, number> = {
       // Standard portions
       "serving": 1.0,
@@ -539,15 +570,12 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       "slice": 0.6,
       "scoop": 0.5,
       
-      // Volume-based
-      "cup": 1.0,
-      "bowl": 1.2,
-      "small bowl": 0.8,
-      "medium bowl": 1.0,
-      "large bowl": 1.5,
-      "glass": 1.0,
-      "bottle": 1.5,
-      "can": 1.0,
+      // Volume-based (generic)
+      "cup": 2.4, // Standard cup 240ml
+      "glass": 2.5, // Standard glass 250ml
+      "bowl": 2.0, // Standard bowl 200ml
+      "bottle": 5.0, // Standard bottle 500ml
+      "can": 3.3, // Standard can 330ml
       
       // Portion descriptions
       "small portion": 0.7,
@@ -556,93 +584,24 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       "handful": 0.3,
       
       // Measurement units
-      "tablespoon": 0.1,
-      "teaspoon": 0.03,
-      "gram": 0.01,
-      "ml": 0.004,
-      
-      // Package sizes
-      "small pack": 0.6,
-      "pack": 1.0,
-      "plate": 1.2,
+      "tablespoon": 0.15,
+      "teaspoon": 0.05,
+      "ml": 0.01,
     };
 
-    // Food-specific multiplier adjustments
+    // Get base multiplier
     let multiplier = baseMultipliers[unit] || 1.0;
     
-    // BEVERAGES - typically 1:1 ratio for cups
-    if (category.includes("beverage") || name.match(/\b(tea|coffee|juice|milk|water)\b/)) {
-      if (unit === "cup" || unit === "glass") multiplier = 1.0;
-      if (unit === "bottle") multiplier = 2.0; // Standard bottle is 2 cups
-      if (unit === "can") multiplier = 1.5; // Standard can is 1.5 cups
+    // BEVERAGES - Enhanced volume-based calculations
+    if (food.category?.toLowerCase().includes("beverage") || name.match(/\b(cola|coke|pepsi|sprite|beer|juice|tea|coffee|milk|lassi)\b/)) {
+      // For beverages, use volume-based multipliers if specific ml not found
+      if (unitLower.includes("glass") && !mlMatch) multiplier = 2.5; // 250ml standard
+      if (unitLower.includes("bottle") && !mlMatch) multiplier = 5.0; // 500ml standard  
+      if (unitLower.includes("can") && !mlMatch) multiplier = 3.3; // 330ml standard
+      if (unitLower.includes("cup") && !mlMatch) multiplier = 2.4; // 240ml standard
     }
     
-    // FRUITS - piece size varies significantly
-    if (category.includes("fruit") || name.match(/\b(apple|banana|orange|mango)\b/)) {
-      if (unit === "piece") {
-        if (name.includes("grape") || name.includes("berry")) multiplier = 0.1;
-        else if (name.includes("banana") || name.includes("apple")) multiplier = 0.8;
-        else if (name.includes("mango") || name.includes("orange")) multiplier = 1.0;
-        else if (name.includes("watermelon") || name.includes("pineapple")) multiplier = 1.5;
-      }
-    }
-    
-    // BREAD & FLATBREADS
-    if (name.match(/\b(roti|chapati|naan|bread|toast|dosa|idli)\b/)) {
-      if (unit === "piece") {
-        if (name.includes("naan") || name.includes("dosa")) multiplier = 1.0;
-        else if (name.includes("roti") || name.includes("chapati")) multiplier = 0.6;
-        else if (name.includes("idli") || name.includes("vada")) multiplier = 0.4;
-      }
-      if (unit === "slice" && name.includes("bread")) multiplier = 0.5;
-    }
-    
-    // RICE & GRAINS
-    if (name.match(/\b(rice|biryani|pulao|oats|quinoa)\b/)) {
-      if (unit === "cup") multiplier = 1.0; // Standard cup is good measure
-      if (unit === "bowl") multiplier = 1.2; // Bowl is slightly larger
-    }
-    
-    // SNACKS - typically smaller pieces
-    if (category.includes("snack") || name.match(/\b(biscuit|cookie|chips|namkeen)\b/)) {
-      if (unit === "piece") {
-        if (name.includes("chips")) multiplier = 0.1; // Single chip
-        else if (name.includes("biscuit") || name.includes("cookie")) multiplier = 0.3;
-        else if (name.includes("samosa") || name.includes("pakora")) multiplier = 0.5;
-      }
-      if (unit === "handful") multiplier = 0.4;
-      if (unit === "small pack") multiplier = 0.8;
-    }
-    
-    // DESSERTS & SWEETS
-    if (category.includes("dessert") || name.match(/\b(cake|ice cream|sweet|laddu)\b/)) {
-      if (unit === "slice" && name.includes("cake")) multiplier = 0.7;
-      if (unit === "scoop" && name.includes("ice cream")) multiplier = 0.5;
-      if (unit === "piece" && name.match(/\b(laddu|gulab jamun|rasgulla)\b/)) multiplier = 0.4;
-    }
-    
-    // PIZZA - special case
-    if (name.includes("pizza")) {
-      if (unit === "slice") multiplier = 0.25; // 1/4 of medium pizza
-      if (unit === "piece") multiplier = 1.0; // Whole pizza
-    }
-    
-    // NUTS & DRIED FRUITS - typically consumed in small quantities
-    if (name.match(/\b(nuts|almond|cashew|walnut|dried|raisin)\b/)) {
-      if (unit === "handful") multiplier = 0.25;
-      if (unit === "piece") multiplier = 0.05;
-      if (unit === "tablespoon") multiplier = 0.15;
-    }
-    
-    // PROTEIN FOODS
-    if (name.match(/\b(chicken|fish|egg|meat|paneer)\b/)) {
-      if (unit === "piece") {
-        if (name.includes("egg")) multiplier = 0.8;
-        else if (name.includes("chicken") && name.includes("piece")) multiplier = 1.2;
-        else multiplier = 1.0;
-      }
-    }
-    
+    console.log(`Unit multiplier for ${name} - ${unit}: ${multiplier}`);
     return Math.max(0.01, multiplier); // Ensure minimum multiplier
   };
 
