@@ -296,6 +296,13 @@ The application follows a client-server architecture with clear separation of co
 - Fixed addMealMutation to include date parameter for accurate historical meal tracking
 - Date-specific meal storage now works consistently across manual food search and AI camera detection
 
+**June 25, 2025 - Fixed AI Camera Meal Item Removal Bug:**
+- Fixed critical bug where AI camera detected foods couldn't be removed from Current Meal
+- Corrected apiRequest function call format in MealSummary component (DELETE method parameter)
+- Error was: `'/api/meal/ID' is not a valid HTTP method` due to incorrect parameter order
+- Now properly uses apiRequest("DELETE", `/api/meal/${id}`) format for meal item removal
+- AI camera workflow now complete: detect food → add to meal → remove if needed
+
 **June 25, 2025 - Enhanced Profile System with Persistent Display:**
 - Implemented persistent profile display in both Profile tab and Dashboard
 - Added profile save state detection with green visual indicators when profile is active

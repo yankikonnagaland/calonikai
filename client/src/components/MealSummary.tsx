@@ -43,7 +43,7 @@ export default function MealSummary({
 
   const removeMealItemMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest(`/api/meal/${id}`, { method: "DELETE" });
+      await apiRequest("DELETE", `/api/meal/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/meal/${sessionId}/${selectedDate}`] });
