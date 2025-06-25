@@ -296,6 +296,14 @@ The application follows a client-server architecture with clear separation of co
 - Fixed addMealMutation to include date parameter for accurate historical meal tracking
 - Date-specific meal storage now works consistently across manual food search and AI camera detection
 
+**June 25, 2025 - Fixed Database Timeout & Sequelize Errors:**
+- Resolved "sequelize statement was cancelled because express request timed out" errors
+- Switched from mixed storage (FallbackStorage + DatabaseStorage) to consistent DatabaseStorage usage
+- Reduced PostgreSQL connection pool settings to prevent connection overload
+- Added timeout protection (8 seconds) for all database operations in usage stats endpoint
+- Implemented graceful fallback to default free tier stats if database operations fail
+- Database now properly configured with statement_timeout and query_timeout parameters
+
 **June 25, 2025 - Fixed Razorpay Modal Interaction Issue:**
 - Fixed critical bug where payment options only became responsive after clicking background
 - Implemented automatic modal activation with programmatic click simulation

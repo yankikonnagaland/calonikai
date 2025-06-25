@@ -463,4 +463,20 @@ export class DatabaseStorage implements IStorage {
 // Import fallback storage for development without Firebase
 import { fallbackStorage } from './fallbackStorage';
 
-export const storage = fallbackStorage;
+// Use database storage for production, fallback storage for development/testing
+let storage: IStorage;
+
+try {
+  // Test database connection
+  if (process.env.DATABASE_URL || process.env.AWS_DATABASE_URL) {
+    storage = new DatabaseStorage();
+    console.log("Using DatabaseStorage with PostgreSQL");
+  } else {
+    throw new Error("No database URL provided");
+  }
+} catch (error) {
+  console.warn("Database connection failed, using FallbackStorage:", error.message);
+  storage = fallbackStorage;
+}
+
+export { storage };

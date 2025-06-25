@@ -20,11 +20,13 @@ console.log(`Database host: ${new URL(databaseUrl).hostname}`);
 
 export const pool = new Pool({ 
   connectionString: databaseUrl,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 60000,
-  maxUses: 7500,
-  allowExitOnIdle: false
+  max: 10, // Reduced connection pool size
+  idleTimeoutMillis: 20000, // Reduced idle timeout
+  connectionTimeoutMillis: 30000, // Reduced connection timeout
+  maxUses: 5000, // Reduced max uses
+  allowExitOnIdle: true, // Allow exit on idle to prevent hanging connections
+  statement_timeout: 30000, // Add statement timeout
+  query_timeout: 30000 // Add query timeout
 });
 
 export const db = drizzle({ client: pool, schema });
