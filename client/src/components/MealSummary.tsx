@@ -200,19 +200,75 @@ export default function MealSummary({
   const isOverTarget = netCalories > targetCalories;
 
   function getMultiplier(unit: string, food: any) {
-    // Standard portion size multipliers
+    const unitLower = unit.toLowerCase();
+    const name = food.name.toLowerCase();
+    
+    // Water always has 0 calories regardless of unit or quantity
+    if (name.includes("water")) {
+      return 0;
+    }
+    
+    // PRIORITY 1: Extract volume/weight from unit descriptions for accurate calculations
+    
+    // VOLUME-BASED UNITS (for beverages) - Extract ml and calculate based on 100ml base
+    const mlMatch = unitLower.match(/(\d+)ml/);
+    if (mlMatch) {
+      const mlAmount = parseInt(mlMatch[1]);
+      console.log(`MealSummary - Volume calculation: ${mlAmount}ml = ${mlAmount/100}x multiplier for ${name}`);
+      return mlAmount / 100; // Base nutrition is per 100ml
+    }
+    
+    // WEIGHT-BASED UNITS (for solid foods) - Extract grams and calculate based on 100g base
+    const gMatch = unitLower.match(/(\d+)g\)/);
+    if (gMatch) {
+      const gAmount = parseInt(gMatch[1]);
+      console.log(`MealSummary - Weight calculation: ${gAmount}g = ${gAmount/100}x multiplier for ${name}`);
+      return gAmount / 100; // Base nutrition is per 100g
+    }
+    
+    // PRIORITY 2: Predefined specific beverage units (fallback for common descriptions)
+    if (unitLower.includes("glass (250ml)")) return 2.5; // 250ml = 2.5 x 100ml
+    if (unitLower.includes("bottle (500ml)")) return 5.0; // 500ml = 5 x 100ml
+    if (unitLower.includes("bottle (650ml)")) return 6.5; // 650ml = 6.5 x 100ml
+    if (unitLower.includes("bottle (330ml)")) return 3.3; // 330ml = 3.3 x 100ml
+    if (unitLower.includes("can (330ml)")) return 3.3; // 330ml = 3.3 x 100ml
+    if (unitLower.includes("cup (240ml)")) return 2.4; // 240ml = 2.4 x 100ml
+    
+    // PRIORITY 3: General unit patterns (when specific volume/weight not found)
     const unitMultipliers: Record<string, number> = {
+      // Standard portions
       "serving": 1.0,
+      "half serving": 0.5,
+      "quarter": 0.25,
+      
+      // Size variations
+      "small": 0.7,
+      "medium": 1.0,
+      "large": 1.4,
+      "extra large": 1.8,
+      
+      // Piece-based
       "piece": 0.8,
       "slice": 0.6,
+      "scoop": 0.5,
+      
+      // Volume-based (generic)
+      "cup": 2.4, // Standard cup 240ml
+      "glass": 2.5, // Standard glass 250ml
+      "bowl": 2.0, // Standard bowl 200ml
+      "bottle": 5.0, // Standard bottle 500ml
+      "can": 3.3, // Standard can 330ml
+      
+      // Portion descriptions
       "small portion": 0.7,
       "medium portion": 1.0,
       "large portion": 1.5,
-      "cup": 1.2,
-      "tablespoon": 0.1,
-      "teaspoon": 0.03,
-      "gram": 0.01, // Per gram vs 100g base
-      "ml": 0.01, // Per ml vs 100ml base (CRITICAL FIX for beer calories)
+      "handful": 0.3,
+      
+      // Measurement units
+      "tablespoon": 0.15,
+      "teaspoon": 0.05,
+      "ml": 0.01,
     };
 
     // Food-specific adjustments
