@@ -330,6 +330,16 @@ The application follows a client-server architecture with clear separation of co
 - Now properly uses apiRequest("DELETE", `/api/meal/${id}`) format for meal item removal
 - AI camera workflow now complete: detect food → add to meal → remove if needed
 
+**June 25, 2025 - Fixed Intelligent Portion Calculation for Accurate Calorie Tracking:**
+- Resolved critical bug where foods showed incorrect calorie counts (e.g., beer showing 43 cal instead of 280 cal for full bottle)
+- Enhanced calculatePortionNutrition function to properly recognize bottle sizes (330ml, 500ml, 650ml)
+- Updated beer portion calculations: 650ml bottle now correctly shows 6.5x multiplier (280 calories vs 43 cal per 100ml)
+- Fixed getLocalUnitSelection to default beer to "bottle (650ml)" for realistic portion sizes
+- Enhanced food search API to return accurate realisticCalories with proper portion multipliers
+- Added comprehensive logging for portion calculation debugging and verification
+- All beverages and foods now display realistic calorie counts based on actual serving sizes
+- Search results prominently show enhanced calories in green with portion explanations
+
 **June 25, 2025 - Enhanced Profile System with Persistent Display:**
 - Implemented persistent profile display in both Profile tab and Dashboard
 - Added profile save state detection with green visual indicators when profile is active

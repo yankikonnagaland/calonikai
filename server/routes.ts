@@ -380,7 +380,7 @@ function getDefaultQuantityForFood(foodName: string, category: string = ""): num
   // Beverages - account for realistic serving sizes
   if (lowerFood.includes("beer")) {
     if (lowerFood.includes("can")) return 5; // 500ml = 5x 100ml
-    if (lowerFood.includes("bottle")) return 3.3; // 330ml = 3.3x 100ml
+    if (lowerFood.includes("bottle")) return 6.5; // Default large bottle 650ml = 6.5x 100ml
     if (lowerFood.includes("pint")) return 5.68; // 568ml = 5.68x 100ml
     return 2.5; // Default glass 250ml = 2.5x 100ml
   }
@@ -417,8 +417,10 @@ function calculatePortionNutrition(food: any, unit: string, quantity: number) {
   // Extract weight/volume from unit descriptions and calculate multiplier
   const unitLower = unit.toLowerCase();
   
-  // Beer and alcohol portion calculations
+  // Beer and alcohol portion calculations (enhanced pattern matching)
   if (unitLower.includes('can') && unitLower.includes('500ml')) multiplier = quantity * 5;
+  else if (unitLower.includes('bottle') && unitLower.includes('650ml')) multiplier = quantity * 6.5;
+  else if (unitLower.includes('bottle') && unitLower.includes('500ml')) multiplier = quantity * 5;
   else if (unitLower.includes('bottle') && unitLower.includes('330ml')) multiplier = quantity * 3.3;
   else if (unitLower.includes('pint') && unitLower.includes('568ml')) multiplier = quantity * 5.68;
   else if (unitLower.includes('glass') && unitLower.includes('250ml')) multiplier = quantity * 2.5;
@@ -482,8 +484,8 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
       };
     }
     return {
-      unit: "glass (250ml)",
-      unitOptions: ["glass (250ml)", "can (500ml)", "bottle (330ml)", "pint (568ml)", "ml"],
+      unit: "bottle (650ml)",
+      unitOptions: ["glass (250ml)", "bottle (330ml)", "bottle (500ml)", "bottle (650ml)", "can (500ml)"],
     };
   }
 
@@ -711,6 +713,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const smartUnits = await getSmartUnitSelection(food.name, food.category);
           const portionNutrition = calculatePortionNutrition(food, smartUnits.unit, smartUnits.quantity);
           
+          console.log(`Enhanced ${food.name}: ${food.calories} cal/100ml -> ${portionNutrition.calories} cal for ${smartUnits.quantity} ${smartUnits.unit}`);
+          
           return {
             ...food,
             smartUnit: smartUnits.unit,
@@ -721,7 +725,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             realisticCarbs: portionNutrition.carbs,
             realisticFat: portionNutrition.fat,
             portionMultiplier: portionNutrition.multiplier,
-            portionExplanation: `${smartUnits.quantity} ${smartUnits.unit} contains ${portionNutrition.calories} calories`
+            portionExplanation: `${smartUnits.quantity} ${smartUnits.unit} contains ${portionNutrition.calories} calories (${food.calories} cal per ${food.portionSize})`
           };
         } catch (error) {
           console.warn(`Failed to enhance food ${food.name}:`, error);
@@ -729,6 +733,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }));
 
+      console.log(`Returning ${enhancedFoods.length} enhanced foods`);
       res.json(enhancedFoods);
     } catch (error) {
       console.error("Search route error:", error);
