@@ -592,6 +592,8 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     // Get base multiplier
     let multiplier = baseMultipliers[unit] || 1.0;
     
+    console.log(`Initial multiplier for ${name} - ${unit}: ${multiplier} (from baseMultipliers)`);
+    
     // BEVERAGES - Enhanced volume-based calculations
     if (food.category?.toLowerCase().includes("beverage") || name.match(/\b(cola|coke|pepsi|sprite|beer|juice|tea|coffee|milk|lassi)\b/)) {
       // For beverages, use volume-based multipliers if specific ml not found
@@ -611,6 +613,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
         else if (name.includes("peanut")) multiplier = 0.008; // ~0.8g per peanut
         else if (name.includes("walnut")) multiplier = 0.025; // ~2.5g per walnut half
         else multiplier = 0.015; // Default for mixed nuts
+        console.log(`Nuts piece calculation for ${name}: using multiplier ${multiplier}`);
       }
       // Handful calculations already handled by weight extraction above
     }
