@@ -309,16 +309,23 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     setSelectedFood(food);
     onFoodSelect(food);
     
-    // Get intelligent food analysis
-    try {
-      const suggestion = await getIntelligentFoodSuggestion(food);
-      setUnit(suggestion.unit);
-      setQuantity(suggestion.quantity);
-    } catch (error) {
-      console.log("Using local suggestion for", food.name);
-      const localSuggestion = getIntelligentUnits(food);
-      setUnit(localSuggestion.unit);
-      setQuantity(localSuggestion.quantity);
+    // Use enhanced portion data if available, otherwise fall back to intelligent suggestions
+    if (food.smartUnit && food.smartQuantity) {
+      console.log(`Using enhanced portion data for ${food.name}: ${food.smartQuantity} ${food.smartUnit}`);
+      setUnit(food.smartUnit);
+      setQuantity(food.smartQuantity);
+    } else {
+      // Get intelligent food analysis
+      try {
+        const suggestion = await getIntelligentFoodSuggestion(food);
+        setUnit(suggestion.unit);
+        setQuantity(suggestion.quantity);
+      } catch (error) {
+        console.log("Using local suggestion for", food.name);
+        const localSuggestion = getIntelligentUnits(food);
+        setUnit(localSuggestion.unit);
+        setQuantity(localSuggestion.quantity);
+      }
     }
     
     // Clear search and hide suggestions
@@ -733,25 +740,53 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="p-3 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 rounded-lg border border-blue-300 dark:border-blue-700">
                   <div className="text-xl font-bold text-blue-700 dark:text-blue-300">
-                    {Math.round((selectedFood.calories || 0) * quantity * getUnitMultiplier(unit, selectedFood))}
+                    {(() => {
+                      // Use enhanced realistic calories if available and unit matches smart unit
+                      if (selectedFood.realisticCalories && selectedFood.smartUnit === unit && quantity === selectedFood.smartQuantity) {
+                        return Math.round(selectedFood.realisticCalories * (quantity / selectedFood.smartQuantity));
+                      }
+                      // Otherwise use base calculation with multiplier
+                      return Math.round((selectedFood.calories || 0) * quantity * getUnitMultiplier(unit, selectedFood));
+                    })()}
                   </div>
                   <div className="text-xs font-medium text-blue-600 dark:text-blue-400">Calories</div>
                 </div>
                 <div className="p-3 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/40 dark:to-green-800/40 rounded-lg border border-green-300 dark:border-green-700">
                   <div className="text-xl font-bold text-green-700 dark:text-green-300">
-                    {Math.round((selectedFood.protein || 0) * quantity * getUnitMultiplier(unit, selectedFood) * 10) / 10}g
+                    {(() => {
+                      // Use enhanced realistic protein if available and unit matches smart unit
+                      if (selectedFood.realisticProtein && selectedFood.smartUnit === unit && quantity === selectedFood.smartQuantity) {
+                        return Math.round((selectedFood.realisticProtein * (quantity / selectedFood.smartQuantity)) * 10) / 10;
+                      }
+                      // Otherwise use base calculation with multiplier
+                      return Math.round((selectedFood.protein || 0) * quantity * getUnitMultiplier(unit, selectedFood) * 10) / 10;
+                    })()}g
                   </div>
                   <div className="text-xs font-medium text-green-600 dark:text-green-400">Protein</div>
                 </div>
                 <div className="p-3 bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/40 dark:to-amber-800/40 rounded-lg border border-amber-300 dark:border-amber-700">
                   <div className="text-xl font-bold text-amber-700 dark:text-amber-300">
-                    {Math.round((selectedFood.carbs || 0) * quantity * getUnitMultiplier(unit, selectedFood) * 10) / 10}g
+                    {(() => {
+                      // Use enhanced realistic carbs if available and unit matches smart unit
+                      if (selectedFood.realisticCarbs && selectedFood.smartUnit === unit && quantity === selectedFood.smartQuantity) {
+                        return Math.round((selectedFood.realisticCarbs * (quantity / selectedFood.smartQuantity)) * 10) / 10;
+                      }
+                      // Otherwise use base calculation with multiplier
+                      return Math.round((selectedFood.carbs || 0) * quantity * getUnitMultiplier(unit, selectedFood) * 10) / 10;
+                    })()}g
                   </div>
                   <div className="text-xs font-medium text-amber-600 dark:text-amber-400">Carbs</div>
                 </div>
                 <div className="p-3 bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/40 dark:to-red-800/40 rounded-lg border border-red-300 dark:border-red-700">
                   <div className="text-xl font-bold text-red-700 dark:text-red-300">
-                    {Math.round((selectedFood.fat || 0) * quantity * getUnitMultiplier(unit, selectedFood) * 10) / 10}g
+                    {(() => {
+                      // Use enhanced realistic fat if available and unit matches smart unit
+                      if (selectedFood.realisticFat && selectedFood.smartUnit === unit && quantity === selectedFood.smartQuantity) {
+                        return Math.round((selectedFood.realisticFat * (quantity / selectedFood.smartQuantity)) * 10) / 10;
+                      }
+                      // Otherwise use base calculation with multiplier
+                      return Math.round((selectedFood.fat || 0) * quantity * getUnitMultiplier(unit, selectedFood) * 10) / 10;
+                    })()}g
                   </div>
                   <div className="text-xs font-medium text-red-600 dark:text-red-400">Fat</div>
                 </div>
