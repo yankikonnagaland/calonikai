@@ -37,46 +37,95 @@ function RazorpayCheckout({ onSuccess }: { onSuccess: () => void }) {
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const razorpayInstanceRef = useRef<any>(null);
 
-  // Pre-load Razorpay script on component mount
+  // Pre-load Razorpay script only when modal opens
   useEffect(() => {
+    let loadingTimeout: NodeJS.Timeout;
+    
     const loadRazorpayScript = () => {
       // Check if script is already loaded
-      if (window.Razorpay) {
+      if ((window as any).Razorpay) {
         setIsScriptLoaded(true);
         return;
       }
 
-      // Remove any existing scripts
-      const existingScript = document.querySelector('script[src*="checkout.razorpay.com"]');
-      if (existingScript) {
-        existingScript.remove();
+      // Set a loading timeout to prevent infinite waiting
+      loadingTimeout = setTimeout(() => {
+        if (!isScriptLoaded) {
+          toast({
+            title: "Payment Service Slow",
+            description: "Payment service is taking longer than expected. Please try again.",
+            variant: "destructive",
+          });
+        }
+      }, 8000);
+
+      // Check for existing script first
+      let script = document.querySelector('script[src*="checkout.razorpay.com"]') as HTMLScriptElement;
+      
+      if (script) {
+        // Script exists, check if Razorpay is available
+        if ((window as any).Razorpay) {
+          setIsScriptLoaded(true);
+          clearTimeout(loadingTimeout);
+          return;
+        }
+        // Script exists but not loaded, wait for it
+        script.onload = () => {
+          setIsScriptLoaded(true);
+          clearTimeout(loadingTimeout);
+        };
+        return;
       }
 
-      const script = document.createElement("script");
+      // Create new script with optimizations
+      script = document.createElement("script");
       script.src = "https://checkout.razorpay.com/v1/checkout.js";
       script.async = true;
+      script.defer = true; // Defer loading to reduce blocking
+      
       script.onload = () => {
         setIsScriptLoaded(true);
+        clearTimeout(loadingTimeout);
       };
+      
       script.onerror = () => {
+        clearTimeout(loadingTimeout);
         toast({
-          title: "Payment Service Unavailable",
-          description: "Unable to load payment service. Please check your internet connection.",
+          title: "Payment Service Error",
+          description: "Failed to load payment service. Please refresh and try again.",
           variant: "destructive",
         });
       };
-      document.head.appendChild(script);
+      
+      // Use requestIdleCallback for non-blocking insertion
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => {
+          document.head.appendChild(script);
+        });
+      } else {
+        // Fallback for browsers without requestIdleCallback
+        setTimeout(() => {
+          document.head.appendChild(script);
+        }, 100);
+      }
     };
 
     loadRazorpayScript();
 
     return () => {
-      // Cleanup on unmount
+      if (loadingTimeout) {
+        clearTimeout(loadingTimeout);
+      }
+      // Cleanup razorpay instance
       if (razorpayInstanceRef.current) {
-        razorpayInstanceRef.current.close();
+        try {
+          razorpayInstanceRef.current.close();
+        } catch (e) {
+          // Ignore cleanup errors
+        }
       }
     };
-  }, [toast]);
+  }, [toast, isScriptLoaded]);
 
   const handleRazorpayPayment = async () => {
     if (!isScriptLoaded) {
@@ -189,13 +238,26 @@ function RazorpayCheckout({ onSuccess }: { onSuccess: () => void }) {
           enabled: true,
           max_count: 3,
         },
-        timeout: 300, // 5 minutes timeout
+        timeout: 180, // 3 minutes timeout (reduced for better UX)
       };
 
-      // Create and open Razorpay instance
+      // Create and open Razorpay instance with performance optimization
       try {
-        razorpayInstanceRef.current = new (window as any).Razorpay(options);
-        razorpayInstanceRef.current.open();
+        // Use requestIdleCallback to avoid blocking the main thread
+        const openRazorpay = () => {
+          razorpayInstanceRef.current = new (window as any).Razorpay(options);
+          
+          // Add a small delay to prevent UI blocking
+          setTimeout(() => {
+            razorpayInstanceRef.current.open();
+          }, 50);
+        };
+
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(openRazorpay, { timeout: 1000 });
+        } else {
+          setTimeout(openRazorpay, 100);
+        }
       } catch (rzpError) {
         console.error("Razorpay initialization error:", rzpError);
         throw new Error("Failed to initialize payment gateway");
@@ -239,8 +301,9 @@ function RazorpayCheckout({ onSuccess }: { onSuccess: () => void }) {
       </Button>
       
       {!isScriptLoaded && (
-        <div className="text-center text-xs text-gray-500">
-          Initializing secure payment gateway...
+        <div className="text-center text-xs text-gray-500 flex items-center justify-center gap-2">
+          <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+          Loading secure payment gateway...
         </div>
       )}
     </div>
