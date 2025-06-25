@@ -48,6 +48,22 @@ export class FallbackStorage {
 
   async searchFoods(query: string): Promise<Food[]> {
     const normalizedQuery = query.toLowerCase().trim();
+    
+    // Special handling for water - always return 0 calories
+    if (normalizedQuery.includes("water")) {
+      return [{
+        id: 9999999,
+        name: "Water",
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        portionSize: "100ml",
+        category: "Beverage",
+        defaultUnit: "ml"
+      }];
+    }
+    
     const foods = Array.from(memoryFoods.values());
     return foods.filter(food => 
       food.name.toLowerCase().includes(normalizedQuery) ||

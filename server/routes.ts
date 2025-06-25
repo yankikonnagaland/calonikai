@@ -377,9 +377,19 @@ function getDefaultQuantityForFood(foodName: string, category: string = ""): num
   const lowerFood = foodName.toLowerCase();
   const lowerCategory = category.toLowerCase();
 
+  // Special case: Water should always be 0 calories regardless of quantity
+  if (lowerFood.includes("water")) {
+    return 0; // Water has 0 calories always
+  }
+  
+  // Special case: Kingfisher beer should default to 500ml can (5x multiplier)
+  if (lowerFood.includes("kingfisher")) {
+    return 5; // 500ml can = 5x 100ml base
+  }
+  
   // Beverages - account for realistic serving sizes
   if (lowerFood.includes("beer")) {
-    if (lowerFood.includes("can")) return 5; // 500ml = 5x 100ml
+    if (lowerFood.includes("can")) return 5; // 500ml = 5x 100ml  
     if (lowerFood.includes("bottle")) return 6.5; // Default large bottle 650ml = 6.5x 100ml
     if (lowerFood.includes("pint")) return 5.68; // 568ml = 5.68x 100ml
     return 2.5; // Default glass 250ml = 2.5x 100ml
@@ -412,6 +422,17 @@ function getDefaultQuantityForFood(foodName: string, category: string = ""): num
 
 // Calculate accurate nutrition values based on realistic portion sizes
 function calculatePortionNutrition(food: any, unit: string, quantity: number) {
+  // Special case: Water always has 0 calories regardless of quantity or unit
+  if (food.name.toLowerCase().includes("water")) {
+    return {
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+      multiplier: 0
+    };
+  }
+  
   let multiplier = quantity;
   
   // Extract weight/volume from unit descriptions and calculate multiplier
@@ -475,12 +496,28 @@ function calculatePortionNutrition(food: any, unit: string, quantity: number) {
 function getLocalUnitSelection(foodName: string, category: string = "") {
   const name = foodName.toLowerCase();
 
+  // Water - should always be 0 calories
+  if (name.includes("water")) {
+    return {
+      unit: "glass (250ml)",
+      unitOptions: ["glass (250ml)", "bottle (500ml)", "liter", "ml"],
+    };
+  }
+  
   // Beer and alcoholic beverages - realistic serving sizes
   if (name.includes("beer") || name.includes("wine") || name.includes("alcohol")) {
-    if (name.includes("can") || name.includes("bottle")) {
+    // For Kingfisher beer specifically, default to 500ml can
+    if (name.toLowerCase().includes("kingfisher")) {
+      return {
+        unit: "can (500ml)", 
+        unitOptions: ["can (500ml)", "bottle (330ml)", "bottle (650ml)", "pint (568ml)", "glass (250ml)"],
+      };
+    }
+    // For other beers, check if can is mentioned
+    if (name.includes("can")) {
       return {
         unit: "can (500ml)",
-        unitOptions: ["can (500ml)", "bottle (330ml)", "pint (568ml)", "glass (250ml)", "ml"],
+        unitOptions: ["can (500ml)", "bottle (330ml)", "bottle (650ml)", "pint (568ml)", "glass (250ml)"],
       };
     }
     return {
