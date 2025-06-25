@@ -271,6 +271,22 @@ export default function MealSummary({
       "ml": 0.01,
     };
 
+    // NUTS & TRAIL MIXES - Enhanced piece-based calculations
+    if (name.match(/\b(nuts|nut|trail|mix|almond|cashew|peanut|walnut|pistachio|mixed nuts)\b/)) {
+      // For nuts, "piece" should be much smaller than handful
+      if (unitLower.includes("piece")) {
+        // Single nuts are very small portions compared to base 100g
+        if (name.includes("cashew")) multiplier = 0.015; // ~1.5g per cashew
+        else if (name.includes("almond")) multiplier = 0.012; // ~1.2g per almond  
+        else if (name.includes("peanut")) multiplier = 0.008; // ~0.8g per peanut
+        else if (name.includes("walnut")) multiplier = 0.025; // ~2.5g per walnut half
+        else multiplier = 0.015; // Default for mixed nuts
+        console.log(`MealSummary nuts piece calculation for ${name}: using multiplier ${multiplier} (should be ~${Math.round(food.calories * multiplier)} cal per piece)`);
+        return multiplier; // Return immediately to avoid other calculations overriding
+      }
+      // Handful calculations already handled by weight extraction above
+    }
+
     // Food-specific adjustments
     if (food.category === "snacks" && unit === "piece") {
       return 0.5; // Individual snacks are smaller
