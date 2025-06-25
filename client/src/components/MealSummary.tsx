@@ -269,6 +269,8 @@ export default function MealSummary({
       "tablespoon": 0.15,
       "teaspoon": 0.05,
       "ml": 0.01,
+      "gram": 0.01, // 1 gram = 1% of 100g base
+      "g": 0.01,
     };
 
     // NUTS & TRAIL MIXES - Enhanced piece-based calculations

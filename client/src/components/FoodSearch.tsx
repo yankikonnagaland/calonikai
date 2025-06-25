@@ -587,6 +587,8 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       "tablespoon": 0.15,
       "teaspoon": 0.05,
       "ml": 0.01,
+      "gram": 0.01, // 1 gram = 1% of 100g base
+      "g": 0.01,
     };
 
     // Get base multiplier
