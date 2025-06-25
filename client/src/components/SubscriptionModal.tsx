@@ -34,12 +34,67 @@ interface SubscriptionModalProps {
 function RazorpayCheckout({ onSuccess }: { onSuccess: () => void }) {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+  const razorpayInstanceRef = useRef<any>(null);
+
+  // Pre-load Razorpay script on component mount
+  useEffect(() => {
+    const loadRazorpayScript = () => {
+      // Check if script is already loaded
+      if (window.Razorpay) {
+        setIsScriptLoaded(true);
+        return;
+      }
+
+      // Remove any existing scripts
+      const existingScript = document.querySelector('script[src*="checkout.razorpay.com"]');
+      if (existingScript) {
+        existingScript.remove();
+      }
+
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.async = true;
+      script.onload = () => {
+        setIsScriptLoaded(true);
+      };
+      script.onerror = () => {
+        toast({
+          title: "Payment Service Unavailable",
+          description: "Unable to load payment service. Please check your internet connection.",
+          variant: "destructive",
+        });
+      };
+      document.head.appendChild(script);
+    };
+
+    loadRazorpayScript();
+
+    return () => {
+      // Cleanup on unmount
+      if (razorpayInstanceRef.current) {
+        razorpayInstanceRef.current.close();
+      }
+    };
+  }, [toast]);
 
   const handleRazorpayPayment = async () => {
+    if (!isScriptLoaded) {
+      toast({
+        title: "Payment Service Loading",
+        description: "Please wait for payment service to load and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
-      // Create Razorpay order
+      // Create Razorpay order with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
       const rawResponse = await apiRequest(
         "POST",
         "/api/create-razorpay-order",
@@ -49,56 +104,71 @@ function RazorpayCheckout({ onSuccess }: { onSuccess: () => void }) {
           planType: "monthly",
         },
       );
-      const orderResponse = await rawResponse.json();
 
-      const orderId = (orderResponse as any).orderId;
+      clearTimeout(timeoutId);
+
+      if (!rawResponse.ok) {
+        throw new Error(`Order creation failed: ${rawResponse.status}`);
+      }
+
+      const orderResponse = await rawResponse.json();
+      const orderId = orderResponse.orderId;
+
+      if (!orderId) {
+        throw new Error("Invalid order response");
+      }
 
       console.log("Razorpay order created:", orderResponse);
 
-      // Configure Razorpay options
+      // Configure Razorpay options with better error handling
       const options = {
-        key:
-          import.meta.env.VITE_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID,
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: 39900,
         currency: "INR",
         name: "Calonik.ai",
-        description: "Premium Subscription",
+        description: "Premium Subscription - ₹399/month",
         order_id: orderId,
         handler: async function (response: any) {
+          setIsProcessing(true);
           try {
             console.log("Payment response from Razorpay:", response);
 
-            // Verify payment on backend
+            // Verify payment on backend with timeout
+            const verifyController = new AbortController();
+            const verifyTimeoutId = setTimeout(() => verifyController.abort(), 15000);
+
             await apiRequest("POST", "/api/verify-razorpay-payment", {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
             });
 
+            clearTimeout(verifyTimeoutId);
+
             toast({
               title: "Payment Successful",
-              description: "Welcome to Premium! Redirecting to tracker...",
+              description: "Welcome to Premium! Redirecting...",
             });
 
-            // Close modal and redirect to tracker page
+            // Close modal and redirect
             onSuccess();
 
-            // Add a small delay then redirect to payment success page
             setTimeout(() => {
-              window.location.href =
-                window.location.origin + "/payment-success";
+              window.location.href = window.location.origin + "/payment-success";
             }, 1500);
           } catch (error) {
+            console.error("Payment verification error:", error);
             toast({
               title: "Payment Verification Failed",
               description: "Please contact support if amount was deducted.",
               variant: "destructive",
             });
+            setIsProcessing(false);
           }
         },
         prefill: {
           name: "Calonik User",
-          email: "user@example.com",
+          email: "user@calonik.ai",
         },
         notes: {
           plan: "monthly",
@@ -109,23 +179,33 @@ function RazorpayCheckout({ onSuccess }: { onSuccess: () => void }) {
         },
         modal: {
           ondismiss: () => {
+            console.log("Razorpay modal dismissed");
             setIsProcessing(false);
           },
+          animation: true,
+          confirm_close: false,
         },
+        retry: {
+          enabled: true,
+          max_count: 3,
+        },
+        timeout: 300, // 5 minutes timeout
       };
 
-      // Load Razorpay script and open checkout
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => {
-        const rzp = new (window as any).Razorpay(options);
-        rzp.open();
-      };
-      document.body.appendChild(script);
+      // Create and open Razorpay instance
+      try {
+        razorpayInstanceRef.current = new (window as any).Razorpay(options);
+        razorpayInstanceRef.current.open();
+      } catch (rzpError) {
+        console.error("Razorpay initialization error:", rzpError);
+        throw new Error("Failed to initialize payment gateway");
+      }
+
     } catch (error) {
+      console.error("Payment initiation error:", error);
       toast({
         title: "Payment Failed",
-        description: "Unable to initiate payment. Please try again.",
+        description: error instanceof Error ? error.message : "Unable to initiate payment. Please try again.",
         variant: "destructive",
       });
       setIsProcessing(false);
@@ -150,11 +230,19 @@ function RazorpayCheckout({ onSuccess }: { onSuccess: () => void }) {
 
       <Button
         onClick={handleRazorpayPayment}
-        disabled={isProcessing}
-        className="w-full bg-emerald-600 hover:bg-emerald-700"
+        disabled={isProcessing || !isScriptLoaded}
+        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50"
       >
-        {isProcessing ? "Processing..." : "Subscribe - ₹399/month"}
+        {!isScriptLoaded ? "Loading Payment Service..." : 
+         isProcessing ? "Processing Payment..." : 
+         "Subscribe - ₹399/month"}
       </Button>
+      
+      {!isScriptLoaded && (
+        <div className="text-center text-xs text-gray-500">
+          Initializing secure payment gateway...
+        </div>
+      )}
     </div>
   );
 }
