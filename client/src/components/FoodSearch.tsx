@@ -420,9 +420,9 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     
     // Default intelligent suggestion
     return {
-      unit: "serving",
+      unit: "serving (100g)",
       quantity: 1,
-      unitOptions: ["serving", "gram", "piece"],
+      unitOptions: ["serving (100g)", "gram", "piece"],
       reasoning: "Standard serving size recommended"
     };
   };
