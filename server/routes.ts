@@ -35,13 +35,13 @@ async function searchFoodWithAI(query: string) {
     const normalizedQuery = query.toLowerCase().trim();
 
     // Check database first for exact and partial matches
-    let existingFoods = await fallbackStorage.searchFoods(normalizedQuery);
+    let existingFoods = await storage.searchFoods(normalizedQuery);
     if (existingFoods.length > 0) {
       return existingFoods[0];
     }
 
     // Try partial matches for common variations
-    const partialResults = await fallbackStorage.searchFoods(
+    const partialResults = await storage.searchFoods(
       normalizedQuery.split(" ")[0],
     );
     if (partialResults.length > 0) {
@@ -118,7 +118,7 @@ Consider regional variations and authentic preparation methods.`,
     };
 
     // Store for future searches
-    await fallbackStorage.storeAiFood(food);
+    await storage.storeAiFood(food);
     console.log(`AI food created: ${food.name} (${food.calories} cal)`);
 
     return food;
@@ -620,7 +620,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create or get admin user with unlimited access
-      const adminUser = await fallbackStorage.upsertUser({
+      const adminUser = await storage.upsertUser({
         id: "admin_testing_user",
         email: "admin@calonik.ai",
         firstName: "Admin",
@@ -646,7 +646,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Food routes
   app.get("/api/foods", async (req, res) => {
     try {
-      const foods = await fallbackStorage.getAllFoods();
+      const foods = await storage.getAllFoods();
       res.json(foods);
     } catch (error) {
       console.error("Error fetching foods:", error);
@@ -681,7 +681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         defaultUnit: defaultUnit || "serving",
       };
 
-      await fallbackStorage.storeAiFood(aiFood);
+      await storage.storeAiFood(aiFood);
       console.log("AI food stored:", aiFood.name);
       res.json(aiFood);
     } catch (error) {
@@ -730,16 +730,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Use fallback storage and AI search
       try {
-        foods = await fallbackStorage.searchFoods(query);
+        foods = await storage.searchFoods(query);
       } catch (error) {
-        console.warn("Fallback storage search failed");
+        console.warn("Storage search failed");
       }
 
       // If no foods found, use AI search
       if (foods.length === 0 && process.env.OPENAI_API_KEY) {
         try {
           const aiFood = await searchFoodDirectly(query);
-          await fallbackStorage.storeAiFood(aiFood);
+          await storage.storeAiFood(aiFood);
           foods = [aiFood];
         } catch (aiError) {
           console.warn("AI search failed, using intelligent fallback");
@@ -789,7 +789,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { sessionId } = req.params;
       // Use Replit user ID if authenticated, otherwise use session ID
       const userSessionId = req.user?.id || sessionId;
-      const meals = await fallbackStorage.getMealItems(userSessionId);
+      const meals = await storage.getMealItems(userSessionId);
       res.json(meals);
     } catch (error) {
       console.error("Error fetching meals:", error);
@@ -803,7 +803,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { sessionId } = req.params;
       // Use Replit user ID if authenticated, otherwise use session ID
       const userSessionId = req.user?.id || sessionId;
-      const meals = await fallbackStorage.getMealItems(userSessionId);
+      const meals = await storage.getMealItems(userSessionId);
       res.json(meals);
     } catch (error) {
       console.error("Error fetching meals:", error);
@@ -818,7 +818,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use the provided session ID directly (it's already the effective user ID from frontend)
 
       console.log(`Fetching meals for session ${sessionId} on date ${date}`);
-      const meals = await fallbackStorage.getMealItems(sessionId, date);
+      const meals = await storage.getMealItems(sessionId, date);
       console.log(`Found ${meals.length} meals for ${date}`);
 
       res.json(meals);
@@ -846,7 +846,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
       }
 
-      const meal = await fallbackStorage.addMealItem(validation.data);
+      const meal = await storage.addMealItem(validation.data);
       console.log(
         "Meal added successfully:",
         meal.id,
@@ -886,14 +886,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Store the AI food first if it doesn't exist
-      const food = await fallbackStorage.getFoodById(mealData.foodId);
+      const food = await storage.getFoodById(mealData.foodId);
       if (!food) {
         console.log(
-          "Food not found in fallback storage, this might be an AI-generated food",
+          "Food not found in storage, this might be an AI-generated food",
         );
       }
 
-      const meal = await fallbackStorage.addMealItem(validation.data);
+      const meal = await storage.addMealItem(validation.data);
       console.log(
         "Meal added successfully:",
         meal.id,
@@ -916,7 +916,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid meal ID" });
       }
 
-      const success = await fallbackStorage.removeMealItem(id);
+      const success = await storage.removeMealItem(id);
       if (!success) {
         return res.status(404).json({ message: "Meal not found" });
       }
@@ -938,7 +938,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid meal ID" });
       }
 
-      const success = await fallbackStorage.removeMealItem(id);
+      const success = await storage.removeMealItem(id);
       console.log(`Removal result:`, success);
       if (!success) {
         return res.status(404).json({ message: "Meal not found" });
@@ -962,7 +962,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(
         `Clearing meal for session: ${effectiveSessionId} on date: ${targetDate}`,
       );
-      const success = await fallbackStorage.clearMeal(
+      const success = await storage.clearMeal(
         effectiveSessionId,
         targetDate,
       );
@@ -978,7 +978,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/meals/session/:sessionId", async (req, res) => {
     try {
       const { sessionId } = req.params;
-      const success = await fallbackStorage.clearMeal(sessionId);
+      const success = await storage.clearMeal(sessionId);
       res.json({ message: "Meal cleared successfully", cleared: success });
     } catch (error) {
       console.error("Error clearing meal:", error);
@@ -992,7 +992,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { sessionId } = req.params;
       // Use Replit user ID if authenticated, otherwise use session ID
       const userSessionId = req.user?.id || sessionId;
-      const profile = await fallbackStorage.getUserProfile(userSessionId);
+      const profile = await storage.getUserProfile(userSessionId);
       res.json(profile);
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -1052,7 +1052,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         targetCalories: Math.round(targetCalories),
       };
 
-      const profile = await fallbackStorage.saveUserProfile(profileData);
+      const profile = await storage.saveUserProfile(profileData);
       res.json(profile);
     } catch (error) {
       console.error("Error calculating profile:", error);
@@ -1069,7 +1069,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       // Use authenticated user ID if available, otherwise use session ID
       const effectiveSessionId = req.user?.id || sessionId;
-      const exercises = await fallbackStorage.getExercises(
+      const exercises = await storage.getExercises(
         effectiveSessionId,
         date,
       );
@@ -1099,7 +1099,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log("Exercise POST - validated data:", validation.data);
-      const exercise = await fallbackStorage.addExercise(validation.data);
+      const exercise = await storage.addExercise(validation.data);
       console.log("Exercise POST - stored exercise:", exercise);
       res.json(exercise);
     } catch (error) {
@@ -1115,7 +1115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid exercise ID" });
       }
 
-      const success = await fallbackStorage.removeExercise(id);
+      const success = await storage.removeExercise(id);
       if (!success) {
         return res.status(404).json({ message: "Exercise not found" });
       }
@@ -1130,7 +1130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/exercise/session/:sessionId", async (req, res) => {
     try {
       const { sessionId } = req.params;
-      const success = await fallbackStorage.clearExercises(sessionId);
+      const success = await storage.clearExercises(sessionId);
       res.json({ message: "Exercises cleared successfully", cleared: success });
     } catch (error) {
       console.error("Error clearing exercises:", error);
@@ -1304,7 +1304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { sessionId } = req.params;
       // Use Replit user ID if authenticated, otherwise use session ID
       const userSessionId = req.user?.id || sessionId;
-      const summaries = await fallbackStorage.getDailySummaries(userSessionId);
+      const summaries = await storage.getDailySummaries(userSessionId);
       res.json(summaries);
     } catch (error) {
       console.error("Error fetching daily summaries:", error);
@@ -1317,7 +1317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { sessionId, date } = req.params;
       // Use Replit user ID if authenticated, otherwise use session ID
       const userSessionId = req.user?.id || sessionId;
-      const summary = await fallbackStorage.getDailySummary(
+      const summary = await storage.getDailySummary(
         userSessionId,
         date,
       );
@@ -1350,7 +1350,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
       }
 
-      const summary = await fallbackStorage.saveDailySummary(validation.data);
+      const summary = await storage.saveDailySummary(validation.data);
       console.log("Daily summary saved successfully:", summary.id);
       res.json(summary);
     } catch (error) {

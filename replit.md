@@ -364,6 +364,15 @@ The application follows a client-server architecture with clear separation of co
 - All beverages and foods now display realistic calorie counts based on actual serving sizes
 - Search results prominently show enhanced calories in green with portion explanations
 
+**June 25, 2025 - Fixed Critical Database Persistence Issue:**
+- RESOLVED: User data and profiles no longer reset during redeployments
+- Fixed root cause: Application was using fallbackStorage (in-memory) instead of storage (PostgreSQL) in routes.ts
+- Replaced 13+ instances of fallbackStorage with proper storage instance across all API endpoints
+- All user operations now consistently use PostgreSQL database: meals, profiles, exercises, daily summaries
+- Database verification confirmed data persistence: 12 users, 4 profiles, 38 meal items retained
+- Application logs now show proper database queries instead of FallbackStorage messages
+- User data (profiles, meal history, exercise records) now persists permanently across all redeployments
+
 **June 25, 2025 - Enhanced Profile System with Persistent Display:**
 - Implemented persistent profile display in both Profile tab and Dashboard
 - Added profile save state detection with green visual indicators when profile is active
