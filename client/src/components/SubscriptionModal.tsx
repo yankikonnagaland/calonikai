@@ -30,12 +30,14 @@ interface SubscriptionModalProps {
   };
 }
 
-// Razorpay payment component
+// Razorpay payment component with aggressive performance optimization
 function RazorpayCheckout({ onSuccess }: { onSuccess: () => void }) {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+  const [isModalReady, setIsModalReady] = useState(false);
   const razorpayInstanceRef = useRef<any>(null);
+  const preloadTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Pre-load Razorpay script only when modal opens
   useEffect(() => {
@@ -97,24 +99,58 @@ function RazorpayCheckout({ onSuccess }: { onSuccess: () => void }) {
         });
       };
       
-      // Use requestIdleCallback for non-blocking insertion
+      // Use requestIdleCallback for non-blocking insertion with performance optimization
+      const insertScript = () => {
+        document.head.appendChild(script);
+        
+        // Preload Razorpay resources after script loads
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(() => {
+            preloadRazorpayResources();
+          });
+        }
+      };
+
       if ('requestIdleCallback' in window) {
-        requestIdleCallback(() => {
-          document.head.appendChild(script);
-        });
+        requestIdleCallback(insertScript, { timeout: 2000 });
       } else {
-        // Fallback for browsers without requestIdleCallback
-        setTimeout(() => {
-          document.head.appendChild(script);
-        }, 100);
+        setTimeout(insertScript, 150);
       }
     };
 
     loadRazorpayScript();
 
+    // Preload Razorpay resources to reduce modal load time
+    const preloadRazorpayResources = () => {
+      try {
+        // Preload common Razorpay resources
+        const preloadUrls = [
+          'https://cdn.razorpay.com/static/assets/css/checkout.css',
+          'https://cdn.razorpay.com/static/assets/js/checkout.js'
+        ];
+        
+        preloadUrls.forEach(url => {
+          const link = document.createElement('link');
+          link.rel = 'preload';
+          link.href = url;
+          link.as = url.includes('.css') ? 'style' : 'script';
+          link.crossOrigin = 'anonymous';
+          document.head.appendChild(link);
+        });
+        
+        setIsModalReady(true);
+      } catch (e) {
+        // Ignore preload errors
+        setIsModalReady(true);
+      }
+    };
+
     return () => {
       if (loadingTimeout) {
         clearTimeout(loadingTimeout);
+      }
+      if (preloadTimeoutRef.current) {
+        clearTimeout(preloadTimeoutRef.current);
       }
       // Cleanup razorpay instance
       if (razorpayInstanceRef.current) {
@@ -125,7 +161,7 @@ function RazorpayCheckout({ onSuccess }: { onSuccess: () => void }) {
         }
       }
     };
-  }, [toast, isScriptLoaded]);
+  }, [toast]);
 
   const handleRazorpayPayment = async () => {
     if (!isScriptLoaded) {
@@ -138,6 +174,9 @@ function RazorpayCheckout({ onSuccess }: { onSuccess: () => void }) {
     }
 
     setIsProcessing(true);
+
+    // Add a small delay to prevent UI blocking during order creation
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     try {
       // Create Razorpay order with timeout
@@ -231,8 +270,10 @@ function RazorpayCheckout({ onSuccess }: { onSuccess: () => void }) {
             console.log("Razorpay modal dismissed");
             setIsProcessing(false);
           },
-          animation: true,
+          animation: false, // Disable animations to reduce performance overhead
           confirm_close: false,
+          escape: true,
+          backdrop_close: true,
         },
         retry: {
           enabled: true,
@@ -241,23 +282,32 @@ function RazorpayCheckout({ onSuccess }: { onSuccess: () => void }) {
         timeout: 180, // 3 minutes timeout (reduced for better UX)
       };
 
-      // Create and open Razorpay instance with performance optimization
+      // Create and open Razorpay instance with aggressive performance optimization
       try {
-        // Use requestIdleCallback to avoid blocking the main thread
-        const openRazorpay = () => {
-          razorpayInstanceRef.current = new (window as any).Razorpay(options);
-          
-          // Add a small delay to prevent UI blocking
-          setTimeout(() => {
-            razorpayInstanceRef.current.open();
-          }, 50);
+        // Create instance immediately but defer opening
+        razorpayInstanceRef.current = new (window as any).Razorpay(options);
+        
+        // Use multiple performance strategies
+        const openWithOptimization = () => {
+          // Yield to browser to prevent blocking
+          if ('scheduler' in window && 'postTask' in (window as any).scheduler) {
+            (window as any).scheduler.postTask(() => {
+              razorpayInstanceRef.current.open();
+            }, { priority: 'user-blocking' });
+          } else if ('requestIdleCallback' in window) {
+            requestIdleCallback(() => {
+              razorpayInstanceRef.current.open();
+            }, { timeout: 500 });
+          } else {
+            setTimeout(() => {
+              razorpayInstanceRef.current.open();
+            }, 16); // Next frame
+          }
         };
 
-        if ('requestIdleCallback' in window) {
-          requestIdleCallback(openRazorpay, { timeout: 1000 });
-        } else {
-          setTimeout(openRazorpay, 100);
-        }
+        // Immediate opening for better UX
+        openWithOptimization();
+        
       } catch (rzpError) {
         console.error("Razorpay initialization error:", rzpError);
         throw new Error("Failed to initialize payment gateway");
@@ -293,10 +343,10 @@ function RazorpayCheckout({ onSuccess }: { onSuccess: () => void }) {
       <Button
         onClick={handleRazorpayPayment}
         disabled={isProcessing || !isScriptLoaded}
-        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50"
+        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-all duration-200 razorpay-payment-button"
       >
         {!isScriptLoaded ? "Loading Payment Service..." : 
-         isProcessing ? "Processing Payment..." : 
+         isProcessing ? "Opening Payment Gateway..." : 
          "Subscribe - ₹399/month"}
       </Button>
       

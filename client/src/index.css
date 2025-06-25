@@ -4,6 +4,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Performance optimizations for payment modals */
+.razorpay-payment-button {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Prevent layout thrashing during modal operations */
+[data-radix-portal] {
+  contain: layout style paint;
+}
+
+/* Optimize iframe rendering for payment gateways */
+iframe[src*="razorpay"] {
+  will-change: contents;
+  contain: strict;
+}
+
 :root {
   --background: hsl(216, 27%, 7%);
   --foreground: hsl(210, 40%, 96%);

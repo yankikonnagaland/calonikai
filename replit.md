@@ -297,14 +297,14 @@ The application follows a client-server architecture with clear separation of co
 - Date-specific meal storage now works consistently across manual food search and AI camera detection
 
 **June 25, 2025 - Optimized Razorpay Payment Modal Performance:**
-- Fixed long loading times for Razorpay payment options page
-- Implemented requestIdleCallback for non-blocking script loading 
-- Added defer attribute to reduce main thread blocking
-- Reduced timeout from 5 minutes to 3 minutes for better UX
+- Fixed long loading times for Razorpay payment options page (250ms+ violations)
+- Implemented aggressive performance optimizations: resource preloading, disabled animations, scheduler API
+- Added CSS containment and will-change properties to prevent layout thrashing
+- Used requestIdleCallback and modern browser scheduling APIs for non-blocking operations
+- Preloads Razorpay CSS/JS assets to reduce modal initialization time
+- Frame-aligned timing (16ms) for smooth UI operations
 - Added loading timeout protection (8 seconds) with user feedback
-- Used performance-optimized modal opening with delayed initialization
-- Added visual loading spinner for better user experience
-- Fixed forced reflow violations causing 250ms+ delays
+- Performance-optimized modal opening with immediate instance creation
 
 **June 25, 2025 - Fixed AI Camera Meal Item Removal Bug:**
 - Fixed critical bug where AI camera detected foods couldn't be removed from Current Meal
