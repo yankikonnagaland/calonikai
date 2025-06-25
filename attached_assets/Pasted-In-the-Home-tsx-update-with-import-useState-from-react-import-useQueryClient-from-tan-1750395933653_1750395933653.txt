@@ -1,0 +1,80 @@
+In the Home.tsx update with
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import Navigation from "@/components/Navigation";
+import FoodSearch from "@/components/FoodSearch";
+import MealSummary from "@/components/MealSummary";
+import UserProfile from "@/components/UserProfile";
+import ExerciseTracker from "@/components/ExerciseTracker";
+import HealthyAlternatives from "@/components/HealthyAlternatives";
+import Dashboard from "@/components/Dashboard";
+import FoodCamera from "@/components/FoodCamera";
+import TrackerNutritionSummary from "@/components/TrackerNutritionSummary";
+import { getSessionId } from "@/lib/session";
+
+type TabType = "tracker" | "profile" | "exercise" | "dashboard";
+
+export default function Home() {
+  const [activeTab, setActiveTab] = useState<TabType>("tracker");
+  const [selectedFood, setSelectedFood] = useState<any>(null);
+  const sessionId = getSessionId();
+  const queryClient = useQueryClient();
+
+  const handleMealItemAdded = () => {
+    queryClient.invalidateQueries({ queryKey: [`/api/meal/${sessionId}`] });
+    queryClient.invalidateQueries({ queryKey: [`/api/daily-summary`] });
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 sm:pb-6">
+        {activeTab === "tracker" && (
+          <div className="animate-fade-in">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <FoodSearch 
+                  sessionId={sessionId} 
+                  onFoodSelect={setSelectedFood}
+                  onMealAdded={handleMealItemAdded}
+                  onRedirectToDashboard={() => setActiveTab("dashboard")}
+                />
+                <FoodCamera 
+                  sessionId={sessionId}
+                  onFoodDetected={setSelectedFood}
+                  onMealItemAdded={handleMealItemAdded}
+                />
+              </div>
+              <div className="space-y-6">
+                <MealSummary sessionId={sessionId} />
+              </div>
+            </div>
+            <div className="mt-6 space-y-6">
+              <HealthyAlternatives sessionId={sessionId} />
+              <TrackerNutritionSummary sessionId={sessionId} />
+            </div>
+          </div>
+        )}
+
+        {activeTab === "profile" && (
+          <div className="animate-fade-in">
+            <UserProfile sessionId={sessionId} />
+          </div>
+        )}
+
+        {activeTab === "exercise" && (
+          <div className="animate-fade-in">
+            <ExerciseTracker sessionId={sessionId} />
+          </div>
+        )}
+
+        {activeTab === "dashboard" && (
+          <div className="animate-fade-in">
+            <Dashboard sessionId={sessionId} />
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}

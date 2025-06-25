@@ -1,0 +1,86 @@
+Optimise the image processing functionality like Resize the image to 224x224 (like Food101 model standard) using a canvas. 
+Show smaller preview of the whole image.
+
+Base64 encode the image and send it to a Python backend (Flask/FastAPI).
+
+Use the below codes for reference
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Food Calorie Estimator</title>
+</head>
+<body>
+  <h2>Upload or Take a Picture of Your Meal</h2>
+  <input type="file" accept="image/*" capture="environment" id="inputImage">
+  <br><br>
+  <canvas id="canvas" style="display:none;"></canvas>
+  <button onclick="sendImage()">Analyze</button>
+  <pre id="result"></pre>
+
+  <script>
+    function sendImage() {
+      const input = document.getElementById("inputImage");
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+      const file = input.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          canvas.width = 224;
+          canvas.height = 224;
+          ctx.drawImage(img, 0, 0, 224, 224);
+          const dataURL = canvas.toDataURL("image/jpeg", 0.6);
+          fetch("/analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image: dataURL })
+          })
+          .then(res => res.json())
+          .then(data => {
+            document.getElementById("result").textContent = data.result;
+          });
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  </script>
+</body>
+</html>
+
+from flask import Flask, request, jsonify
+import openai
+import base64
+import re
+
+app = Flask(__name__)
+openai.api_key = "sk-REPLACE_WITH_YOUR_KEY"
+
+def clean_base64(data_url):
+    return re.sub('^data:image/.+;base64,', '', data_url)
+
+@app.route("/analyze", methods=["POST"])
+def analyze():
+    data = request.get_json()
+    image_base64 = clean_base64(data["image"])
+
+    response = openai.ChatCompletion.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "user", "content": [
+                {"type": "text", "text": "What food items are in this image? List estimated calories for each. Keep it brief."},
+                {"type": "image_url", "image_url": {
+                    "url": f"data:image/jpeg;base64,{image_base64}"
+                }}
+            ]}
+        ],
+        max_tokens=400
+    )
+    result_text = response["choices"][0]["message"]["content"]
+    return jsonify({"result": result_text})
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=81)

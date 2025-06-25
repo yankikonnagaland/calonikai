@@ -1,0 +1,305 @@
+import { useState, useEffect } from "react";
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
+import Navigation from "@/components/Navigation";
+import FoodSearch from "@/components/FoodSearch";
+import MealSummary from "@/components/MealSummary";
+import UserProfile from "@/components/UserProfile";
+import ExerciseTracker from "@/components/ExerciseTracker";
+import Dashboard from "@/components/Dashboard";
+import FoodCamera from "@/components/FoodCamera";
+import TrackerNutritionSummary from "@/components/TrackerNutritionSummary";
+import WeightUpdateModal from "@/components/WeightUpdateModal";
+import { getSessionId } from "@/lib/session";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarDays, Utensils } from "lucide-react";
+import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
+
+type TabType = "tracker" | "profile" | "exercise" | "dashboard";
+
+export default function Home() {
+  const [activeTab, setActiveTab] = useState<TabType>("tracker");
+  const [selectedFood, setSelectedFood] = useState<any>(null);
+  const [showWeightModal, setShowWeightModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const { user } = useAuth();
+  const sessionId = user?.id || getSessionId();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  // Listen for profile setup navigation event
+  useEffect(() => {
+    const handleSwitchToProfile = () => {
+      setActiveTab('profile');
+    };
+    
+    window.addEventListener('switchToProfile', handleSwitchToProfile);
+    return () => window.removeEventListener('switchToProfile', handleSwitchToProfile);
+  }, []);
+
+  // Format selected date for API calls
+  const selectedDateString = format(selectedDate, 'yyyy-MM-dd');
+  
+  console.log("Home Component - Selected date:", selectedDate);
+  console.log("Home Component - Selected date string:", selectedDateString);
+  console.log("Home Component - Today's date:", format(new Date(), 'yyyy-MM-dd'));
+  console.log("Home Component - Session ID:", sessionId);
+
+  // Fetch user profile for weight tracking
+  const { data: userProfile } = useQuery({
+    queryKey: [`/api/profile/${sessionId}`],
+  });
+
+  // Morning weight reminder logic
+  useEffect(() => {
+    const checkMorningReminder = () => {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const lastWeightUpdate = localStorage.getItem(`lastWeightUpdate_${sessionId}`);
+      const today = now.toDateString();
+      
+      // Show modal if it's morning (6-11 AM) and user hasn't logged weight today
+      if (currentHour >= 6 && currentHour <= 11 && lastWeightUpdate !== today && userProfile) {
+        const reminderShown = localStorage.getItem(`weightReminderShown_${today}_${sessionId}`);
+        if (!reminderShown) {
+          setTimeout(() => setShowWeightModal(true), 2000); // Show after 2 seconds
+          localStorage.setItem(`weightReminderShown_${today}_${sessionId}`, 'true');
+        }
+      }
+    };
+
+    checkMorningReminder();
+  }, [sessionId, userProfile]);
+
+  // Get meal items for selected date
+  const { data: mealItems, isLoading } = useQuery({
+    queryKey: [`/api/meal/${sessionId}/${selectedDateString}`],
+  });
+
+  // Submit meal mutation
+  const submitMealMutation = useMutation({
+    mutationFn: async () => {
+      // Calculate totals
+      const totalCalories = (mealItems || []).reduce((sum: number, item: any) => 
+        sum + ((item.food?.calories || 0) * (item.quantity || 1)), 0
+      );
+      const totalProtein = (mealItems || []).reduce((sum: number, item: any) => 
+        sum + ((item.food?.protein || 0) * (item.quantity || 1)), 0
+      );
+      const totalCarbs = (mealItems || []).reduce((sum: number, item: any) => 
+        sum + ((item.food?.carbs || 0) * (item.quantity || 1)), 0
+      );
+      const totalFat = (mealItems || []).reduce((sum: number, item: any) => 
+        sum + ((item.food?.fat || 0) * (item.quantity || 1)), 0
+      );
+
+      await apiRequest(`/api/daily-summary`, {
+        method: "POST",
+        body: {
+          sessionId,
+          date: selectedDateString,
+          totalCalories,
+          totalProtein,
+          totalCarbs,
+          totalFat,
+          caloriesBurned: 0,
+          netCalories: totalCalories,
+          mealData: JSON.stringify(mealItems || [])
+        },
+      });
+
+      // Clear the meal after submission
+      await apiRequest(`/api/meal/clear/${sessionId}/${selectedDateString}`, {
+        method: "POST",
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Meal Submitted!",
+        description: `Your meal has been added to ${format(selectedDate, 'MMM dd, yyyy')}'s summary.`,
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/meal/${sessionId}/${selectedDateString}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/daily-summary/${sessionId}/${selectedDateString}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/daily-summaries/${sessionId}`] });
+    },
+  });
+
+  // Clear meal mutation
+  const clearMealMutation = useMutation({
+    mutationFn: () => apiRequest(`/api/meal/clear/${sessionId}/${selectedDateString}`, { method: "POST" }),
+    onSuccess: () => {
+      toast({
+        title: "Meal Cleared",
+        description: `All items have been removed from ${format(selectedDate, 'MMM dd, yyyy')}'s meal.`,
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/meal/${sessionId}/${selectedDateString}`] });
+    },
+  });
+
+  const handleMealItemAdded = () => {
+    queryClient.invalidateQueries({ queryKey: [`/api/meal/${sessionId}/${selectedDateString}`] });
+    queryClient.invalidateQueries({ queryKey: [`/api/daily-summary`] });
+  };
+
+  const handleWeightModalClose = () => {
+    setShowWeightModal(false);
+    // Mark as updated for today
+    const today = new Date().toDateString();
+    localStorage.setItem(`lastWeightUpdate_${sessionId}`, today);
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+      
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 sm:pb-6">
+        {/* Tracker Tab */}
+        {activeTab === "tracker" && (
+          <div className="animate-fade-in">
+            {/* Tracker Header with Calendar */}
+            <Card className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20 mb-6">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center text-2xl">
+                      <Utensils className="w-6 h-6 mr-3 text-primary" />
+                      Food Tracker
+                    </CardTitle>
+                    <p className="text-muted-foreground">
+                      Track your daily nutrition intake for {format(selectedDate, 'MMM dd, yyyy')}
+                    </p>
+                  </div>
+                  
+                  {/* Date Selector */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-[200px] justify-start text-left font-normal hover:bg-white/80 bg-[#9333ea] text-white border-purple-400"
+                      >
+                        <CalendarDays className="mr-2 h-4 w-4" />
+                        {format(selectedDate, "PPP")}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => date && setSelectedDate(date)}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </CardHeader>
+            </Card>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <FoodSearch 
+                  sessionId={sessionId} 
+                  selectedDate={selectedDateString}
+                  onFoodSelect={setSelectedFood}
+                  onMealAdded={handleMealItemAdded}
+                  onRedirectToDashboard={() => setActiveTab("dashboard")}
+                />
+                <FoodCamera 
+                  sessionId={sessionId}
+                  selectedDate={selectedDateString}
+                  onFoodDetected={setSelectedFood}
+                  onMealItemAdded={handleMealItemAdded}
+                />
+              </div>
+              <div className="space-y-6">
+                <MealSummary 
+                  sessionId={sessionId} 
+                  selectedDate={selectedDateString}
+                  onSubmit={() => submitMealMutation.mutate()}
+                  onClear={() => clearMealMutation.mutate()}
+                  isSubmitting={submitMealMutation.isPending}
+                  isClearing={clearMealMutation.isPending}
+                />
+              </div>
+            </div>
+            <div className="mt-6 space-y-6">
+              <TrackerNutritionSummary sessionId={sessionId} selectedDate={selectedDateString} />
+            </div>
+          </div>
+        )}
+
+        {/* Profile Tab */}
+        {activeTab === "profile" && (
+          <div className="animate-fade-in">
+            <UserProfile sessionId={sessionId} />
+          </div>
+        )}
+
+        {/* Exercise Tab */}
+        {activeTab === "exercise" && (
+          <div className="animate-fade-in">
+            {/* Calendar Date Picker for Exercise */}
+            <Card className="mb-6 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border-blue-200 dark:border-blue-800">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center text-lg">
+                  <CalendarDays className="w-5 h-5 mr-2 text-blue-600" />
+                  Select Exercise Date
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Choose the date for your exercise tracking
+                </p>
+              </CardHeader>
+              <CardContent>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal h-12"
+                    >
+                      <CalendarDays className="mr-3 h-4 w-4" />
+                      {format(selectedDate, 'EEEE, MMMM do, yyyy')}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={(date) => {
+                        if (date) {
+                          setSelectedDate(date);
+                        }
+                      }}
+                      disabled={(date) => date > new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </CardContent>
+            </Card>
+            
+            <ExerciseTracker sessionId={sessionId} selectedDate={selectedDateString} />
+          </div>
+        )}
+
+        {/* Dashboard Tab */}
+        {activeTab === "dashboard" && (
+          <div className="animate-fade-in">
+            <Dashboard sessionId={sessionId} />
+          </div>
+        )}
+      </main>
+      
+      {/* Morning Weight Update Modal */}
+      <WeightUpdateModal
+        isOpen={showWeightModal}
+        onClose={handleWeightModalClose}
+        sessionId={sessionId}
+        currentProfile={userProfile}
+      />
+    </div>
+  );
+}

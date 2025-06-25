@@ -1,0 +1,79 @@
+Create a full-stack Indian Calorie Tracker web application with the following specifications:
+
+## Core Features
+- **Food Search & Selection**: Search through 100+ Indian food items with autocomplete
+- **Nutrition Tracking**: Display calories, protein, carbs, and fat for selected foods
+- **Meal Management**: Add/remove items to build meals with running totals
+- **Exercise Calculator**: Calculate time needed to burn consumed calories through different exercises
+- **User Profile**: BMR calculation with personalized daily calorie recommendations
+- **Healthy Alternatives**: Suggest lower-calorie food swaps with nutritional tips
+
+## Technical Stack
+- **Frontend**: React 18 + TypeScript + Vite
+- **Styling**: Tailwind CSS + shadcn/ui components with Radix UI primitives
+- **Backend**: Express.js + TypeScript
+- **Database**: In-memory storage with comprehensive Indian food database
+- **State Management**: TanStack Query for server state
+- **Routing**: Wouter for client-side routing
+- **Forms**: React Hook Form + Zod validation
+
+## UI Requirements
+- **2 Input Fields Only**: 
+  1. Food Name (searchable dropdown)
+  2. Quantity & Unit (number input + select with 5 options: Pieces, Small portion, Medium portion, Large portion, Gms)
+- **Smart Auto-Selection**: Auto-select "pieces" for piece-based foods (samosa, momos, eggs), "medium portion" for others
+- **Vibrant Animations**: Gradient backgrounds, pulse effects, bounce animations on profile results
+- **Responsive Design**: Mobile-first with clean, modern interface
+
+## Food Database (100+ items)
+Include comprehensive Indian foods: Rice, Dal, Roti, Paratha, Biryani, Curry dishes, Snacks (Samosa, Momos, Pakora), Sweets (Gulab Jamun, Jalebi), Beverages (Lassi, Chai), Vegetables, Non-veg items, etc.
+- Simplified names: "Rice" not "Basmati Rice", "Momos" not "Momos (Chicken)"
+- Each food with: name, calories, protein, carbs, fat, portion size, category
+
+## User Profile Features
+- Input fields: Gender, Age, Height, Weight, Body Type, Activity Level, Weight Goal
+- BMR calculation using Mifflin-St Jeor equation
+- TDEE calculation based on activity level
+- Target calories for weight loss/gain/maintenance
+- Animated result cards with emoji explanations:
+  - "🧠 BMR is the number of calories your body burns at rest just to stay alive..."
+  - "🏃‍♂️ This is your BMR plus calories burned through daily activities..."
+  - "🎯 This is your personalized calorie goal based on your weight goal..."
+
+## API Endpoints
+- GET /api/foods - All foods
+- GET /api/foods/search?q=query - Search foods
+- GET /api/foods/:id - Specific food
+- GET /api/meal/:sessionId - Meal items
+- POST /api/meal - Add meal item
+- DELETE /api/meal/:id - Remove meal item
+- DELETE /api/meal/clear/:sessionId - Clear meal
+- POST /api/exercise/complete - Log exercise
+
+## Exercise System
+4 exercise types: Running (10 cal/min), Walking (5 cal/min), Skipping (12 cal/min), Cycling (8 cal/min)
+- Calculate time needed to burn meal calories
+- Animated progress tracking with celebrations
+- Store completed exercises per session
+
+## Healthy Alternatives
+Smart suggestions based on food selection:
+- High-calorie foods → lower-calorie alternatives
+- Daily nutrition tips about nuts, seeds, superfoods
+- Calorie difference calculations
+
+## Session Management
+- Generate unique session IDs for meal tracking
+- Persist in localStorage for continuity
+- Clear meal functionality
+
+## Design Guidelines
+- Color scheme: Emerald green primary, with blue/purple accents
+- Typography: Inter font family
+- Cards with shadows, rounded corners, hover effects
+- Gradient backgrounds for profile results
+- Loading states and error handling
+- Toast notifications for user feedback
+
+
+Create a complete, production-ready application with vibrant animations, comprehensive food database, and all the features described above. Include proper error handling, loading states, and responsive design.

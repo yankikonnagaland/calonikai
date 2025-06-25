@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calonik.ai - Database Viewer</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        .content {
+            padding: 30px;
+        }
+        .section {
+            margin-bottom: 40px;
+            background: #f8fafc;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+        .section-header {
+            background: #4a5568;
+            color: white;
+            padding: 15px 20px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+        }
+        .section-header .icon {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        .section-content {
+            padding: 20px;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .table th, .table td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .table th {
+            background: #edf2f7;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        .table tr:hover {
+            background: #f7fafc;
+        }
+        .schema-info {
+            background: #e6fffa;
+            border: 1px solid #81e6d9;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .data-count {
+            background: #4a5568;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-left: auto;
+        }
+        .json-viewer {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        .storage-info {
+            background: #fff5f5;
+            border: 1px solid #fed7d7;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .storage-info h3 {
+            color: #c53030;
+            margin: 0 0 10px 0;
+        }
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .refresh-btn:hover {
+            background: #5a67d8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗄️ Calonik.ai Database Viewer</h1>
+            <p>Current data storage structure and user information</p>
+        </div>
+        
+        <div class="content">
+            <div class="storage-info">
+                <h3>⚠️ Storage Type: In-Memory Fallback</h3>
+                <p>The application is currently using <strong>in-memory storage</strong> instead of a traditional database. Data is stored in JavaScript Map objects and will be lost when the server restarts. This is a temporary solution for development.</p>
+            </div>
+
+            <button class="refresh-btn" onclick="loadData()">🔄 Refresh Data</button>
+
+            <!-- User Profile Section -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="icon">👤</span>
+                    User Profile
+                    <span class="data-count" id="profile-count">Loading...</span>
+                </div>
+                <div class="section-content">
+                    <div class="schema-info">
+                        <strong>Schema:</strong> sessionId, gender, age, height(cm), weight(kg), bodyType, activityLevel, weightGoal, weightTarget, bmr, tdee, targetCalories
+                    </div>
+                    <div id="profile-data">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Exercises Section -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="icon">💪</span>
+                    Exercises
+                    <span class="data-count" id="exercise-count">Loading...</span>
+                </div>
+                <div class="section-content">
+                    <div class="schema-info">
+                        <strong>Schema:</strong> id, sessionId, type, duration(min), caloriesBurned, createdAt
+                    </div>
+                    <div id="exercise-data">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Daily Summary Section -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="icon">📊</span>
+                    Daily Summary
+                    <span class="data-count" id="summary-count">Loading...</span>
+                </div>
+                <div class="section-content">
+                    <div class="schema-info">
+                        <strong>Schema:</strong> id, sessionId, date, totalCalories, totalProtein, totalCarbs, totalFat, caloriesBurned, netCalories, mealData(JSON)
+                    </div>
+                    <div id="summary-data">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Current Meal Section -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="icon">🍽️</span>
+                    Current Meal Items
+                    <span class="data-count" id="meal-count">Loading...</span>
+                </div>
+                <div class="section-content">
+                    <div class="schema-info">
+                        <strong>Schema:</strong> id, sessionId, foodId, quantity, unit, createdAt, food(name, calories, protein, carbs, fat)
+                    </div>
+                    <div id="meal-data">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Database Schema Section -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="icon">🗂️</span>
+                    Complete Database Schema
+                </div>
+                <div class="section-content">
+                    <div class="json-viewer" id="schema-data">
+{
+  "foods": {
+    "id": "serial PRIMARY KEY",
+    "name": "text NOT NULL",
+    "calories": "real NOT NULL",
+    "protein": "real NOT NULL", 
+    "carbs": "real NOT NULL",
+    "fat": "real NOT NULL",
+    "portionSize": "text NOT NULL",
+    "category": "text NOT NULL",
+    "defaultUnit": "text NOT NULL"
+  },
+  "userProfiles": {
+    "id": "serial PRIMARY KEY",
+    "sessionId": "text NOT NULL",
+    "gender": "text NOT NULL",
+    "age": "integer NOT NULL",
+    "height": "real NOT NULL (in cm)",
+    "weight": "real NOT NULL (in kg)",
+    "bodyType": "text NOT NULL",
+    "activityLevel": "text NOT NULL",
+    "weightGoal": "text NOT NULL (lose/gain/maintain)",
+    "weightTarget": "real (kg to lose/gain)",
+    "bmr": "real (calculated)",
+    "tdee": "real (calculated)", 
+    "targetCalories": "real (calculated)",
+    "createdAt": "timestamp DEFAULT NOW()"
+  },
+  "exercises": {
+    "id": "serial PRIMARY KEY",
+    "sessionId": "text NOT NULL",
+    "type": "text NOT NULL",
+    "duration": "integer NOT NULL (minutes)",
+    "caloriesBurned": "real NOT NULL",
+    "completedAt": "timestamp DEFAULT NOW()"
+  },
+  "dailySummaries": {
+    "id": "serial PRIMARY KEY", 
+    "sessionId": "text NOT NULL",
+    "date": "text NOT NULL (YYYY-MM-DD)",
+    "totalCalories": "real NOT NULL",
+    "totalProtein": "real NOT NULL",
+    "totalCarbs": "real NOT NULL", 
+    "totalFat": "real NOT NULL",
+    "caloriesBurned": "real NOT NULL",
+    "netCalories": "real NOT NULL",
+    "mealData": "text NOT NULL (JSON string)",
+    "createdAt": "timestamp DEFAULT NOW()"
+  },
+  "mealItems": {
+    "id": "serial PRIMARY KEY",
+    "sessionId": "text NOT NULL", 
+    "foodId": "integer NOT NULL",
+    "quantity": "real NOT NULL",
+    "unit": "text NOT NULL",
+    "createdAt": "timestamp DEFAULT NOW()"
+  }
+}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const sessionId = '9zC6vwaVwpTBowfIgWwHDs6baAG2'; // Current Firebase user session
+
+        async function fetchData(endpoint) {
+            try {
+                const response = await fetch(endpoint);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                return { error: error.message };
+            }
+        }
+
+        function formatJSON(data) {
+            return JSON.stringify(data, null, 2);
+        }
+
+        function createTable(data, columns) {
+            if (!data || data.length === 0) {
+                return '<p style="color: #718096; font-style: italic;">No data available</p>';
+            }
+
+            let html = '<table class="table"><thead><tr>';
+            columns.forEach(col => {
+                html += `<th>${col}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+
+            data.forEach(item => {
+                html += '<tr>';
+                columns.forEach(col => {
+                    let value = item[col];
+                    if (typeof value === 'object') {
+                        value = JSON.stringify(value);
+                    }
+                    if (typeof value === 'string' && value.length > 50) {
+                        value = value.substring(0, 50) + '...';
+                    }
+                    html += `<td>${value || 'N/A'}</td>`;
+                });
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            return html;
+        }
+
+        async function loadData() {
+            // Load User Profile
+            const profile = await fetchData(`/api/profile/${sessionId}`);
+            document.getElementById('profile-count').textContent = profile.error ? 'Error' : '1 record';
+            if (profile.error) {
+                document.getElementById('profile-data').innerHTML = `<p style="color: #e53e3e;">Error: ${profile.error}</p>`;
+            } else {
+                document.getElementById('profile-data').innerHTML = `
+                    <div class="json-viewer">${formatJSON(profile)}</div>
+                `;
+            }
+
+            // Load Exercises
+            const exercises = await fetchData(`/api/exercise/${sessionId}`);
+            document.getElementById('exercise-count').textContent = exercises.error ? 'Error' : `${exercises.length || 0} records`;
+            if (exercises.error) {
+                document.getElementById('exercise-data').innerHTML = `<p style="color: #e53e3e;">Error: ${exercises.error}</p>`;
+            } else {
+                document.getElementById('exercise-data').innerHTML = createTable(exercises, ['id', 'type', 'duration', 'caloriesBurned', 'createdAt']);
+            }
+
+            // Load Daily Summary
+            const today = new Date().toISOString().split('T')[0];
+            const summary = await fetchData(`/api/daily-summary/${sessionId}/${today}`);
+            document.getElementById('summary-count').textContent = summary.error ? 'Error' : (summary ? '1 record' : '0 records');
+            if (summary.error) {
+                document.getElementById('summary-data').innerHTML = `<p style="color: #e53e3e;">Error: ${summary.error}</p>`;
+            } else if (summary) {
+                document.getElementById('summary-data').innerHTML = `
+                    <div class="json-viewer">${formatJSON(summary)}</div>
+                `;
+            } else {
+                document.getElementById('summary-data').innerHTML = '<p style="color: #718096; font-style: italic;">No daily summary for today</p>';
+            }
+
+            // Load Current Meal
+            const meals = await fetchData(`/api/meal/${sessionId}`);
+            document.getElementById('meal-count').textContent = meals.error ? 'Error' : `${meals.length || 0} records`;
+            if (meals.error) {
+                document.getElementById('meal-data').innerHTML = `<p style="color: #e53e3e;">Error: ${meals.error}</p>`;
+            } else {
+                document.getElementById('meal-data').innerHTML = createTable(meals, ['id', 'foodId', 'quantity', 'unit', 'createdAt']);
+            }
+        }
+
+        // Load data when page loads
+        loadData();
+    </script>
+</body>
+</html>

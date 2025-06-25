@@ -1,0 +1,1598 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Calendar, TrendingUp, TrendingDown, Target, Flame, ChevronLeft, ChevronRight, Activity, Utensils, Scale, UserCircle } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+
+import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect, useMemo } from "react";
+import type { DailySummary, UserProfile, Exercise } from "@shared/schema";
+
+interface DashboardProps {
+  sessionId: string;
+}
+
+export default function Dashboard({ sessionId }: DashboardProps) {
+  const today = new Date().toISOString().split('T')[0];
+  const [selectedDate, setSelectedDate] = useState<string>(today);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  // Reset selected date to today on component mount
+  useEffect(() => {
+    setSelectedDate(today);
+  }, [today]);
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  // Reset selected date to today when switching months
+  useEffect(() => {
+    const todayMonth = new Date().getMonth();
+    const todayYear = new Date().getFullYear();
+    const currentViewMonth = currentMonth.getMonth();
+    const currentViewYear = currentMonth.getFullYear();
+    
+    if (todayMonth === currentViewMonth && todayYear === currentViewYear) {
+      setSelectedDate(today);
+    } else {
+      setSelectedDate("");
+    }
+  }, [currentMonth, today]);
+
+  const monthNames = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+
+  const { data: dailySummaries = [], isLoading } = useQuery<DailySummary[]>({
+    queryKey: [`/api/daily-summaries/${sessionId}`],
+  });
+
+  const { data: selectedDaySummary } = useQuery<DailySummary>({
+    queryKey: [`/api/daily-summary/${sessionId}/${selectedDate}`],
+  });
+
+  const { data: userProfile } = useQuery<UserProfile>({
+    queryKey: [`/api/profile/${sessionId}`],
+  });
+
+  const { data: exercises = [] } = useQuery<Exercise[]>({
+    queryKey: [`/api/exercise/${sessionId}`],
+  });
+
+  // Query exercises specifically for the selected date
+  const { data: selectedDateExercises = [], refetch: refetchSelectedDateExercises } = useQuery<Exercise[]>({
+    queryKey: [`/api/exercise/${sessionId}/${selectedDate}`],
+    enabled: !!sessionId && !!selectedDate,
+    staleTime: 0, // Always refetch when invalidated
+  });
+
+  // Fetch weight for selected date
+  const { data: selectedDateWeight } = useQuery({
+    queryKey: [`/api/daily-weight/${sessionId}/${selectedDate}`],
+  });
+
+  // Fetch daily weights for chart
+  const { data: dailyWeights } = useQuery({
+    queryKey: [`/api/daily-weights/${sessionId}`],
+  });
+
+  // Prepare chart data combining daily summaries and weights
+  const chartData = useMemo(() => {
+    if (!dailySummaries || !dailyWeights) return [];
+    
+    const weightMap = new Map(dailyWeights.map((w: any) => [w.date, w.weight]));
+    const summaryMap = new Map(dailySummaries.map((s: any) => [s.date, s]));
+    
+    // Get all unique dates from both datasets
+    const allDates = new Set([
+      ...dailySummaries.map((s: any) => s.date),
+      ...dailyWeights.map((w: any) => w.date)
+    ]);
+    
+    return Array.from(allDates)
+      .sort()
+      .slice(-14) // Last 14 days
+      .map(date => ({
+        date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        calories: summaryMap.get(date)?.totalCalories || 0,
+        weight: weightMap.get(date) || null,
+        targetCalories: userProfile?.targetCalories || 2000,
+      }))
+      .filter(item => item.calories > 0 || item.weight); // Only include days with data
+  }, [dailySummaries, dailyWeights, userProfile?.targetCalories]);
+
+  // Enhanced social sharing component with visual templates
+  const ShareComponent = () => {
+    const shareText = generateShareText();
+    const visualTemplate = generateVisualTemplate();
+    
+    function generateShareText() {
+      const userName = userProfile?.firstName || "Fitness Enthusiast";
+      const date = new Date(selectedDate).toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      
+      const caloriesIn = selectedDaySummary?.totalCalories || 0;
+      const caloriesOut = selectedDaySummary?.caloriesBurned || 0;
+      const netCalories = caloriesIn - caloriesOut;
+      const protein = selectedDaySummary?.totalProtein || 0;
+      const exerciseCount = selectedDateExercises.length;
+      const goalProgress = Math.round((caloriesIn / targetCalories) * 100);
+      
+      return `🎯 ${userName}'s Daily Progress - ${date}
+
+📊 NUTRITION STATS:
+• Calories: ${caloriesIn}/${targetCalories} (${goalProgress}%)
+• Burned: ${caloriesOut} cal
+• Net: ${netCalories > 0 ? '+' : ''}${netCalories} cal
+• Protein: ${protein.toFixed(1)}g
+
+💪 WORKOUT: ${exerciseCount} activities completed
+
+${goalProgress >= 100 ? '🔥 Goal achieved!' : '⚡ On track!'}
+
+Powered by Calonik.ai 🚀
+
+#HealthJourney #CalorieTracking #FitnessGoals #Calonik #HealthTech`;
+    }
+
+    function generateVisualTemplate() {
+      const userName = userProfile?.firstName || "User";
+      const date = new Date(selectedDate).toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      const caloriesIn = selectedDaySummary?.totalCalories || 0;
+      const caloriesOut = selectedDaySummary?.caloriesBurned || 0;
+      const netCalories = caloriesIn - caloriesOut;
+      const protein = selectedDaySummary?.totalProtein || 0;
+      const goalProgress = Math.round((caloriesIn / targetCalories) * 100);
+      
+      return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { 
+            margin: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 1080px; 
+            height: 1920px; 
+            display: flex; 
+            flex-direction: column;
+            color: white;
+            box-sizing: border-box;
+            padding: 80px 60px;
+        }
+        .header { text-align: center; margin-bottom: 80px; }
+        .title { font-size: 72px; font-weight: 800; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .subtitle { font-size: 48px; margin: 20px 0 0 0; opacity: 0.9; }
+        .date { font-size: 36px; margin: 10px 0 0 0; opacity: 0.8; }
+        .stats-container { flex: 1; display: flex; flex-direction: column; gap: 40px; }
+        .stat-card { 
+            background: rgba(255,255,255,0.15); 
+            border-radius: 24px; 
+            padding: 50px; 
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .stat-title { font-size: 36px; font-weight: 600; margin-bottom: 20px; opacity: 0.9; }
+        .stat-value { font-size: 84px; font-weight: 800; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .progress-bar { 
+            width: 100%; 
+            height: 24px; 
+            background: rgba(255,255,255,0.2); 
+            border-radius: 12px; 
+            overflow: hidden; 
+            margin: 20px 0;
+        }
+        .progress-fill { 
+            height: 100%; 
+            background: linear-gradient(90deg, #10b981, #06d6a0); 
+            width: ${Math.min(goalProgress, 100)}%; 
+            border-radius: 12px;
+            transition: width 0.3s ease;
+        }
+        .footer { 
+            text-align: center; 
+            margin-top: 60px; 
+            font-size: 42px; 
+            font-weight: 600;
+            opacity: 0.9;
+        }
+        .brand { 
+            background: linear-gradient(90deg, #fbbf24, #f59e0b); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+            font-weight: 800;
+        }
+        .emoji { font-size: 1.2em; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="title"><span class="emoji">🎯</span> ${userName}'s Progress</h1>
+        <p class="subtitle">Daily Nutrition Summary</p>
+        <p class="date">${date}</p>
+    </div>
+    
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-title"><span class="emoji">🍽️</span> Calories Consumed</div>
+            <div class="stat-value">${caloriesIn}</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            <div style="font-size: 32px; opacity: 0.8;">${goalProgress}% of ${targetCalories} cal goal</div>
+        </div>
+        
+        <div style="display: flex; gap: 40px;">
+            <div class="stat-card" style="flex: 1;">
+                <div class="stat-title"><span class="emoji">🔥</span> Burned</div>
+                <div class="stat-value" style="font-size: 64px;">${caloriesOut}</div>
+            </div>
+            <div class="stat-card" style="flex: 1;">
+                <div class="stat-title"><span class="emoji">💪</span> Protein</div>
+                <div class="stat-value" style="font-size: 64px;">${protein.toFixed(0)}g</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-title"><span class="emoji">⚡</span> Net Calories</div>
+            <div class="stat-value" style="color: ${netCalories > targetCalories ? '#f87171' : '#10b981'};">
+                ${netCalories > 0 ? '+' : ''}${netCalories}
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        Powered by <span class="brand">Calonik.ai</span> <span class="emoji">🚀</span>
+    </div>
+</body>
+</html>`;
+    }
+    
+    const copyToClipboard = async (text: string) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        toast({
+          title: "Copied to clipboard!",
+          description: "Share text is ready to paste anywhere.",
+        });
+        setShareDialogOpen(false);
+      } catch (err) {
+        toast({
+          title: "Copy failed",
+          description: "Please select and copy the text manually.",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    const shareOnSocial = (platform: string) => {
+      const encodedText = encodeURIComponent(shareText);
+      const encodedUrl = encodeURIComponent(window.location.href);
+      
+      let shareUrl = '';
+      switch (platform) {
+        case 'twitter':
+          shareUrl = `https://twitter.com/intent/tweet?text=${encodedText}`;
+          break;
+        case 'facebook':
+          shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`;
+          break;
+        case 'whatsapp':
+          shareUrl = `https://wa.me/?text=${encodedText}`;
+          break;
+        case 'linkedin':
+          shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}&summary=${encodedText}`;
+          break;
+        case 'instagram':
+          // Instagram Stories sharing via URL scheme (mobile only)
+          if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+            shareUrl = `instagram-stories://share`;
+            // For Instagram, we'll download the visual template as image
+            downloadVisualTemplate('instagram');
+            toast({
+              title: "Instagram Story Ready!",
+              description: "Image downloaded. Open Instagram and upload to your story!",
+            });
+            setShareDialogOpen(false);
+            return;
+          } else {
+            toast({
+              title: "Instagram Sharing",
+              description: "Download the visual template and share it on Instagram from your mobile device!",
+            });
+            downloadVisualTemplate('instagram');
+            setShareDialogOpen(false);
+            return;
+          }
+      }
+      
+      if (shareUrl) {
+        window.open(shareUrl, '_blank', 'width=600,height=400');
+        setShareDialogOpen(false);
+      }
+    };
+
+    const downloadVisualTemplate = (format: 'jpeg' = 'jpeg') => {
+      if (format === 'jpeg') {
+        // Create Apple-inspired JPEG image
+        const canvas = document.createElement('canvas');
+        canvas.width = 1080;
+        canvas.height = 1080;
+        const ctx = canvas.getContext('2d');
+        
+        if (ctx) {
+          // Clean white background
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          // Subtle border
+          ctx.strokeStyle = '#f0f0f0';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(40, 40, canvas.width - 80, canvas.height - 80);
+          
+          // App name
+          ctx.fillStyle = '#1d1d1f';
+          ctx.font = '32px -apple-system, BlinkMacSystemFont, sans-serif';
+          ctx.textAlign = 'left';
+          ctx.fillText('Calonik.ai', 80, 120);
+          
+          // Date
+          ctx.fillStyle = '#86868b';
+          ctx.font = '24px -apple-system, BlinkMacSystemFont, sans-serif';
+          ctx.fillText(new Date().toLocaleDateString('en-US', { 
+            month: 'long', 
+            day: 'numeric', 
+            year: 'numeric' 
+          }), 80, 160);
+          
+          // Main metrics
+          const caloriesIn = Math.round(selectedDaySummary?.totalCalories || 0);
+          const caloriesOut = Math.round(selectedDaySummary?.caloriesBurned || 0);
+          
+          // Calories In
+          ctx.fillStyle = '#007AFF';
+          ctx.font = 'bold 72px -apple-system, BlinkMacSystemFont, sans-serif';
+          ctx.fillText(caloriesIn.toString(), 80, 310);
+          ctx.fillStyle = '#86868b';
+          ctx.font = '20px -apple-system, BlinkMacSystemFont, sans-serif';
+          ctx.fillText('Calories In', 80, 340);
+          
+          // Calories Out
+          ctx.fillStyle = '#FF3B30';
+          ctx.font = 'bold 72px -apple-system, BlinkMacSystemFont, sans-serif';
+          ctx.fillText(caloriesOut.toString(), 540, 310);
+          ctx.fillStyle = '#86868b';
+          ctx.font = '20px -apple-system, BlinkMacSystemFont, sans-serif';
+          ctx.fillText('Calories Out', 540, 340);
+          
+          // Exercise
+          ctx.fillStyle = '#1d1d1f';
+          ctx.font = '24px -apple-system, BlinkMacSystemFont, sans-serif';
+          ctx.fillText('Today\'s Exercise', 80, 420);
+          const exerciseText = todayExercises.length > 0 
+            ? todayExercises.map(ex => ex.name).join(', ') 
+            : 'No exercise recorded';
+          ctx.fillStyle = '#86868b';
+          ctx.font = '20px -apple-system, BlinkMacSystemFont, sans-serif';
+          ctx.fillText(exerciseText.length > 60 ? exerciseText.substring(0, 60) + '...' : exerciseText, 80, 455);
+          
+          // Nutrition
+          ctx.fillStyle = '#1d1d1f';
+          ctx.font = '24px -apple-system, BlinkMacSystemFont, sans-serif';
+          ctx.fillText('Nutrition', 80, 520);
+          
+          ctx.fillStyle = '#86868b';
+          ctx.font = '18px -apple-system, BlinkMacSystemFont, sans-serif';
+          ctx.fillText(`Protein: ${Math.round(selectedDaySummary?.totalProtein || 0)}g`, 80, 555);
+          ctx.fillText(`Carbs: ${Math.round(selectedDaySummary?.totalCarbs || 0)}g`, 360, 555);
+          ctx.fillText(`Fat: ${Math.round(selectedDaySummary?.totalFat || 0)}g`, 640, 555);
+          
+          // Goal progress
+          if (userProfile) {
+            const goalProgress = Math.round(((selectedDaySummary?.totalCalories || 0) / userProfile.targetCalories) * 100);
+            
+            ctx.fillStyle = '#1d1d1f';
+            ctx.font = '24px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.fillText('Calorie Goal Progress', 80, 640);
+            
+            ctx.fillStyle = goalProgress > 100 ? '#FF3B30' : '#34C759';
+            ctx.font = 'bold 48px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.fillText(`${goalProgress}%`, 80, 700);
+            
+            // Progress bar
+            const barWidth = 800;
+            const barHeight = 8;
+            const barX = 80;
+            const barY = 725;
+            
+            ctx.fillStyle = '#f2f2f7';
+            ctx.fillRect(barX, barY, barWidth, barHeight);
+            
+            const progressWidth = Math.min((barWidth * goalProgress) / 100, barWidth);
+            ctx.fillStyle = goalProgress > 100 ? '#FF3B30' : '#34C759';
+            ctx.fillRect(barX, barY, progressWidth, barHeight);
+            
+            ctx.fillStyle = '#86868b';
+            ctx.font = '18px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.fillText(`Target: ${userProfile.targetCalories} calories`, 80, 755);
+          }
+          
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `calonik-progress-${selectedDate}.jpg`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            }
+          }, 'image/jpeg', 0.95);
+        }
+      } else if (format === 'instagram') {
+        // Create a canvas to generate Instagram Story format (1080x1920)
+        const canvas = document.createElement('canvas');
+        canvas.width = 1080;
+        canvas.height = 1920;
+        const ctx = canvas.getContext('2d');
+        
+        if (ctx) {
+          // Create gradient background
+          const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+          gradient.addColorStop(0, '#667eea');
+          gradient.addColorStop(1, '#764ba2');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          // Add text content
+          ctx.fillStyle = 'white';
+          ctx.textAlign = 'center';
+          
+          // Title
+          ctx.font = 'bold 72px Arial';
+          ctx.fillText(`🎯 ${userProfile?.firstName || "User"}'s Progress`, canvas.width/2, 200);
+          
+          // Date
+          ctx.font = '48px Arial';
+          ctx.fillText(new Date(selectedDate).toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            month: 'long', 
+            day: 'numeric' 
+          }), canvas.width/2, 280);
+          
+          // Stats
+          const caloriesIn = selectedDaySummary?.totalCalories || 0;
+          const caloriesOut = selectedDaySummary?.caloriesBurned || 0;
+          const protein = selectedDaySummary?.totalProtein || 0;
+          const goalProgress = Math.round((caloriesIn / targetCalories) * 100);
+          
+          ctx.font = 'bold 64px Arial';
+          ctx.fillText(`🍽️ ${caloriesIn} calories`, canvas.width/2, 500);
+          
+          ctx.font = '42px Arial';
+          ctx.fillText(`${goalProgress}% of ${targetCalories} cal goal`, canvas.width/2, 580);
+          
+          ctx.font = 'bold 56px Arial';
+          ctx.fillText(`🔥 ${caloriesOut} burned`, canvas.width/2, 720);
+          ctx.fillText(`💪 ${protein.toFixed(0)}g protein`, canvas.width/2, 820);
+          
+          // Net calories
+          const netCalories = caloriesIn - caloriesOut;
+          ctx.fillStyle = netCalories > targetCalories ? '#f87171' : '#10b981';
+          ctx.font = 'bold 72px Arial';
+          ctx.fillText(`⚡ ${netCalories > 0 ? '+' : ''}${netCalories} net`, canvas.width/2, 980);
+          
+          // Footer
+          ctx.fillStyle = 'white';
+          ctx.font = 'bold 48px Arial';
+          ctx.fillText('Powered by Calonik.ai 🚀', canvas.width/2, 1700);
+          
+          // Download as image
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `calonik-story-${selectedDate}.png`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            }
+          }, 'image/png');
+        }
+      }
+      
+      if (format !== 'jpeg') {
+        toast({
+          title: "Visual Template Downloaded!",
+          description: format === 'html' ? "HTML template ready to share" : "Instagram story image ready to upload",
+        });
+        setShareDialogOpen(false);
+      } else {
+        toast({
+          title: "JPEG Downloaded!",
+          description: "High-quality image ready to share on social media",
+        });
+        setShareDialogOpen(false);
+      }
+    };
+    
+    const [showHtmlPreview, setShowHtmlPreview] = useState(false);
+
+    return (
+      <div className="space-y-4">
+        <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
+          <h4 className="font-semibold mb-4">Share Your Progress</h4>
+          
+          <div className="mb-4 border rounded-lg overflow-hidden bg-white">
+            <div className="bg-gray-100 dark:bg-gray-800 px-3 py-2 text-sm font-medium">
+              Progress Summary
+            </div>
+              <div className="p-6 bg-white rounded-lg shadow-sm border border-gray-200">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Calonik.ai</h2>
+                  <p className="text-gray-600">{new Date().toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                  })}</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-6 mb-6">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-blue-600">{Math.round(selectedDaySummary?.totalCalories || 0)}</div>
+                    <div className="text-sm text-gray-600">Calories In</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-red-600">{Math.round(selectedDaySummary?.caloriesBurned || 0)}</div>
+                    <div className="text-sm text-gray-600">Calories Out</div>
+                  </div>
+                </div>
+                
+                <div className="mb-4">
+                  <h3 className="font-semibold text-gray-900 mb-2">Today's Exercise</h3>
+                  <p className="text-gray-600">{todayExercises.length > 0 ? todayExercises.map(ex => ex.name).join(', ') : 'No exercise recorded'}</p>
+                </div>
+                
+                <div className="mb-4">
+                  <h3 className="font-semibold text-gray-900 mb-2">Nutrition</h3>
+                  <div className="flex justify-between">
+                    <span>Protein: {Math.round(selectedDaySummary?.totalProtein || 0)}g</span>
+                    <span>Carbs: {Math.round(selectedDaySummary?.totalCarbs || 0)}g</span>
+                    <span>Fat: {Math.round(selectedDaySummary?.totalFat || 0)}g</span>
+                  </div>
+                </div>
+                
+                {userProfile && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Calorie Goal Progress</h3>
+                    <div className="flex items-center gap-3">
+                      <div className="text-2xl font-bold text-green-600">
+                        {Math.round(((selectedDaySummary?.totalCalories || 0) / userProfile.targetCalories) * 100)}%
+                      </div>
+                      <div className="flex-1 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-green-600 h-2 rounded-full"
+                          style={{ width: `${Math.min(((selectedDaySummary?.totalCalories || 0) / userProfile.targetCalories) * 100, 100)}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">Target: {userProfile.targetCalories} calories</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          
+          <div className="grid grid-cols-3 gap-2">
+            <Button 
+              onClick={() => downloadVisualTemplate('jpeg')}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Download JPEG
+            </Button>
+            <Button 
+              onClick={() => copyToClipboard(shareText)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Copy className="w-4 h-4" />
+              Copy Text
+            </Button>
+            <Button 
+              onClick={() => shareOnSocial('whatsapp')}
+              className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white"
+            >
+              Share WhatsApp
+            </Button>
+          </div>
+        </div>
+        
+        <textarea 
+          readOnly 
+          value={shareText}
+          className="w-full h-32 p-3 text-sm border rounded-md resize-none"
+        />
+        
+        <Button 
+          onClick={() => copyToClipboard(shareText)}
+          className="w-full flex items-center gap-2"
+        >
+          <Copy className="w-4 h-4" />
+          Copy Text to Clipboard
+        </Button>
+        
+        <div className="grid grid-cols-2 gap-2">
+          <Button 
+            onClick={() => shareOnSocial('twitter')}
+            className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600"
+          >
+            Share on Twitter
+          </Button>
+          <Button 
+            onClick={() => shareOnSocial('facebook')}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+          >
+            Share on Facebook
+          </Button>
+          <Button 
+            onClick={() => shareOnSocial('whatsapp')}
+            className="flex items-center gap-2 bg-green-500 hover:bg-green-600"
+          >
+            Share on WhatsApp
+          </Button>
+          <Button 
+            onClick={() => shareOnSocial('instagram')}
+            className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+          >
+            Instagram Story
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  // AI-powered motivational message
+  const { data: motivationalMessage } = useQuery<{
+    type: 'success' | 'warning' | 'info' | 'default';
+    message: string;
+    tip?: string;
+  }>({
+    queryKey: [`/api/motivational-message/${sessionId}`],
+    enabled: !!userProfile,
+  });
+
+  // Calculate selected date's calories and exercise data
+  const selectedSummary = selectedDaySummary || dailySummaries.find(s => s.date === selectedDate);
+  const todaySummary = dailySummaries.find(s => s.date === today);
+  
+  // Get meal items from selected date's daily summary
+  const selectedMealItems = selectedSummary?.mealData ? JSON.parse(selectedSummary.mealData) : [];
+  const todayMealItems = todaySummary?.mealData ? JSON.parse(todaySummary.mealData) : [];
+
+  // Generate calendar days for current month
+  const generateCalendarDays = () => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    const days = [];
+    
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
+    }
+    
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const summary = dailySummaries.find(s => s.date === dateStr);
+      days.push({ day, dateStr, summary });
+    }
+    
+    return days;
+  };
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    setCurrentMonth(prev => {
+      const newMonth = new Date(prev);
+      if (direction === 'prev') {
+        newMonth.setMonth(prev.getMonth() - 1);
+      } else {
+        newMonth.setMonth(prev.getMonth() + 1);
+      }
+      return newMonth;
+    });
+  };
+  
+  // Handle date selection and load data for selected date
+  const handleDateSelect = (dateStr: string) => {
+    setSelectedDate(dateStr);
+    queryClient.invalidateQueries({ queryKey: [`/api/daily-summary/${sessionId}/${dateStr}`] });
+  };
+
+  const getCalorieStatus = (summary: DailySummary | undefined) => {
+    if (!summary || !userProfile) return null;
+    
+    const dailyCalories = summary.totalCalories;
+    const goalCalories = userProfile.targetCalories || 2000;
+    const weightGoal = userProfile.weightGoal || 'maintain';
+    
+    // Calculate achievement based on weight goal
+    let achieved = false;
+    
+    if (weightGoal === 'lose') {
+      // For weight loss, achieved if calories are under target (allowing 10% tolerance)
+      achieved = dailyCalories <= goalCalories * 1.1;
+    } else if (weightGoal === 'gain') {
+      // For weight gain, achieved if calories are at or above target (allowing 10% below tolerance)
+      achieved = dailyCalories >= goalCalories * 0.9;
+    } else {
+      // For maintain, achieved if within 15% of target
+      achieved = Math.abs(dailyCalories - goalCalories) <= goalCalories * 0.15;
+    }
+    
+    return { 
+      color: achieved ? 'bg-green-500' : 'bg-red-500', 
+      status: achieved ? 'achieved' : 'missed' 
+    };
+  };
+
+  // Helper function to calculate calories burned from exercises for a specific date
+  const getCaloriesOutForDate = (dateStr: string) => {
+    // For selected date, use the date-specific exercises
+    if (dateStr === selectedDate) {
+      return selectedDateExercises.reduce((total, ex) => {
+        return total + (ex.caloriesBurned || 0);
+      }, 0);
+    }
+    
+    // For other dates, filter from all exercises
+    if (!exercises || exercises.length === 0) {
+      return 0;
+    }
+    
+    const filteredExercises = exercises.filter(ex => {
+      const exerciseDate = ex.date || new Date(ex.createdAt || new Date()).toISOString().split('T')[0];
+      return exerciseDate === dateStr;
+    });
+    
+    return filteredExercises.reduce((total, ex) => {
+      return total + (ex.caloriesBurned || 0);
+    }, 0);
+  };
+
+  const selectedCaloriesIn = Math.round((selectedSummary?.totalCalories || 0) * 100) / 100;
+  // Always calculate calories out from exercises for the selected date
+  const selectedCaloriesOut = Math.round(getCaloriesOutForDate(selectedDate) * 100) / 100;
+  const selectedNetCalories = Math.round((selectedCaloriesIn - selectedCaloriesOut) * 100) / 100;
+  
+  const todayCaloriesIn = Math.round((todaySummary?.totalCalories || 0) * 100) / 100;
+  const todayCaloriesOut = Math.round(getCaloriesOutForDate(today) * 100) / 100;
+  const netCalories = Math.round((todayCaloriesIn - todayCaloriesOut) * 100) / 100;
+  const targetCalories = userProfile?.targetCalories || 2000;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Target className="w-5 h-5 mr-2" />
+              Loading Dashboard...
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="animate-pulse space-y-2">
+              <div className="h-4 bg-muted rounded w-full"></div>
+              <div className="h-4 bg-muted rounded w-3/4"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      {/* Main Content - Daily Summary */}
+      <div className="lg:col-span-3 space-y-6">
+        {/* Calorie Goal Progress - Moved to Top */}
+        {userProfile && (
+          <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200 dark:border-purple-800">
+            <CardHeader>
+              <CardTitle className="flex items-center text-xl">
+                <Target className="w-5 h-5 mr-2 text-purple-600" />
+                Daily Calorie Goal Progress
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Target: {targetCalories} calories | Current: {selectedDate === today ? todayCaloriesIn : selectedCaloriesIn} calories
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between text-sm font-medium">
+                  <span>Progress</span>
+                  <span>{Math.round(((selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) / targetCalories) * 100)}%</span>
+                </div>
+                <Progress 
+                  value={Math.min(((selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) / targetCalories) * 100, 100)}
+                  className="h-3"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>0</span>
+                  <span>{targetCalories} cal</span>
+                </div>
+                {(selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) > targetCalories && (
+                  <div className="bg-red-50 dark:bg-red-950/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
+                    <p className="text-sm text-red-700 dark:text-red-300 font-medium">
+                      You've exceeded your daily calorie goal by {Math.round((selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) - targetCalories)} calories
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Today's Summary Card */}
+        <Card className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-950/20 dark:to-green-950/20">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center text-2xl">
+                  <Target className="w-6 h-6 mr-3 text-primary" />
+                  {selectedDate === today ? "Today's Nutrition Summary" : "Nutrition Summary"}
+                </CardTitle>
+                <p className="text-muted-foreground">
+                  {new Date(selectedDate).toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                </p>
+              </div>
+              
+              {/* Selected Date Weight Display */}
+              {(selectedDateWeight || userProfile?.weight) && (
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 p-4 rounded-xl border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full">
+                      <Scale className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                        {selectedDate === today ? "Today's Weight" : "Weight"}
+                      </p>
+                      <p className="text-2xl font-bold text-blue-800 dark:text-blue-200">
+                        {selectedDateWeight?.weight || userProfile?.weight} kg
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Calories In vs Out + Weight */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="flex items-center gap-3">
+                  <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-full">
+                    <Utensils className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-green-700 dark:text-green-300">Calories In</p>
+                    <p className="text-2xl font-bold text-green-800 dark:text-green-200">{selectedCaloriesIn}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-orange-50 dark:bg-orange-950/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+                <div className="flex items-center gap-3">
+                  <div className="bg-orange-100 dark:bg-orange-900/30 p-2 rounded-full">
+                    <Activity className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-orange-700 dark:text-orange-300">Calories Out</p>
+                    <p className="text-2xl font-bold text-orange-800 dark:text-orange-200">{selectedCaloriesOut}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className={`p-4 rounded-lg border ${
+                selectedNetCalories > targetCalories 
+                  ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800' 
+                  : 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800'
+              }`}>
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-full ${
+                    selectedNetCalories > targetCalories 
+                      ? 'bg-red-100 dark:bg-red-900/30' 
+                      : 'bg-blue-100 dark:bg-blue-900/30'
+                  }`}>
+                    <Flame className={`w-5 h-5 ${
+                      selectedNetCalories > targetCalories ? 'text-red-600' : 'text-blue-600'
+                    }`} />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-medium ${
+                      selectedNetCalories > targetCalories 
+                        ? 'text-red-700 dark:text-red-300' 
+                        : 'text-blue-700 dark:text-blue-300'
+                    }`}>Net Calories</p>
+                    <p className={`text-2xl font-bold ${
+                      selectedNetCalories > targetCalories 
+                        ? 'text-red-800 dark:text-red-200' 
+                        : 'text-blue-800 dark:text-blue-200'
+                    }`}>{selectedNetCalories}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Today's Weight Card - Always Show */}
+              <div className="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                <div className="flex items-center gap-3">
+                  <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded-full">
+                    <Scale className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                      {selectedDate === today ? "Today's Weight" : "Weight"}
+                    </p>
+                    <p className="text-2xl font-bold text-purple-800 dark:text-purple-200">
+                      {selectedDateWeight?.weight || userProfile?.weight || '--'} kg
+                    </p>
+                    {!selectedDateWeight?.weight && userProfile?.weight && selectedDate !== today && (
+                      <p className="text-xs text-purple-500 dark:text-purple-400 mt-1">
+                        No weight logged for {new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </p>
+                    )}
+                    {!selectedDateWeight?.weight && !userProfile?.weight && (
+                      <p className="text-xs text-purple-500 dark:text-purple-400 mt-1">
+                        Set weight in Profile
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+
+
+            {/* Enhanced Profile & Weight Goal Section */}
+            {userProfile && userProfile.bmr && (
+              <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 p-6 rounded-xl border border-purple-200 dark:border-purple-800">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-gradient-to-r from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 p-3 rounded-full">
+                      <Target className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-purple-800 dark:text-purple-200">Your Profile Overview</h3>
+                      <p className="text-sm text-purple-600 dark:text-purple-400">
+                        Personalized nutrition targets based on your goals
+                      </p>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    Active Profile
+                  </Badge>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Personal Stats */}
+                  <div className="bg-white/50 dark:bg-gray-900/30 p-4 rounded-lg">
+                    <h4 className="font-semibold text-purple-800 dark:text-purple-200 mb-3">Personal Stats</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm">Age:</span>
+                        <span className="font-medium">{userProfile.age} years</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Height:</span>
+                        <span className="font-medium">{Math.floor(userProfile.height / 30.48)}'{Math.round(((userProfile.height / 30.48) % 1) * 12)}" ({userProfile.height.toFixed(2)} cm)</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Weight:</span>
+                        <span className="font-medium">{userProfile.weight} kg</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Activity:</span>
+                        <span className="font-medium text-xs capitalize">{userProfile.activityLevel.replace('_', ' ')}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Nutrition Targets */}
+                  <div className="bg-white/50 dark:bg-gray-900/30 p-4 rounded-lg">
+                    <h4 className="font-semibold text-purple-800 dark:text-purple-200 mb-3">Daily Targets</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm">Calories:</span>
+                        <span className="font-bold text-lg">{Math.round(userProfile.targetCalories)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">BMR:</span>
+                        <span className="font-medium">{Math.round(userProfile.bmr)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">TDEE:</span>
+                        <span className="font-medium">{Math.round(userProfile.tdee)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Weight Goal */}
+                  <div className="bg-white/50 dark:bg-gray-900/30 p-4 rounded-lg">
+                    <h4 className="font-semibold text-purple-800 dark:text-purple-200 mb-3">Weight Goal</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm">Goal:</span>
+                        <span className="font-medium capitalize">{userProfile.weightGoal} weight</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Target:</span>
+                        <span className="font-medium">{userProfile.weightTarget} kg</span>
+                      </div>
+                      <div className="pt-2">
+                        <Badge 
+                          variant={userProfile.weightGoal === 'lose' ? 'destructive' : userProfile.weightGoal === 'gain' ? 'default' : 'secondary'}
+                          className="w-full justify-center"
+                        >
+                          {userProfile.weightGoal === 'lose' ? 'Weight Loss Plan' : 
+                           userProfile.weightGoal === 'gain' ? 'Weight Gain Plan' : 
+                           'Maintenance Plan'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Profile Setup Prompt for users without saved profile */}
+            {!userProfile?.bmr && (
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 p-6 rounded-xl border border-amber-200 dark:border-amber-800">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 p-3 rounded-full">
+                    <UserCircle className="w-6 h-6 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-amber-800 dark:text-amber-200">Complete Your Profile</h3>
+                    <p className="text-sm text-amber-600 dark:text-amber-400">
+                      Set up your profile to get personalized nutrition targets and track your progress
+                    </p>
+                  </div>
+                </div>
+                <div className="pt-4">
+                  <Button 
+                    onClick={() => window.dispatchEvent(new CustomEvent('switchToProfile'))}
+                    className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                  >
+                    <UserCircle className="w-4 h-4 mr-2" />
+                    Set Up Profile Now
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* AI-Powered Motivational Message */}
+            {motivationalMessage && (
+              <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-start gap-3">
+                  <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full">
+                    <Flame className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold mb-1 text-blue-800 dark:text-blue-200">
+                      Daily Motivation
+                    </h3>
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      Stay motivated with your nutrition journey!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Progress Bar */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Calorie Goal Progress</span>
+                <span className="text-sm text-muted-foreground">
+                  {todayCaloriesIn} / {targetCalories} calories
+                </span>
+              </div>
+              <Progress 
+                value={(todayCaloriesIn / targetCalories) * 100} 
+                className="h-3"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>0</span>
+                <span>{targetCalories}</span>
+              </div>
+              
+              {/* Weight Goal Progress Indicator */}
+              {userProfile && (
+                <div className="mt-4 p-3 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Target className="w-4 h-4 text-indigo-600" />
+                      <span className="text-sm font-medium text-indigo-800 dark:text-indigo-200">
+                        Weight Goal Status
+                      </span>
+                    </div>
+                    <Badge variant={
+                      (userProfile.weightGoal === 'lose' && selectedCaloriesIn < targetCalories) ||
+                      (userProfile.weightGoal === 'gain' && selectedCaloriesIn > targetCalories) ||
+                      (userProfile.weightGoal === 'maintain' && Math.abs(selectedCaloriesIn - targetCalories) < 100)
+                        ? 'default' : 'secondary'
+                    } className="text-xs">
+                      {(userProfile.weightGoal === 'lose' && selectedCaloriesIn < targetCalories) ||
+                       (userProfile.weightGoal === 'gain' && selectedCaloriesIn > targetCalories) ||
+                       (userProfile.weightGoal === 'maintain' && Math.abs(selectedCaloriesIn - targetCalories) < 100)
+                        ? 'On Track' : 'Needs Adjustment'}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
+                    {userProfile.weightGoal === 'lose' 
+                      ? 'Stay under your calorie target to support weight loss'
+                      : userProfile.weightGoal === 'gain'
+                      ? 'Eat above your calorie target to support weight gain'
+                      : 'Maintain your calorie target to keep current weight'
+                    }
+                  </p>
+                </div>
+              )}
+
+            {/* Calories vs Weight Chart */}
+            {chartData.length > 0 && (
+              <div className="bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-950/20 dark:to-blue-950/20 p-6 rounded-xl border border-gray-200 dark:border-gray-800">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-gradient-to-r from-gray-100 to-blue-100 dark:from-gray-900/30 dark:to-blue-900/30 p-3 rounded-full">
+                    <TrendingUp className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">Daily Progress Chart</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Track your calories intake vs weight changes over time
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 12 }}
+                        className="text-xs"
+                      />
+                      <YAxis 
+                        yAxisId="calories"
+                        orientation="left"
+                        tick={{ fontSize: 12 }}
+                        label={{ value: 'Calories', angle: -90, position: 'insideLeft' }}
+                        domain={['dataMin - 200', 'dataMax + 200']}
+                      />
+                      <YAxis 
+                        yAxisId="weight"
+                        orientation="right"
+                        tick={{ fontSize: 12 }}
+                        label={{ value: 'Weight (kg)', angle: 90, position: 'insideRight' }}
+                        domain={['dataMin - 2', 'dataMax + 2']}
+                      />
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          fontSize: '12px'
+                        }}
+                        formatter={(value: any, name: string) => [
+                          name === 'calories' ? `${value} cal` : 
+                          name === 'targetCalories' ? `${value} cal (target)` :
+                          `${value} kg`,
+                          name === 'calories' ? 'Calories Consumed' :
+                          name === 'targetCalories' ? 'Target Calories' :
+                          'Weight'
+                        ]}
+                      />
+                      <Legend />
+                      
+                      {/* Calories line */}
+                      <Line 
+                        yAxisId="calories"
+                        type="monotone" 
+                        dataKey="calories" 
+                        stroke="#3b82f6" 
+                        strokeWidth={3}
+                        dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                        connectNulls={false}
+                        name="calories"
+                      />
+                      
+                      {/* Target calories line */}
+                      <Line 
+                        yAxisId="calories"
+                        type="monotone" 
+                        dataKey="targetCalories" 
+                        stroke="#94a3b8" 
+                        strokeWidth={2}
+                        strokeDasharray="5 5"
+                        dot={false}
+                        name="targetCalories"
+                      />
+                      
+                      {/* Weight line */}
+                      <Line 
+                        yAxisId="weight"
+                        type="monotone" 
+                        dataKey="weight" 
+                        stroke="#10b981" 
+                        strokeWidth={3}
+                        dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+                        connectNulls={false}
+                        name="weight"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="bg-white/50 dark:bg-gray-900/30 p-3 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      <span className="font-medium">Daily Calories</span>
+                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                      Your actual calorie intake per day
+                    </p>
+                  </div>
+                  <div className="bg-white/50 dark:bg-gray-900/30 p-3 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                      <span className="font-medium">Target Calories</span>
+                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                      Your daily calorie goal for {userProfile?.weightGoal || 'maintenance'}
+                    </p>
+                  </div>
+                  <div className="bg-white/50 dark:bg-gray-900/30 p-3 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <span className="font-medium">Weight Trend</span>
+                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                      Your daily weight measurements
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Selected Date Activities */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Selected Date Food Items */}
+          {(() => {
+            const selectedDateMealItems = selectedDaySummary?.mealData 
+              ? JSON.parse(selectedDaySummary.mealData) 
+              : [];
+            
+            return selectedDateMealItems && selectedDateMealItems.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Utensils className="w-5 h-5 text-green-600" />
+                  {selectedDate === today ? "Today's Food Items" : `${new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} Food Items`}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {selectedDateMealItems.map((item: any, index: number) => (
+                    <div key={index} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                          {item.food?.name || 'Unknown Food'}
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {item.quantity} {item.unit}
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="text-center">
+                          <span className="text-blue-600 font-medium">
+                            {Math.round((item.food?.calories || 0) * (item.quantity || 1))}
+                          </span>
+                          <p className="text-xs text-gray-500">cal</p>
+                        </div>
+                        <div className="text-center">
+                          <span className="text-green-600 font-medium">
+                            {Math.round((item.food?.protein || 0) * (item.quantity || 1))}g
+                          </span>
+                          <p className="text-xs text-gray-500">protein</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            );
+          })()}
+
+          {/* Selected Date Completed Exercises */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5 text-orange-600" />
+                {selectedDate === today ? "Today's Completed Exercises" : `${new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} Exercises`}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {selectedDateExercises.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <span className="text-3xl mb-2 block">💪</span>
+                    <p className="text-sm">No exercises completed yet for {selectedDate === today ? "today" : selectedDate}.</p>
+                    <p className="text-xs">Visit the Exercise tab to start tracking!</p>
+                  </div>
+                ) : (
+                  selectedDateExercises.map((exercise) => (
+                    <div key={exercise.id} className="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100 capitalize">
+                          {exercise.exerciseName}
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {exercise.duration} minutes
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-1 gap-2 text-sm">
+                        <div className="text-center">
+                          <span className="text-orange-600 font-bold">
+                            {Math.round(exercise.caloriesBurned)} cal
+                          </span>
+                          <p className="text-xs text-gray-500">burned</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Selected Day Details */}
+        {selectedDaySummary && (
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                Daily Summary - {new Date(selectedDate).toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-blue-600">{selectedDaySummary.totalCalories}</p>
+                  <p className="text-sm text-muted-foreground">Calories</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-green-600">{Number(selectedDaySummary.totalProtein).toFixed(2).replace(/\.?0+$/, '')}g</p>
+                  <p className="text-sm text-muted-foreground">Protein</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-yellow-600">{Number(selectedDaySummary.totalCarbs).toFixed(2).replace(/\.?0+$/, '')}g</p>
+                  <p className="text-sm text-muted-foreground">Carbs</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-purple-600">{Number(selectedDaySummary.totalFat).toFixed(2).replace(/\.?0+$/, '')}g</p>
+                  <p className="text-sm text-muted-foreground">Fat</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Side Calendar */}
+      <div className="lg:col-span-1 space-y-6">
+        {/* Calendar View */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Calendar
+              </CardTitle>
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="sm" onClick={() => navigateMonth('prev')}>
+                  <ChevronLeft className="w-3 h-3" />
+                </Button>
+                <span className="font-medium text-xs min-w-[80px] text-center">
+                  {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                </span>
+                <Button variant="outline" size="sm" onClick={() => navigateMonth('next')}>
+                  <ChevronRight className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground mb-2">
+                <div>S</div>
+                <div>M</div>
+                <div>T</div>
+                <div>W</div>
+                <div>T</div>
+                <div>F</div>
+                <div>S</div>
+              </div>
+              
+              <div className="grid grid-cols-7 gap-1">
+                {generateCalendarDays().map((dayData, index) => (
+                  <div key={index} className="aspect-square">
+                    {dayData ? (
+                      <button
+                        onClick={() => handleDateSelect(dayData.dateStr)}
+                        className={`w-full h-full rounded text-xs font-medium transition-all relative ${
+                          selectedDate === dayData.dateStr
+                            ? 'bg-primary text-primary-foreground'
+                            : dayData.dateStr === today
+                            ? 'bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 ring-2 ring-blue-500'
+                            : dayData.summary
+                            ? 'bg-muted hover:bg-muted/80 text-foreground'
+                            : 'hover:bg-muted/50 text-muted-foreground'
+                        }`}
+                      >
+                        <span className="relative z-10">{dayData.day}</span>
+                        {dayData.summary && (
+                          <div className={`absolute bottom-0.5 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full ${
+                            getCalorieStatus(dayData.summary)?.color || 'bg-gray-400'
+                          }`}></div>
+                        )}
+                      </button>
+                    ) : (
+                      <div className="w-full h-full"></div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Legend */}
+              <div className="space-y-1 text-xs text-muted-foreground pt-2 border-t">
+                <div className="flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                  <span>Goal Achieved</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                  <span>Goal Missed</span>
+                </div>
+                {userProfile && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Target: {userProfile.targetCalories} cal ({userProfile.weightGoal || 'maintain'})
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Stats */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Quick Stats</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-muted-foreground">Days Tracked</span>
+                <Badge variant="outline" className="text-xs">
+                  {dailySummaries.length}
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-muted-foreground">Avg Daily</span>
+                <span className="text-xs font-medium">
+                  {dailySummaries.length > 0 
+                    ? Math.round(dailySummaries.reduce((sum, s) => sum + s.totalCalories, 0) / dailySummaries.length)
+                    : 0
+                  } cal
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Monthly Summary */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Monthly Overview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 p-3 rounded-lg">
+                <h4 className="font-semibold text-blue-800 dark:text-blue-200 text-sm mb-2">
+                  {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                </h4>
+                <div className="grid grid-cols-1 gap-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-blue-600 dark:text-blue-300">Days tracked:</span>
+                    <span className="font-medium">{dailySummaries.filter(s => {
+                      const summaryDate = new Date(s.date);
+                      return summaryDate.getMonth() === currentMonth.getMonth() && 
+                             summaryDate.getFullYear() === currentMonth.getFullYear();
+                    }).length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-green-600 dark:text-green-300">Total calories:</span>
+                    <span className="font-medium">{dailySummaries.filter(s => {
+                      const summaryDate = new Date(s.date);
+                      return summaryDate.getMonth() === currentMonth.getMonth() && 
+                             summaryDate.getFullYear() === currentMonth.getFullYear();
+                    }).reduce((sum, s) => sum + s.totalCalories, 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-orange-600 dark:text-orange-300">Total burned:</span>
+                    <span className="font-medium">{dailySummaries.filter(s => {
+                      const summaryDate = new Date(s.date);
+                      return summaryDate.getMonth() === currentMonth.getMonth() && 
+                             summaryDate.getFullYear() === currentMonth.getFullYear();
+                    }).reduce((sum, s) => sum + s.caloriesBurned, 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-purple-600 dark:text-purple-300">Monthly avg:</span>
+                    <span className="font-medium">
+                      {(() => {
+                        const monthData = dailySummaries.filter(s => {
+                          const summaryDate = new Date(s.date);
+                          return summaryDate.getMonth() === currentMonth.getMonth() && 
+                                 summaryDate.getFullYear() === currentMonth.getFullYear();
+                        });
+                        return monthData.length > 0 ? Math.round(monthData.reduce((sum, s) => sum + s.totalCalories, 0) / monthData.length) : 0;
+                      })()} cal/day
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
