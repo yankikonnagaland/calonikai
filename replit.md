@@ -323,6 +323,18 @@ The application follows a client-server architecture with clear separation of co
 - Added loading timeout protection (8 seconds) with user feedback
 - Performance-optimized modal opening with immediate instance creation
 
+**June 25, 2025 - Enhanced Intelligent Unit Selection System:**
+- Completely revamped intelligent unit selection to match latest calculation methods
+- Beer now defaults to "bottle (650ml)" with options for 330ml, 500ml, and 650ml bottles
+- Rice dishes use weight-based portions: "medium portion (150g)" for plain rice, "medium portion (200g)" for biryani/pulao
+- Dal and curries specify realistic portions: "medium bowl (200g)" for dal, "serving (150g)" for curries
+- Bread items enhanced with specific weights: rotis (50g each, 2 pieces), naan (80g), idli (30g each, 3 pieces)
+- Fruits specify realistic weights: apple/orange (180g), banana (120g), mango (200g)
+- Beverages categorized by type: beer bottles, wine glasses (150ml), tea/coffee cups (240ml), soft drinks (250ml)
+- All unit options now include weight/volume specifications for accurate calorie calculations
+- Default serving size enhanced to "serving (100g)" instead of generic "serving"
+- Enhanced portion explanations provide better user guidance for realistic food tracking
+
 **June 25, 2025 - Fixed AI Camera Meal Item Removal Bug:**
 - Fixed critical bug where AI camera detected foods couldn't be removed from Current Meal
 - Corrected apiRequest function call format in MealSummary component (DELETE method parameter)

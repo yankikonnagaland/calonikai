@@ -116,65 +116,187 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     
     // Comprehensive food categorization with intelligent unit selection
     
-    // 1. BEVERAGES
+    // 1. BEVERAGES - Enhanced with realistic serving sizes
     if (category.includes("beverage") || category.includes("drink") || 
-        name.match(/\b(tea|coffee|juice|milk|latte|cappuccino|smoothie|shake|cola|soda|water|lassi|chai)\b/)) {
+        name.match(/\b(tea|coffee|juice|milk|latte|cappuccino|smoothie|shake|cola|soda|water|lassi|chai|beer|wine|alcohol)\b/)) {
+      
+      // Alcoholic beverages - use bottle/can sizes
+      if (name.match(/\b(beer|wine|whiskey|vodka|rum|gin|alcohol)\b/)) {
+        if (name.includes("beer")) {
+          return {
+            unit: "bottle (650ml)",
+            quantity: 1,
+            unitOptions: ["bottle (330ml)", "bottle (500ml)", "bottle (650ml)", "can (330ml)", "ml"],
+            reasoning: "Beer is typically consumed in bottles, 650ml is standard large bottle"
+          };
+        } else if (name.includes("wine")) {
+          return {
+            unit: "glass (150ml)",
+            quantity: 1,
+            unitOptions: ["glass (150ml)", "bottle (750ml)", "ml"],
+            reasoning: "Wine is served in 150ml glasses, full bottle is 750ml"
+          };
+        } else {
+          return {
+            unit: "shot (30ml)",
+            quantity: 1,
+            unitOptions: ["shot (30ml)", "ml", "bottle"],
+            reasoning: "Spirits are measured in 30ml shots"
+          };
+        }
+      }
+      
+      // Non-alcoholic beverages
+      if (name.match(/\b(juice|cola|soda|soft drink)\b/)) {
+        return {
+          unit: "glass (250ml)",
+          quantity: 1,
+          unitOptions: ["glass (250ml)", "bottle (500ml)", "can (330ml)", "ml"],
+          reasoning: "Soft drinks typically served in 250ml glasses or standard bottles"
+        };
+      }
+      
+      // Hot beverages
+      if (name.match(/\b(tea|coffee|chai|latte|cappuccino)\b/)) {
+        return {
+          unit: "cup (240ml)",
+          quantity: 1,
+          unitOptions: ["cup (240ml)", "mug (350ml)", "ml"],
+          reasoning: "Hot beverages served in standard 240ml cups"
+        };
+      }
+      
+      // Default beverages
       return {
-        unit: "cup",
+        unit: "glass (250ml)",
         quantity: 1,
-        unitOptions: ["cup", "glass", "ml", "bottle", "can"],
-        reasoning: "Beverages are typically measured in cups or glasses"
+        unitOptions: ["glass (250ml)", "cup (240ml)", "bottle (500ml)", "ml"],
+        reasoning: "Standard beverage serving is 250ml glass"
       };
     }
     
-    // 2. GRAINS & RICE DISHES
+    // 2. GRAINS & RICE DISHES - Enhanced with realistic portions
     if (name.match(/\b(rice|biryani|pulao|pilaf|quinoa|oats|muesli|cereal|porridge|khichdi)\b/)) {
+      const isSpecialRice = name.match(/\b(biryani|pulao|pilaf)\b/);
       return {
-        unit: "cup",
+        unit: isSpecialRice ? "medium portion (200g)" : "medium portion (150g)",
         quantity: 1,
-        unitOptions: ["cup", "small bowl", "medium bowl", "large bowl", "serving"],
-        reasoning: "Grain dishes are best measured in cups or bowls"
+        unitOptions: ["small portion (100g)", "medium portion (150g)", "large portion (200g)", "bowl", "cup"],
+        reasoning: isSpecialRice ? "Special rice dishes are served in larger 200g portions" : "Plain rice typically served in 150g portions"
       };
     }
     
-    // 3. CURRIES & LIQUID DISHES
+    // 3. CURRIES & LIQUID DISHES - Enhanced with realistic portions
     if (name.match(/\b(curry|dal|daal|soup|stew|gravy|sambhar|rasam|kadhi)\b/)) {
-      return {
-        unit: "bowl",
-        quantity: 1,
-        unitOptions: ["bowl", "cup", "small bowl", "large bowl", "serving"],
-        reasoning: "Liquid dishes are typically served in bowls"
-      };
+      const isDal = name.match(/\b(dal|daal)\b/);
+      const isSoup = name.match(/\b(soup|rasam)\b/);
+      
+      if (isDal) {
+        return {
+          unit: "medium bowl (200g)",
+          quantity: 1,
+          unitOptions: ["small bowl (150g)", "medium bowl (200g)", "large bowl (300g)"],
+          reasoning: "Dal is typically served in 200g portions as main accompaniment"
+        };
+      } else if (isSoup) {
+        return {
+          unit: "bowl (250ml)",
+          quantity: 1,
+          unitOptions: ["small bowl (200ml)", "bowl (250ml)", "large bowl (350ml)"],
+          reasoning: "Soups are liquid-based, measured in ml portions"
+        };
+      } else {
+        return {
+          unit: "serving (150g)",
+          quantity: 1,
+          unitOptions: ["small serving (100g)", "serving (150g)", "large serving (200g)"],
+          reasoning: "Curries are typically served in 150g portions with rice"
+        };
+      }
     }
     
-    // 4. BREAD & FLATBREADS
+    // 4. BREAD & FLATBREADS - Enhanced with realistic sizes
     if (name.match(/\b(roti|chapati|naan|bread|toast|paratha|puri|kulcha|dosa|uttapam|idli|vada)\b/)) {
-      return {
-        unit: "piece",
-        quantity: 1,
-        unitOptions: ["piece", "slice", "small", "medium", "large"],
-        reasoning: "Bread items are counted as individual pieces"
-      };
+      if (name.match(/\b(roti|chapati)\b/)) {
+        return {
+          unit: "medium roti (50g)",
+          quantity: 2,
+          unitOptions: ["small roti (35g)", "medium roti (50g)", "large roti (70g)"],
+          reasoning: "Rotis are typically eaten 2 at a time, medium size is 50g each"
+        };
+      } else if (name.match(/\b(naan|paratha)\b/)) {
+        return {
+          unit: "piece (80g)",
+          quantity: 1,
+          unitOptions: ["small (60g)", "piece (80g)", "large (100g)"],
+          reasoning: "Naan and paratha are larger, typically 80g each"
+        };
+      } else if (name.match(/\b(idli|vada)\b/)) {
+        return {
+          unit: "piece (30g)",
+          quantity: 3,
+          unitOptions: ["piece (30g)", "small (25g)", "large (40g)"],
+          reasoning: "Idli/vada are small, typically served 3 pieces (30g each)"
+        };
+      } else if (name.match(/\b(dosa|uttapam)\b/)) {
+        return {
+          unit: "piece (100g)",
+          quantity: 1,
+          unitOptions: ["small (80g)", "piece (100g)", "large (120g)"],
+          reasoning: "Dosas are large, typically 100g each"
+        };
+      } else {
+        return {
+          unit: "slice (25g)",
+          quantity: 2,
+          unitOptions: ["slice (25g)", "piece", "small", "medium"],
+          reasoning: "Bread slices are typically 25g each, eaten 2 at a time"
+        };
+      }
     }
     
-    // 5. FRUITS
+    // 5. FRUITS - Enhanced with realistic weights
     if (category.includes("fruit") || 
         name.match(/\b(apple|banana|orange|mango|grapes|strawberry|pineapple|watermelon|papaya|guava|pomegranate)\b/)) {
       // Whole fruits vs cut fruits
       if (name.includes("slice") || name.includes("chopped") || name.includes("cut")) {
         return {
-          unit: "cup",
+          unit: "cup (150g)",
           quantity: 1,
-          unitOptions: ["cup", "bowl", "serving", "gram"],
-          reasoning: "Cut fruits are best measured in cups or servings"
+          unitOptions: ["cup (150g)", "bowl (200g)", "serving (100g)"],
+          reasoning: "Cut fruits measured by volume, 150g per cup"
         };
       } else {
-        return {
-          unit: "piece",
-          quantity: 1,
-          unitOptions: ["piece", "small", "medium", "large", "cup"],
-          reasoning: "Whole fruits are counted as pieces"
-        };
+        // Specific fruit weights
+        if (name.match(/\b(apple|orange)\b/)) {
+          return {
+            unit: "medium (180g)",
+            quantity: 1,
+            unitOptions: ["small (150g)", "medium (180g)", "large (220g)"],
+            reasoning: "Medium apple/orange weighs about 180g"
+          };
+        } else if (name.includes("banana")) {
+          return {
+            unit: "medium (120g)",
+            quantity: 1,
+            unitOptions: ["small (100g)", "medium (120g)", "large (150g)"],
+            reasoning: "Medium banana weighs about 120g"
+          };
+        } else if (name.includes("mango")) {
+          return {
+            unit: "medium (200g)",
+            quantity: 1,
+            unitOptions: ["small (150g)", "medium (200g)", "large (300g)"],
+            reasoning: "Medium mango weighs about 200g"
+          };
+        } else {
+          return {
+            unit: "piece (100g)",
+            quantity: 1,
+            unitOptions: ["small (80g)", "piece (100g)", "large (150g)"],
+            reasoning: "Average fruit piece weighs about 100g"
+          };
+        }
       }
     }
     
