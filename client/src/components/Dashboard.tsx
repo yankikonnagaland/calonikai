@@ -1374,6 +1374,16 @@ Powered by Calonik.ai 🚀
                                     else return 0.015; // Default for mixed nuts
                                   }
                                 }
+
+                                // MEAT & PROTEIN - Enhanced piece-based calculations for consistent portioning
+                                if (name.match(/\b(chicken|mutton|fish|beef|pork|lamb|turkey|duck)\b/) && unitLower.includes("piece")) {
+                                  // Meat pieces should be realistic portions - not too large or too small
+                                  if (name.includes("chicken")) return 0.8; // Chicken piece ~80g
+                                  else if (name.includes("fish")) return 1.0; // Fish piece ~100g
+                                  else if (name.includes("pork")) return 0.75; // Pork piece ~75g  
+                                  else if (name.includes("beef")) return 0.9; // Beef piece ~90g
+                                  else return 0.75; // Default meat piece ~75g
+                                }
                                 
                                 // PRIORITY 3: General unit patterns
                                 const unitMultipliers: Record<string, number> = {
@@ -1454,6 +1464,15 @@ Powered by Calonik.ai 🚀
                                     else if (name.includes("walnut")) return 0.025;
                                     else return 0.015;
                                   }
+                                }
+
+                                // MEAT & PROTEIN - Enhanced piece-based calculations for consistent portioning
+                                if (name.match(/\b(chicken|mutton|fish|beef|pork|lamb|turkey|duck)\b/) && unitLower.includes("piece")) {
+                                  if (name.includes("chicken")) return 0.8;
+                                  else if (name.includes("fish")) return 1.0;
+                                  else if (name.includes("pork")) return 0.75;
+                                  else if (name.includes("beef")) return 0.9;
+                                  else return 0.75;
                                 }
                                 
                                 const unitMultipliers: Record<string, number> = {

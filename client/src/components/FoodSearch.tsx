@@ -620,6 +620,18 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       }
       // Handful calculations already handled by weight extraction above
     }
+
+    // MEAT & PROTEIN - Enhanced piece-based calculations for consistent portioning
+    if (name.match(/\b(chicken|mutton|fish|beef|pork|lamb|turkey|duck)\b/) && unitLower.includes("piece")) {
+      // Meat pieces should be realistic portions - not too large or too small
+      if (name.includes("chicken")) multiplier = 0.8; // Chicken piece ~80g
+      else if (name.includes("fish")) multiplier = 1.0; // Fish piece ~100g
+      else if (name.includes("pork")) multiplier = 0.75; // Pork piece ~75g  
+      else if (name.includes("beef")) multiplier = 0.9; // Beef piece ~90g
+      else multiplier = 0.75; // Default meat piece ~75g
+      console.log(`Meat piece calculation for ${name}: using multiplier ${multiplier} (should be ~${Math.round(food.calories * multiplier)} cal per piece)`);
+      return multiplier;
+    }
     
     console.log(`Unit multiplier for ${name} - ${unit}: ${multiplier}`);
     return Math.max(0.01, multiplier); // Ensure minimum multiplier
@@ -780,13 +792,18 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                 <div className="relative">
                   <Input
                     type="number"
-                    min="0.1"
-                    step="0.1"
+                    min={unit.toLowerCase().includes("piece") ? "1" : "0.1"}
+                    step={unit.toLowerCase().includes("piece") ? "1" : "0.1"}
                     value={quantity}
                     onChange={(e) => {
                       const value = parseFloat(e.target.value);
                       if (!isNaN(value) && value > 0) {
-                        setQuantity(value);
+                        // For piece units, only allow integers
+                        if (unit.toLowerCase().includes("piece")) {
+                          setQuantity(Math.round(value));
+                        } else {
+                          setQuantity(value);
+                        }
                       } else if (e.target.value === "") {
                         setQuantity(1);
                       }
@@ -794,6 +811,9 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                     onBlur={(e) => {
                       if (e.target.value === "" || isNaN(parseFloat(e.target.value))) {
                         setQuantity(1);
+                      } else if (unit.toLowerCase().includes("piece")) {
+                        // Ensure pieces are always integers
+                        setQuantity(Math.round(parseFloat(e.target.value)));
                       }
                     }}
                     className="mt-1 bg-white dark:bg-gray-800 text-lg font-semibold h-12 text-center pr-16"
@@ -802,14 +822,26 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col gap-1">
                     <button
                       type="button"
-                      onClick={() => setQuantity(prev => Math.round((prev + 0.5) * 10) / 10)}
+                      onClick={() => {
+                        if (unit.toLowerCase().includes("piece")) {
+                          setQuantity(prev => prev + 1); // Increment by 1 for pieces
+                        } else {
+                          setQuantity(prev => Math.round((prev + 0.5) * 10) / 10); // Increment by 0.5 for other units
+                        }
+                      }}
                       className="w-6 h-4 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded flex items-center justify-center transition-colors"
                     >
                       +
                     </button>
                     <button
                       type="button"
-                      onClick={() => setQuantity(prev => Math.max(0.1, Math.round((prev - 0.5) * 10) / 10))}
+                      onClick={() => {
+                        if (unit.toLowerCase().includes("piece")) {
+                          setQuantity(prev => Math.max(1, prev - 1)); // Decrement by 1 for pieces, minimum 1
+                        } else {
+                          setQuantity(prev => Math.max(0.1, Math.round((prev - 0.5) * 10) / 10)); // Decrement by 0.5 for other units
+                        }
+                      }}
                       className="w-6 h-4 hover:bg-red-600 text-white text-xs rounded flex items-center justify-center transition-colors bg-[#8c9195]"
                     >
                       -

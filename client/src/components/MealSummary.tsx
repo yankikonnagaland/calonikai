@@ -289,6 +289,18 @@ export default function MealSummary({
       // Handful calculations already handled by weight extraction above
     }
 
+    // MEAT & PROTEIN - Enhanced piece-based calculations for consistent portioning
+    if (name.match(/\b(chicken|mutton|fish|beef|pork|lamb|turkey|duck)\b/) && unitLower.includes("piece")) {
+      // Meat pieces should be realistic portions - not too large or too small
+      let meatMultiplier = 0.75; // Default meat piece ~75g
+      if (name.includes("chicken")) meatMultiplier = 0.8; // Chicken piece ~80g
+      else if (name.includes("fish")) meatMultiplier = 1.0; // Fish piece ~100g
+      else if (name.includes("pork")) meatMultiplier = 0.75; // Pork piece ~75g  
+      else if (name.includes("beef")) meatMultiplier = 0.9; // Beef piece ~90g
+      console.log(`MealSummary meat piece calculation for ${name}: using multiplier ${meatMultiplier} (should be ~${Math.round(food.calories * meatMultiplier)} cal per piece)`);
+      return meatMultiplier;
+    }
+
     // Food-specific adjustments
     if (food.category === "snacks" && unit === "piece") {
       return 0.5; // Individual snacks are smaller
