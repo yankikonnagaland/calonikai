@@ -75,7 +75,7 @@ export default function Footer() {
         {/* Disclaimer */}
         <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
           <div className="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
-            <p className="dark:text-amber-200 text-center text-[14px] text-[#c7c5bd]">
+            <p className="dark:text-amber-200 text-center text-[14px] text-[#b3b3b3]">
               <strong>Disclaimer:</strong> Calonik.ai is for informational purposes only and is not intended as medical advice, diagnosis, or treatment. 
               The calorie calculations, nutritional information, and health recommendations provided by our AI are estimates and may not be accurate for all individuals. 
               Please consult with a qualified healthcare provider or registered dietitian before making significant changes to your diet or exercise routine. 
