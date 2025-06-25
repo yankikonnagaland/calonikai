@@ -601,6 +601,20 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       if (unitLower.includes("cup") && !mlMatch) multiplier = 2.4; // 240ml standard
     }
     
+    // NUTS & TRAIL MIXES - Enhanced piece-based calculations
+    if (name.match(/\b(nuts|nut|trail|mix|almond|cashew|peanut|walnut|pistachio|mixed nuts)\b/)) {
+      // For nuts, "piece" should be much smaller than handful
+      if (unitLower.includes("piece")) {
+        // Single cashew/almond is about 1-2g, so piece = 0.01-0.02 multiplier
+        if (name.includes("cashew")) multiplier = 0.015; // ~1.5g per cashew
+        else if (name.includes("almond")) multiplier = 0.012; // ~1.2g per almond  
+        else if (name.includes("peanut")) multiplier = 0.008; // ~0.8g per peanut
+        else if (name.includes("walnut")) multiplier = 0.025; // ~2.5g per walnut half
+        else multiplier = 0.015; // Default for mixed nuts
+      }
+      // Handful calculations already handled by weight extraction above
+    }
+    
     console.log(`Unit multiplier for ${name} - ${unit}: ${multiplier}`);
     return Math.max(0.01, multiplier); // Ensure minimum multiplier
   };
