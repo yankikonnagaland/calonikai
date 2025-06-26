@@ -445,15 +445,20 @@ export class DatabaseStorage implements IStorage {
 
   // Daily weight operations
   async saveDailyWeight(weight: InsertDailyWeight): Promise<DailyWeight> {
-    const [savedWeight] = await db
-      .insert(dailyWeights)
-      .values(weight)
-      .onConflictDoUpdate({
-        target: [dailyWeights.sessionId, dailyWeights.date],
-        set: { weight: weight.weight }
-      })
-      .returning();
-    return savedWeight;
+    try {
+      const [savedWeight] = await db
+        .insert(dailyWeights)
+        .values(weight)
+        .onConflictDoUpdate({
+          target: [dailyWeights.sessionId, dailyWeights.date],
+          set: { weight: weight.weight }
+        })
+        .returning();
+      return savedWeight;
+    } catch (error) {
+      console.error("Error in saveDailyWeight:", error);
+      throw error;
+    }
   }
 
   async getDailyWeight(sessionId: string, date: string): Promise<DailyWeight | undefined> {

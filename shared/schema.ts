@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, real, timestamp, varchar, jsonb, index, boolean, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, real, timestamp, varchar, jsonb, index, boolean, date, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -77,7 +77,9 @@ export const dailyWeights = pgTable("daily_weights", {
   weight: real("weight").notNull(), // in kg, using real for decimal support
   date: text("date").notNull(), // YYYY-MM-DD format
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  sessionDateUnique: unique("daily_weights_session_date_unique").on(table.sessionId, table.date),
+}));
 
 export const insertFoodSchema = createInsertSchema(foods).omit({
   id: true,
