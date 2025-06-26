@@ -546,7 +546,7 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                   <div className="bg-white/50 dark:bg-gray-900/30 p-4 rounded-lg">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-green-600">{Math.round(existingProfile.targetCalories)}</div>
-                      <div className="text-sm text-muted-foreground">Daily Calories</div>
+                      <div className="text-sm text-muted-foreground">Target Daily Calories</div>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
