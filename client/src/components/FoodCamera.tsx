@@ -589,7 +589,7 @@ export default function FoodCamera({ sessionId, selectedDate, onFoodDetected, on
     }
     
     if (name.match(/\b(beer|lager|ale)\b/)) {
-      return { unit: "bottle (650ml)", quantity: 1 };
+      return { unit: "bottle/big can (650ml)", quantity: 1 };
     }
     
     if (name.match(/\b(cola|coke|pepsi|sprite|soda|soft drink)\b/)) {

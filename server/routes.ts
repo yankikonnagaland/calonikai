@@ -502,12 +502,16 @@ function calculatePortionNutrition(food: any, unit: string, quantity: number) {
 
 function getLocalUnitSelection(foodName: string, category: string = "") {
   const name = foodName.toLowerCase();
+  const isBeverage = category.toLowerCase().includes("beverage") || category.toLowerCase().includes("drink") ||
+                   name.includes("juice") || name.includes("tea") || name.includes("coffee") || 
+                   name.includes("milk") || name.includes("lassi") || name.includes("shake") ||
+                   name.includes("beer") || name.includes("wine") || name.includes("alcohol");
 
   // Water - should always be 0 calories
   if (name.includes("water")) {
     return {
       unit: "glass (250ml)",
-      unitOptions: ["glass (250ml)", "bottle (500ml)", "liter", "ml"],
+      unitOptions: isBeverage ? ["glass (250ml)", "bottle/big can (500ml)", "liter", "ml"] : ["glass (250ml)", "bottle (500ml)", "liter", "ml"],
     };
   }
   
@@ -517,19 +521,19 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
     if (name.toLowerCase().includes("kingfisher")) {
       return {
         unit: "can (500ml)", 
-        unitOptions: ["can (500ml)", "bottle (330ml)", "bottle (650ml)", "pint (568ml)", "glass (250ml)"],
+        unitOptions: ["can (500ml)", "bottle/big can (330ml)", "bottle/big can (650ml)", "pint (568ml)", "glass (250ml)"],
       };
     }
     // For other beers, check if can is mentioned
     if (name.includes("can")) {
       return {
         unit: "can (500ml)",
-        unitOptions: ["can (500ml)", "bottle (330ml)", "bottle (650ml)", "pint (568ml)", "glass (250ml)"],
+        unitOptions: ["can (500ml)", "bottle/big can (330ml)", "bottle/big can (650ml)", "pint (568ml)", "glass (250ml)"],
       };
     }
     return {
-      unit: "bottle (650ml)",
-      unitOptions: ["glass (250ml)", "bottle (330ml)", "bottle (500ml)", "bottle (650ml)", "can (500ml)"],
+      unit: "bottle/big can (650ml)",
+      unitOptions: ["glass (250ml)", "bottle/big can (330ml)", "bottle/big can (500ml)", "bottle/big can (650ml)", "can (500ml)"],
     };
   }
 
@@ -545,7 +549,7 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
   ) {
     return { 
       unit: "cup (250ml)", 
-      unitOptions: ["cup (250ml)", "glass (200ml)", "bottle (500ml)", "small cup (150ml)", "large cup (350ml)"] 
+      unitOptions: isBeverage ? ["cup (250ml)", "glass (200ml)", "bottle/big can (500ml)", "small cup (150ml)", "large cup (350ml)"] : ["cup (250ml)", "glass (200ml)", "bottle (500ml)", "small cup (150ml)", "large cup (350ml)"]
     };
   }
 

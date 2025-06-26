@@ -115,32 +115,33 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     const category = food.category?.toLowerCase() || "";
     
     // Comprehensive food categorization with intelligent unit selection
+    const isBeverage = category.includes("beverage") || category.includes("drink") || 
+        name.match(/\b(tea|coffee|juice|milk|latte|cappuccino|smoothie|shake|cola|soda|water|lassi|chai|beer|wine|alcohol)\b/);
     
     // 1. BEVERAGES - Enhanced with realistic serving sizes
-    if (category.includes("beverage") || category.includes("drink") || 
-        name.match(/\b(tea|coffee|juice|milk|latte|cappuccino|smoothie|shake|cola|soda|water|lassi|chai|beer|wine|alcohol)\b/)) {
+    if (isBeverage) {
       
       // Alcoholic beverages - use bottle/can sizes
       if (name.match(/\b(beer|wine|whiskey|vodka|rum|gin|alcohol)\b/)) {
         if (name.includes("beer")) {
           return {
-            unit: "bottle (650ml)",
+            unit: "bottle/big can (650ml)",
             quantity: 1,
-            unitOptions: ["bottle (330ml)", "bottle (500ml)", "bottle (650ml)", "can (330ml)", "ml"],
-            reasoning: "Beer is typically consumed in bottles, 650ml is standard large bottle"
+            unitOptions: ["bottle/big can (330ml)", "bottle/big can (500ml)", "bottle/big can (650ml)", "can (330ml)", "ml"],
+            reasoning: "Beer is typically consumed in bottles or big cans, 650ml is standard large size"
           };
         } else if (name.includes("wine")) {
           return {
             unit: "glass (150ml)",
             quantity: 1,
-            unitOptions: ["glass (150ml)", "bottle (750ml)", "ml"],
+            unitOptions: ["glass (150ml)", "bottle/big can (750ml)", "ml"],
             reasoning: "Wine is served in 150ml glasses, full bottle is 750ml"
           };
         } else {
           return {
             unit: "shot (30ml)",
             quantity: 1,
-            unitOptions: ["shot (30ml)", "ml", "bottle"],
+            unitOptions: ["shot (30ml)", "ml", "bottle/big can"],
             reasoning: "Spirits are measured in 30ml shots"
           };
         }
@@ -151,8 +152,8 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
         return {
           unit: "glass (250ml)",
           quantity: 1,
-          unitOptions: ["glass (250ml)", "bottle (500ml)", "can (330ml)", "ml"],
-          reasoning: "Soft drinks typically served in 250ml glasses or standard bottles"
+          unitOptions: ["glass (250ml)", "bottle/big can (500ml)", "can (330ml)", "ml"],
+          reasoning: "Soft drinks typically served in 250ml glasses or standard bottles/big cans"
         };
       }
       
@@ -170,7 +171,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       return {
         unit: "glass (250ml)",
         quantity: 1,
-        unitOptions: ["glass (250ml)", "cup (240ml)", "bottle (500ml)", "ml"],
+        unitOptions: ["glass (250ml)", "cup (240ml)", "bottle/big can (500ml)", "ml"],
         reasoning: "Standard beverage serving is 250ml glass"
       };
     }
