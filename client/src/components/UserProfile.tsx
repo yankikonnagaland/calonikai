@@ -27,7 +27,7 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
   const queryClient = useQueryClient();
 
   // Get existing profile from database
-  const { data: existingProfile } = useQuery({
+  const { data: existingProfile } = useQuery<UserProfileType>({
     queryKey: [`/api/profile/${sessionId}`],
     enabled: Boolean(sessionId),
   });
@@ -41,6 +41,7 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
     activityLevel: z.string().min(1, "Please select activity level"),
     weightGoal: z.string().min(1, "Please select weight goal"),
     weightTarget: z.string().min(1, "Please enter target").transform(val => parseFloat(val)).refine(val => !isNaN(val) && val >= 1 && val <= 100, "Target must be between 1 and 100 kg"),
+    customProteinTarget: z.string().optional().transform(val => val ? parseFloat(val) : undefined).refine(val => val === undefined || (!isNaN(val) && val >= 20 && val <= 300), "Protein target must be between 20 and 300 grams"),
   });
 
   const form = useForm({
@@ -54,6 +55,7 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
       activityLevel: existingProfile?.activityLevel || "",
       weightGoal: existingProfile?.weightGoal || "",
       weightTarget: existingProfile?.weightTarget?.toString() || "",
+      customProteinTarget: existingProfile?.targetProtein?.toString() || "",
     },
   });
 
@@ -69,6 +71,7 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
         activityLevel: existingProfile.activityLevel || "",
         weightGoal: existingProfile.weightGoal || "",
         weightTarget: existingProfile.weightTarget?.toString() || "",
+        customProteinTarget: existingProfile.targetProtein?.toString() || "",
       });
       setIsEditing(false);
     }
@@ -130,15 +133,21 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
       const heightInCm = totalInches * 2.54;
       
       // Ensure proper type conversion for backend
+      // Calculate protein target: 0.8g per kg body weight (default), or use custom value
+      const weight = typeof data.weight === 'number' ? data.weight : parseFloat(data.weight);
+      const defaultProteinTarget = Math.round(weight * 0.8);
+      const proteinTarget = data.customProteinTarget || defaultProteinTarget;
+
       const profileData = {
         gender: data.gender,
         age: typeof data.age === 'number' ? data.age : parseInt(data.age),
         height: heightInCm,
-        weight: typeof data.weight === 'number' ? data.weight : parseFloat(data.weight),
+        weight: weight,
         bodyType: "average", // Default value as schema requires it
         activityLevel: data.activityLevel,
         weightGoal: data.weightGoal,
         weightTarget: typeof data.weightTarget === 'number' ? data.weightTarget : parseFloat(data.weightTarget),
+        targetProtein: proteinTarget,
         sessionId
       };
 
@@ -171,7 +180,8 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
         ...profileData,
         bmr: Math.round(bmr),
         tdee: Math.round(tdee),
-        targetCalories: Math.round(targetCalories)
+        targetCalories: Math.round(targetCalories),
+        targetProtein: proteinTarget
       };
 
       // Save to database
@@ -501,6 +511,27 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                           </FormItem>
                         )}
                       />
+
+                      <FormField
+                        control={form.control}
+                        name="customProteinTarget"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Daily Protein Target (grams)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                placeholder={`Auto: ${form.watch("weight") ? Math.round(parseFloat(form.watch("weight")) * 0.8) : 56}g (0.8g per kg)`}
+                                {...field} 
+                              />
+                            </FormControl>
+                            <div className="text-xs text-muted-foreground">
+                              Leave empty to use automatic calculation (0.8g per kg body weight)
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
 
                     {/* Calculate Button */}
@@ -545,18 +576,22 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                 <div className="grid grid-cols-1 gap-4">
                   <div className="bg-white/50 dark:bg-gray-900/30 p-4 rounded-lg">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">{Math.round(existingProfile.targetCalories)}</div>
+                      <div className="text-2xl font-bold text-green-600">{existingProfile.targetCalories ? Math.round(existingProfile.targetCalories) : 0}</div>
                       <div className="text-sm text-muted-foreground">Target Daily Calories</div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <div className="bg-white/50 dark:bg-gray-900/30 p-3 rounded-lg text-center">
-                      <div className="text-lg font-semibold">{Math.round(existingProfile.bmr)}</div>
-                      <div className="text-xs text-muted-foreground">BMR (Basal Metabolic Rate)</div>
+                      <div className="text-lg font-semibold">{Math.round(existingProfile.bmr || 0)}</div>
+                      <div className="text-xs text-muted-foreground">BMR</div>
                     </div>
                     <div className="bg-white/50 dark:bg-gray-900/30 p-3 rounded-lg text-center">
-                      <div className="text-lg font-semibold">{Math.round(existingProfile.tdee)}</div>
-                      <div className="text-xs text-muted-foreground">TDEE (Total Daily Energy Expenditure)</div>
+                      <div className="text-lg font-semibold">{Math.round(existingProfile.tdee || 0)}</div>
+                      <div className="text-xs text-muted-foreground">TDEE</div>
+                    </div>
+                    <div className="bg-white/50 dark:bg-gray-900/30 p-3 rounded-lg text-center">
+                      <div className="text-lg font-semibold text-blue-600">{existingProfile.targetProtein || Math.round((existingProfile.weight || 70) * 0.8)}g</div>
+                      <div className="text-xs text-muted-foreground">Daily Protein</div>
                     </div>
                   </div>
                 </div>

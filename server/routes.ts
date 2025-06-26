@@ -1044,18 +1044,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Calculate target calories based on weight goal
       let targetCalories = tdee;
-      let dailyProteinTarget = 0;
       
       if (data.weightGoal === "lose") {
         targetCalories = tdee - 500; // 500 calorie deficit for 1lb/week loss
-        dailyProteinTarget = Math.round(data.weight * 1.2); // 1.2g per kg for weight loss
       } else if (data.weightGoal === "gain") {
         targetCalories = tdee + 500; // 500 calorie surplus for 1lb/week gain
-        dailyProteinTarget = Math.round(data.weight * 1.6); // 1.6g per kg for weight gain
       } else if (data.weightGoal === "muscle") {
         targetCalories = tdee + 300; // Moderate surplus for muscle building
-        dailyProteinTarget = Math.round(data.weight * 2.0); // 2.0g per kg for muscle building
       }
+
+      // Simple protein target calculation: 0.8g per kg body weight (default), or use custom value
+      const defaultProteinTarget = Math.round(data.weight * 0.8);
+      const dailyProteinTarget = data.targetProtein || defaultProteinTarget;
 
       const profileData = {
         ...data,
@@ -1064,6 +1064,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tdee: Math.round(tdee),
         targetCalories: Math.round(targetCalories),
         targetProtein: dailyProteinTarget,
+        dailyProteinTarget: dailyProteinTarget,
       };
 
       const profile = await storage.saveUserProfile(profileData);
