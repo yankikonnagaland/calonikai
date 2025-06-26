@@ -474,6 +474,10 @@ export class FallbackStorage {
     }
     return weights.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.memoryUsers.values());
+  }
 }
 
 export const fallbackStorage = new FallbackStorage();

@@ -77,6 +77,9 @@ export interface IStorage {
   getUserUsage(userId: string, actionType: "meal_add" | "photo_analyze", date: string): Promise<number>;
   canUserPerformAction(userId: string, actionType: "meal_add" | "photo_analyze"): Promise<boolean>;
   activatePremiumSubscription(userId: string, razorpayData: { customerId?: string; subscriptionId?: string }): Promise<User>;
+  
+  // Nudge system operations
+  getAllUsers(): Promise<User[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -430,6 +433,16 @@ export class DatabaseStorage implements IStorage {
     return updatedUser;
   }
 
+  async getAllUsers(): Promise<User[]> {
+    try {
+      const allUsers = await db.select().from(users);
+      return allUsers;
+    } catch (error: unknown) {
+      console.error("Error fetching all users:", error);
+      return [];
+    }
+  }
+
   // Daily weight operations
   async saveDailyWeight(weight: InsertDailyWeight): Promise<DailyWeight> {
     const [savedWeight] = await db
@@ -474,8 +487,8 @@ try {
   } else {
     throw new Error("No database URL provided");
   }
-} catch (error) {
-  console.warn("Database connection failed, using FallbackStorage:", error.message);
+} catch (error: unknown) {
+  console.warn("Database connection failed, using FallbackStorage:", (error as Error).message);
   storage = fallbackStorage;
 }
 
