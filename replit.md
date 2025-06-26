@@ -328,6 +328,18 @@ The application follows a client-server architecture with clear separation of co
 - Profile calculation now supports three goal types: lose weight (deficit), gain weight (surplus), build muscle (lean surplus)
 - AI insights updated to provide muscle building specific advice and protein intake recommendations
 - Complete protein tracking system integrated with existing calorie and weight tracking functionality
+- Fixed protein target display in "Your Targets" section with dynamic 3-column layout for muscle building users
+- Enhanced UserProfile component to show protein targets alongside BMR/TDEE when muscle building goal is selected
+
+**June 26, 2025 - Fixed Nudge Scheduler & Weight Update Critical Bugs:**
+- RESOLVED: Nudge scheduler morning check-in errors with database timeout protection
+- Added 8-second timeout safeguard for getAllUsers database operations in nudge scheduler
+- Enhanced error handling to prevent scheduler crashes during database connectivity issues
+- Nudge scheduler now continues running even with temporary database problems
+- RESOLVED: "Error updating weight" in WeightUpdateModal due to undefined variable reference
+- Fixed undefined data variable causing weight update failures in morning check-in modal
+- Weight logging now works correctly without console errors
+- Morning weight check-in modal fully functional with proper goal achievement tracking
 
 **June 25, 2025 - Fixed Database Timeout & Sequelize Errors:**
 - Resolved "sequelize statement was cancelled because express request timed out" errors

@@ -43,7 +43,14 @@ async function checkAndSendDailyNudges() {
   console.log(`Checking for daily nudges at ${currentHour}:00`);
 
   try {
-    const users = await storage.getAllUsers();
+    // Add timeout protection for database operations
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Database timeout')), 8000);
+    });
+
+    const usersPromise = storage.getAllUsers();
+    const users = await Promise.race([usersPromise, timeoutPromise]) as any[];
+    
     console.log(`Found ${users.length} users for nudge check`);
     
     let nudgesSent = 0;
@@ -63,6 +70,7 @@ async function checkAndSendDailyNudges() {
     
   } catch (error) {
     console.error("Error in checkAndSendDailyNudges:", error);
+    console.log("Nudge scheduler will continue running and retry next hour");
   }
 }
 
