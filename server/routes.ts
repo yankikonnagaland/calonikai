@@ -9,6 +9,7 @@ import {
   insertUserProfileSchema,
   insertExerciseSchema,
   insertDailySummarySchema,
+  insertDailyWeightSchema,
   searchFoodsSchema,
   calculateProfileSchema,
 } from "@shared/schema";
@@ -1763,8 +1764,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Save daily weight
   app.post("/api/daily-weight", async (req, res) => {
     try {
-      const weightData = req.body;
+      console.log("Daily weight request body:", req.body);
+      
+      // Validate request body
+      const validationResult = insertDailyWeightSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        console.error("Daily weight validation errors:", validationResult.error.errors);
+        return res.status(400).json({ 
+          message: "Invalid weight data", 
+          errors: validationResult.error.errors 
+        });
+      }
+
+      const weightData = validationResult.data;
+      console.log("Validated weight data:", weightData);
+      
       const savedWeight = await storage.saveDailyWeight(weightData);
+      console.log("Saved weight successfully:", savedWeight);
+      
       res.json(savedWeight);
     } catch (error) {
       console.error("Error saving daily weight:", error);

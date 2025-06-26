@@ -105,6 +105,11 @@ export const insertDailySummarySchema = createInsertSchema(dailySummaries).omit(
   createdAt: true,
 });
 
+export const insertDailyWeightSchema = createInsertSchema(dailyWeights).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type Food = typeof foods.$inferSelect;
 export type MealItem = typeof mealItems.$inferSelect;
 export type UserProfile = typeof userProfiles.$inferSelect;
@@ -116,10 +121,10 @@ export type InsertMealItem = z.infer<typeof insertMealItemSchema>;
 export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
 export type InsertExercise = z.infer<typeof insertExerciseSchema>;
 export type InsertDailySummary = z.infer<typeof insertDailySummarySchema>;
+export type InsertDailyWeight = z.infer<typeof insertDailyWeightSchema>;
 
 // Daily weight types
 export type DailyWeight = typeof dailyWeights.$inferSelect;
-export type InsertDailyWeight = typeof dailyWeights.$inferInsert;
 
 // Additional types for API responses
 export const searchFoodsSchema = z.object({
