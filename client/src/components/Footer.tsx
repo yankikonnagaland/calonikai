@@ -15,7 +15,7 @@ export default function Footer() {
                 Calonik.ai
               </span>
             </div>
-            <p className="text-gray-600 dark:text-gray-400 mb-4 max-w-md">
+            <p className="text-gray-600 dark:text-gray-400 mb-4 max-w-md text-justify ml-[-10px] mr-[-10px] pl-[15px] pr-[15px]">
               Smart calorie tracking and weight management with AI-powered food recognition. 
               Achieve your fitness goals with personalized nutrition insights.
             </p>
