@@ -950,32 +950,7 @@ Powered by Calonik.ai 🚀
                 </div>
               </div>
 
-              {/* Today's Weight Card - Always Show */}
-              <div className="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
-                <div className="flex items-center gap-3">
-                  <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded-full">
-                    <Scale className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-purple-700 dark:text-purple-300">
-                      {selectedDate === today ? "Today's Weight" : "Weight"}
-                    </p>
-                    <p className="text-2xl font-bold text-purple-800 dark:text-purple-200">
-                      {selectedDateWeight?.weight || userProfile?.weight || '--'} kg
-                    </p>
-                    {!selectedDateWeight?.weight && userProfile?.weight && selectedDate !== today && (
-                      <p className="text-xs text-purple-500 dark:text-purple-400 mt-1">
-                        No weight logged for {new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      </p>
-                    )}
-                    {!selectedDateWeight?.weight && !userProfile?.weight && (
-                      <p className="text-xs text-purple-500 dark:text-purple-400 mt-1">
-                        Set weight in Profile
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
+              
 
               {/* Protein Tracking Card - Show only for Build Muscle goal */}
               {userProfile?.weightGoal === 'muscle' && userProfile?.targetProtein && (
