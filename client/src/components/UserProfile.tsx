@@ -313,7 +313,7 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-3 gap-3">
                               <div 
                                 className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
                                   field.value === "lose" ? "border-red-500 bg-red-50 dark:bg-red-950" : "border-border hover:border-primary/50"
@@ -334,6 +334,17 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                                 <div className="text-center">
                                   <TrendingUp className="w-8 h-8 mx-auto mb-2 text-green-500" />
                                   <span className="font-medium">Gain Weight</span>
+                                </div>
+                              </div>
+                              <div 
+                                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                                  field.value === "muscle" ? "border-blue-500 bg-blue-50 dark:bg-blue-950" : "border-border hover:border-primary/50"
+                                }`}
+                                onClick={() => field.onChange("muscle")}
+                              >
+                                <div className="text-center">
+                                  <Zap className="w-8 h-8 mx-auto mb-2 text-blue-500" />
+                                  <span className="font-medium">Build Muscle</span>
                                 </div>
                               </div>
                             </div>
@@ -474,9 +485,18 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                       name="weightTarget"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Target (kg to {form.watch("weightGoal") === "lose" ? "lose" : "gain"})</FormLabel>
+                          <FormLabel>
+                            {form.watch("weightGoal") === "muscle" 
+                              ? "Target (kg muscle to gain)" 
+                              : `Target (kg to ${form.watch("weightGoal") === "lose" ? "lose" : "gain"})`
+                            }
+                          </FormLabel>
                           <FormControl>
-                            <Input type="number" placeholder="5" {...field} />
+                            <Input 
+                              type="number" 
+                              placeholder={form.watch("weightGoal") === "muscle" ? "3" : "5"} 
+                              {...field} 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -584,10 +604,25 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                   <div className="text-center p-4 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-lg border">
                     <div className="text-3xl font-bold text-primary">{profileData.targetCalories}</div>
                     <div className="text-sm text-muted-foreground">Daily Target Calories</div>
-                    <Badge variant={profileData.weightGoal === 'lose' ? 'destructive' : 'default'} className="mt-2">
-                      {profileData.weightGoal === 'lose' ? 'Deficit' : 'Surplus'}: {Math.abs(profileData.tdee - profileData.targetCalories)} cal
+                    <Badge variant={
+                      profileData.weightGoal === 'lose' ? 'destructive' : 
+                      profileData.weightGoal === 'muscle' ? 'secondary' : 'default'
+                    } className="mt-2">
+                      {profileData.weightGoal === 'lose' ? 'Deficit' : 
+                       profileData.weightGoal === 'muscle' ? 'Lean Surplus' : 'Surplus'}: {Math.abs(profileData.tdee - profileData.targetCalories)} cal
                     </Badge>
                   </div>
+                  
+                  {/* Protein Target for Muscle Building */}
+                  {profileData.weightGoal === 'muscle' && profileData.targetProtein && (
+                    <div className="text-center p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="text-3xl font-bold text-blue-600">{profileData.targetProtein}g</div>
+                      <div className="text-sm text-muted-foreground">Daily Protein Target</div>
+                      <Badge variant="outline" className="mt-2 border-blue-500 text-blue-600">
+                        Muscle Building: 2g per kg body weight
+                      </Badge>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 

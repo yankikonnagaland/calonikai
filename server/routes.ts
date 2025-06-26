@@ -1040,10 +1040,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Calculate target calories based on weight goal
       let targetCalories = tdee;
+      let dailyProteinTarget = 0;
+      
       if (data.weightGoal === "lose") {
         targetCalories = tdee - 500; // 500 calorie deficit for 1lb/week loss
+        dailyProteinTarget = Math.round(data.weight * 1.2); // 1.2g per kg for weight loss
       } else if (data.weightGoal === "gain") {
         targetCalories = tdee + 500; // 500 calorie surplus for 1lb/week gain
+        dailyProteinTarget = Math.round(data.weight * 1.6); // 1.6g per kg for weight gain
+      } else if (data.weightGoal === "muscle") {
+        targetCalories = tdee + 300; // Moderate surplus for muscle building
+        dailyProteinTarget = Math.round(data.weight * 2.0); // 2.0g per kg for muscle building
       }
 
       const profileData = {
@@ -1052,6 +1059,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         bmr: Math.round(bmr),
         tdee: Math.round(tdee),
         targetCalories: Math.round(targetCalories),
+        targetProtein: dailyProteinTarget,
       };
 
       const profile = await storage.saveUserProfile(profileData);
@@ -1399,6 +1407,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
           insights.push(
             "Focus on strength training to ensure quality weight gain rather than just fat accumulation.",
+          );
+        } else if (weightGoal === "muscle") {
+          insights.push(
+            "Your moderate calorie surplus is optimized for lean muscle building while minimizing fat gain.",
+          );
+          insights.push(
+            "Prioritize protein intake (2g per kg body weight) and progressive resistance training for optimal results.",
+          );
+          insights.push(
+            "Track your daily protein consumption to ensure you're meeting your muscle-building targets.",
           );
         }
 

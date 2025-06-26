@@ -976,6 +976,39 @@ Powered by Calonik.ai 🚀
                   </div>
                 </div>
               </div>
+
+              {/* Protein Tracking Card - Show only for Build Muscle goal */}
+              {userProfile?.weightGoal === 'muscle' && userProfile?.targetProtein && (
+                <div className="bg-cyan-50 dark:bg-cyan-950/20 p-4 rounded-lg border border-cyan-200 dark:border-cyan-800">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-cyan-100 dark:bg-cyan-900/30 p-2 rounded-full">
+                      <Target className="w-5 h-5 text-cyan-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-cyan-700 dark:text-cyan-300">
+                        Daily Protein
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-2xl font-bold text-cyan-800 dark:text-cyan-200">
+                          {selectedDaySummary?.totalProtein?.toFixed(1) || '0.0'}g
+                        </p>
+                        <span className="text-sm text-cyan-600 dark:text-cyan-400">
+                          / {userProfile.targetProtein}g
+                        </span>
+                      </div>
+                      <div className="mt-2">
+                        <Progress 
+                          value={Math.min(100, ((selectedDaySummary?.totalProtein || 0) / userProfile.targetProtein) * 100)} 
+                          className="h-2"
+                        />
+                      </div>
+                      <p className="text-xs text-cyan-500 dark:text-cyan-400 mt-1">
+                        {Math.round(((selectedDaySummary?.totalProtein || 0) / userProfile.targetProtein) * 100)}% of muscle building target
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             
 

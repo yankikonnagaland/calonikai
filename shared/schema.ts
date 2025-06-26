@@ -41,6 +41,8 @@ export const userProfiles = pgTable("user_profiles", {
   bmr: real("bmr"),
   tdee: real("tdee"),
   targetCalories: real("target_calories"),
+  targetProtein: real("target_protein"), // Daily protein goal in grams
+  dailyProteinTarget: real("daily_protein_target"), // Alternative field name for protein goals
   createdAt: timestamp("created_at").defaultNow(),
 });
 
