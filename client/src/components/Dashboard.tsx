@@ -1035,56 +1035,6 @@ Powered by Calonik.ai 🚀
               </div>
             )}
 
-            {/* Progress Bar */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Calorie Goal Progress</span>
-                <span className="text-sm text-muted-foreground">
-                  {todayCaloriesIn} / {targetCalories} calories
-                </span>
-              </div>
-              <Progress 
-                value={(todayCaloriesIn / targetCalories) * 100} 
-                className="h-3"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>0</span>
-                <span>{targetCalories}</span>
-              </div>
-              
-              {/* Weight Goal Progress Indicator */}
-              {userProfile && (
-                <div className="mt-4 p-3 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Target className="w-4 h-4 text-indigo-600" />
-                      <span className="text-sm font-medium text-indigo-800 dark:text-indigo-200">
-                        Weight Goal Status
-                      </span>
-                    </div>
-                    <Badge variant={
-                      (userProfile.weightGoal === 'lose' && selectedCaloriesIn < targetCalories) ||
-                      (userProfile.weightGoal === 'gain' && selectedCaloriesIn > targetCalories) ||
-                      (userProfile.weightGoal === 'maintain' && Math.abs(selectedCaloriesIn - targetCalories) < 100)
-                        ? 'default' : 'secondary'
-                    } className="text-xs">
-                      {(userProfile.weightGoal === 'lose' && selectedCaloriesIn < targetCalories) ||
-                       (userProfile.weightGoal === 'gain' && selectedCaloriesIn > targetCalories) ||
-                       (userProfile.weightGoal === 'maintain' && Math.abs(selectedCaloriesIn - targetCalories) < 100)
-                        ? 'On Track' : 'Needs Adjustment'}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
-                    {userProfile.weightGoal === 'lose' 
-                      ? 'Stay under your calorie target to support weight loss'
-                      : userProfile.weightGoal === 'gain'
-                      ? 'Eat above your calorie target to support weight gain'
-                      : 'Maintain your calorie target to keep current weight'
-                    }
-                  </p>
-                </div>
-              )}
-
             {/* Calories vs Weight Chart */}
             {chartData.length > 0 && (
               <div className="bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-950/20 dark:to-blue-950/20 p-6 rounded-xl border border-gray-200 dark:border-gray-800">
