@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Calendar, TrendingUp, TrendingDown, Target, Flame, ChevronLeft, ChevronRight, Activity, Utensils, Scale, UserCircle } from "lucide-react";
+import { Calendar, TrendingUp, TrendingDown, Target, Flame, ChevronLeft, ChevronRight, Activity, Utensils, Scale, UserCircle, Copy, Download } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -83,13 +83,13 @@ export default function Dashboard({ sessionId }: DashboardProps) {
   const chartData = useMemo(() => {
     if (!dailySummaries || !dailyWeights) return [];
     
-    const weightMap = new Map(dailyWeights.map((w: any) => [w.date, w.weight]));
-    const summaryMap = new Map(dailySummaries.map((s: any) => [s.date, s]));
+    const weightMap = new Map((dailyWeights as any[]).map((w: any) => [w.date, w.weight]));
+    const summaryMap = new Map((dailySummaries as any[]).map((s: any) => [s.date, s]));
     
     // Get all unique dates from both datasets
     const allDates = new Set([
-      ...dailySummaries.map((s: any) => s.date),
-      ...dailyWeights.map((w: any) => w.date)
+      ...(dailySummaries as any[]).map((s: any) => s.date),
+      ...(dailyWeights as any[]).map((w: any) => w.date)
     ]);
     
     return Array.from(allDates)
@@ -106,6 +106,7 @@ export default function Dashboard({ sessionId }: DashboardProps) {
 
   // Enhanced social sharing component with visual templates
   const ShareComponent = () => {
+    const [shareDialogOpen, setShareDialogOpen] = useState(false);
     const shareText = generateShareText();
     const visualTemplate = generateVisualTemplate();
     
@@ -325,7 +326,7 @@ Powered by Calonik.ai 🚀
       }
     };
 
-    const downloadVisualTemplate = (format: 'jpeg' = 'jpeg') => {
+    const downloadVisualTemplate = (format: 'jpeg' | 'instagram' = 'jpeg') => {
       if (format === 'jpeg') {
         // Create Apple-inspired JPEG image
         const canvas = document.createElement('canvas');
@@ -382,8 +383,8 @@ Powered by Calonik.ai 🚀
           ctx.fillStyle = '#1d1d1f';
           ctx.font = '24px -apple-system, BlinkMacSystemFont, sans-serif';
           ctx.fillText('Today\'s Exercise', 80, 420);
-          const exerciseText = todayExercises.length > 0 
-            ? todayExercises.map(ex => ex.name).join(', ') 
+          const exerciseText = selectedDateExercises.length > 0 
+            ? selectedDateExercises.map((ex: any) => ex.name).join(', ') 
             : 'No exercise recorded';
           ctx.fillStyle = '#86868b';
           ctx.font = '20px -apple-system, BlinkMacSystemFont, sans-serif';
@@ -566,7 +567,7 @@ Powered by Calonik.ai 🚀
                 
                 <div className="mb-4">
                   <h3 className="font-semibold text-gray-900 mb-2">Today's Exercise</h3>
-                  <p className="text-gray-600">{todayExercises.length > 0 ? todayExercises.map(ex => ex.name).join(', ') : 'No exercise recorded'}</p>
+                  <p className="text-gray-600">{selectedDateExercises.length > 0 ? selectedDateExercises.map((ex: any) => ex.name).join(', ') : 'No exercise recorded'}</p>
                 </div>
                 
                 <div className="mb-4">
@@ -1161,7 +1162,6 @@ Powered by Calonik.ai 🚀
                 </div>
               </div>
             )}
-            </div>
           </CardContent>
         </Card>
 
