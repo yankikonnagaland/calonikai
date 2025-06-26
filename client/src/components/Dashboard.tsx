@@ -1046,26 +1046,66 @@ Powered by Calonik.ai 🚀
                   {/* Weight Goal */}
                   <div className="bg-white/50 dark:bg-gray-900/30 p-4 rounded-lg">
                     <h4 className="font-semibold text-purple-800 dark:text-purple-200 mb-3">Weight Goal</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm">Goal:</span>
-                        <span className="font-medium capitalize">{userProfile.weightGoal} weight</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm">Target:</span>
-                        <span className="font-medium">{userProfile.weightTarget} kg</span>
-                      </div>
-                      <div className="pt-2">
-                        <Badge 
-                          variant={userProfile.weightGoal === 'lose' ? 'destructive' : userProfile.weightGoal === 'gain' ? 'default' : 'secondary'}
-                          className="w-full justify-center"
+                    
+                    {userProfile.goalAchieved ? (
+                      <div className="space-y-3">
+                        <div className="text-center p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                          <div className="text-2xl mb-2">🎉</div>
+                          <p className="font-semibold text-green-800 dark:text-green-200">Goal Achieved!</p>
+                          <p className="text-sm text-green-600 dark:text-green-400">
+                            Completed on {userProfile.goalAchievedAt ? new Date(userProfile.goalAchievedAt).toLocaleDateString() : 'Recently'}
+                          </p>
+                        </div>
+                        <Button 
+                          onClick={async () => {
+                            try {
+                              await fetch('/api/clear-achieved-goal', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ sessionId })
+                              });
+                              queryClient.invalidateQueries({ queryKey: [`/api/profile/${sessionId}`] });
+                              toast({
+                                title: "Goal Cleared",
+                                description: "You can now set a new weight goal in your profile",
+                                variant: "default"
+                              });
+                            } catch (error) {
+                              toast({
+                                title: "Error",
+                                description: "Failed to clear goal",
+                                variant: "destructive"
+                              });
+                            }
+                          }}
+                          variant="outline" 
+                          className="w-full"
                         >
-                          {userProfile.weightGoal === 'lose' ? 'Weight Loss Plan' : 
-                           userProfile.weightGoal === 'gain' ? 'Weight Gain Plan' : 
-                           'Maintenance Plan'}
-                        </Badge>
+                          Set New Goal
+                        </Button>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm">Goal:</span>
+                          <span className="font-medium capitalize">{userProfile.weightGoal} weight</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm">Target:</span>
+                          <span className="font-medium">{userProfile.weightTarget} kg</span>
+                        </div>
+                        <div className="pt-2">
+                          <Badge 
+                            variant={userProfile.weightGoal === 'lose' ? 'destructive' : userProfile.weightGoal === 'gain' ? 'default' : 'secondary'}
+                            className="w-full justify-center"
+                          >
+                            {userProfile.weightGoal === 'lose' ? 'Weight Loss Plan' : 
+                             userProfile.weightGoal === 'gain' ? 'Weight Gain Plan' : 
+                             'Maintenance Plan'}
+                          </Badge>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

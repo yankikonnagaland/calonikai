@@ -16,6 +16,7 @@ import {
 import { z } from "zod";
 import OpenAI from "openai";
 import crypto from "crypto";
+import { checkWeightGoalAchievement, markGoalAsAchieved } from "./weightGoalChecker";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -1782,10 +1783,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const savedWeight = await storage.saveDailyWeight(weightData);
       console.log("Saved weight successfully:", savedWeight);
       
+      // Check if weight goal is achieved
+      const profile = await storage.getUserProfile(weightData.sessionId);
+      if (profile && !profile.goalAchieved) {
+        const goalResult = await checkWeightGoalAchievement(
+          weightData.sessionId, 
+          weightData.weight, 
+          profile
+        );
+        
+        if (goalResult.achieved) {
+          await markGoalAsAchieved(weightData.sessionId);
+          console.log(`Weight goal achieved for session: ${weightData.sessionId}`);
+          
+          // Return achievement message with weight data
+          res.json({
+            ...savedWeight,
+            goalAchieved: true,
+            achievementMessage: goalResult.message
+          });
+          return;
+        }
+      }
+      
       res.json(savedWeight);
     } catch (error) {
       console.error("Error saving daily weight:", error);
       res.status(500).json({ message: "Failed to save daily weight" });
+    }
+  });
+
+  // Clear achieved weight goal endpoint
+  app.post("/api/clear-achieved-goal", async (req, res) => {
+    try {
+      const { sessionId } = req.body;
+      if (!sessionId) {
+        return res.status(400).json({ message: "Session ID required" });
+      }
+
+      const profile = await storage.getUserProfile(sessionId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      // Clear the achieved goal
+      await storage.saveUserProfile({
+        ...profile,
+        weightGoal: 'maintain',
+        weightTarget: null,
+        goalAchieved: false,
+        goalAchievedAt: null,
+        sessionId: profile.sessionId
+      });
+
+      res.json({ message: "Goal cleared successfully", cleared: true });
+    } catch (error) {
+      console.error("Error clearing achieved goal:", error);
+      res.status(500).json({ message: "Failed to clear goal" });
     }
   });
 

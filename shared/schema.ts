@@ -36,6 +36,8 @@ export const userProfiles = pgTable("user_profiles", {
   activityLevel: text("activity_level").notNull(),
   weightGoal: text("weight_goal").notNull(),
   weightTarget: real("weight_target"), // How many kgs to lose/gain
+  goalAchieved: boolean("goal_achieved").default(false), // Track if goal is achieved
+  goalAchievedAt: timestamp("goal_achieved_at"), // When goal was achieved
   bmr: real("bmr"),
   tdee: real("tdee"),
   targetCalories: real("target_calories"),

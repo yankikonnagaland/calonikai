@@ -86,6 +86,15 @@ export default function WeightUpdateModal({ isOpen, onClose, sessionId, currentP
         variant,
       });
 
+      // Check for goal achievement in response
+      if (responseData.goalAchieved) {
+        toast({
+          title: "🎉 Goal Achieved!",
+          description: responseData.achievementMessage || "Congratulations on reaching your weight goal!",
+          variant: "default",
+        });
+      }
+
       // Invalidate cache to refresh profile data
       queryClient.invalidateQueries({ queryKey: [`/api/profile/${sessionId}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/daily-summary`] });
