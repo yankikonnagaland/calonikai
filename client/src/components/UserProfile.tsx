@@ -590,7 +590,7 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className={`grid gap-4 ${profileData.weightGoal === 'muscle' && profileData.targetProtein ? 'grid-cols-3' : 'grid-cols-2'}`}>
                     <div className="text-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
                       <div className="text-2xl font-bold text-primary">{profileData.bmr}</div>
                       <div className="text-xs text-muted-foreground">BMR (cal/day)</div>
@@ -599,6 +599,12 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                       <div className="text-2xl font-bold text-primary">{profileData.tdee}</div>
                       <div className="text-xs text-muted-foreground">TDEE (cal/day)</div>
                     </div>
+                    {profileData.weightGoal === 'muscle' && profileData.targetProtein && (
+                      <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="text-2xl font-bold text-blue-600">{profileData.targetProtein}g</div>
+                        <div className="text-xs text-blue-600 dark:text-blue-400">Protein Target</div>
+                      </div>
+                    )}
                   </div>
                   
                   <div className="text-center p-4 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-lg border">
