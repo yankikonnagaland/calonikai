@@ -552,7 +552,7 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-white/50 dark:bg-gray-900/30 p-3 rounded-lg text-center">
                       <div className="text-lg font-semibold">{Math.round(existingProfile.bmr)}</div>
-                      <div className="text-xs text-muted-foreground">BMR</div>
+                      <div className="text-xs text-muted-foreground">BMR (Basal Metabolic Rate)</div>
                     </div>
                     <div className="bg-white/50 dark:bg-gray-900/30 p-3 rounded-lg text-center">
                       <div className="text-lg font-semibold">{Math.round(existingProfile.tdee)}</div>
