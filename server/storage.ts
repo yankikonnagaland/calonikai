@@ -484,17 +484,38 @@ import { fallbackStorage } from './fallbackStorage';
 // Use database storage for production, fallback storage for development/testing
 let storage: IStorage;
 
-try {
-  // Test database connection
-  if (process.env.DATABASE_URL || process.env.AWS_DATABASE_URL) {
-    storage = new DatabaseStorage();
-    console.log("Using DatabaseStorage with PostgreSQL");
-  } else {
-    throw new Error("No database URL provided");
+async function initializeStorage(): Promise<IStorage> {
+  try {
+    // Test database connection
+    if (process.env.DATABASE_URL || process.env.AWS_DATABASE_URL) {
+      const dbStorage = new DatabaseStorage();
+      
+      // Test the connection with a simple query
+      try {
+        await dbStorage.getAllFoods(); // This will test the database connection
+        console.log("Using DatabaseStorage with PostgreSQL");
+        return dbStorage;
+      } catch (dbError) {
+        console.warn("Database connection test failed:", dbError);
+        throw dbError;
+      }
+    } else {
+      throw new Error("No database URL provided");
+    }
+  } catch (error: unknown) {
+    console.warn("Database connection failed, using FallbackStorage:", (error as Error).message);
+    return fallbackStorage;
   }
-} catch (error: unknown) {
-  console.warn("Database connection failed, using FallbackStorage:", (error as Error).message);
-  storage = fallbackStorage;
 }
+
+// Initialize storage synchronously with fallback as default
+storage = fallbackStorage;
+
+// Attempt to upgrade to database storage asynchronously
+initializeStorage().then((initializedStorage) => {
+  storage = initializedStorage;
+}).catch((error) => {
+  console.warn("Failed to initialize database storage, continuing with fallback:", error);
+});
 
 export { storage };
