@@ -135,7 +135,7 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
       // Ensure proper type conversion for backend
       // Calculate protein target: 0.8g per kg body weight (default), or use custom value
       const weight = typeof data.weight === 'number' ? data.weight : parseFloat(data.weight);
-      const defaultProteinTarget = Math.round(weight * 0.8);
+      const defaultProteinTarget = Math.floor(weight * 0.8);
       const proteinTarget = data.customProteinTarget || defaultProteinTarget;
 
       const profileData = {
@@ -590,7 +590,7 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                       <div className="text-xs text-muted-foreground">TDEE</div>
                     </div>
                     <div className="bg-white/50 dark:bg-gray-900/30 p-3 rounded-lg text-center">
-                      <div className="text-lg font-semibold text-blue-600">{existingProfile.targetProtein || Math.round((existingProfile.weight || 70) * 0.8)}g</div>
+                      <div className="text-lg font-semibold text-blue-600">{existingProfile.targetProtein || Math.floor((existingProfile.weight || 70) * 0.8)}g</div>
                       <div className="text-xs text-muted-foreground">Daily Protein</div>
                     </div>
                   </div>

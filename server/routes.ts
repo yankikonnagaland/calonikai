@@ -1054,7 +1054,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Simple protein target calculation: 0.8g per kg body weight (default), or use custom value
-      const defaultProteinTarget = Math.round(data.weight * 0.8);
+      const defaultProteinTarget = Math.floor(data.weight * 0.8);
       const dailyProteinTarget = data.targetProtein || defaultProteinTarget;
 
       const profileData = {
