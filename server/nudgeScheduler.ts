@@ -30,7 +30,7 @@ export function stopNudgeScheduler() {
   }
 }
 
-async function checkAndSendDailyNudges() {
+export async function checkAndSendDailyNudges() {
   const now = new Date();
   const currentHour = now.getHours();
   const today = now.toISOString().split('T')[0];
@@ -52,6 +52,11 @@ async function checkAndSendDailyNudges() {
     const users = await Promise.race([usersPromise, timeoutPromise]) as any[];
     
     console.log(`Found ${users.length} users for nudge check`);
+    
+    // Log user details for testing
+    for (const user of users) {
+      console.log(`User: ${user.email}, subscription: ${user.subscriptionStatus}, firstName: ${user.firstName}`);
+    }
     
     let nudgesSent = 0;
     for (const user of users) {

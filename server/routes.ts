@@ -1861,6 +1861,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test endpoint to trigger nudge scheduler manually
+  app.post('/api/test-nudges', async (req, res) => {
+    try {
+      console.log("=== Manual nudge test triggered ===");
+      
+      // Run nudge checker directly with manual logging
+      const now = new Date();
+      const currentHour = now.getHours();
+      const today = now.toISOString().split('T')[0];
+      
+      console.log(`Testing nudge scheduler at ${currentHour}:00 for date ${today}`);
+      
+      // Get all users from database
+      const users = await storage.getAllUsers();
+      console.log(`Found ${users.length} users in database`);
+      
+      let nudgesSent = 0;
+      for (const user of users) {
+        console.log(`Checking user: ${user.email}, subscription: ${user.subscriptionStatus}`);
+        
+        if (user.email && user.subscriptionStatus === 'premium') {
+          console.log(`Would send nudge to premium user: ${user.email}`);
+          nudgesSent++;
+          
+          // For testing, we'll just log instead of actually sending emails
+          // since SENDGRID_API_KEY is not configured
+        }
+      }
+      
+      console.log(`=== Nudge test completed: ${nudgesSent} nudges would be sent ===`);
+      
+      res.json({ 
+        message: "Nudge scheduler test completed", 
+        timestamp: new Date().toISOString(),
+        usersFound: users.length,
+        nudgesWouldSend: nudgesSent,
+        testMode: true
+      });
+    } catch (error) {
+      console.error("Error in manual nudge test:", error);
+      res.status(500).json({ 
+        message: "Failed to run nudge test", 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
