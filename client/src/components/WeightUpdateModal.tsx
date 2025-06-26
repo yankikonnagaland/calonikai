@@ -87,10 +87,10 @@ export default function WeightUpdateModal({ isOpen, onClose, sessionId, currentP
       });
 
       // Check for goal achievement in response
-      if (responseData.goalAchieved) {
+      if (data.goalAchieved) {
         toast({
           title: "🎉 Goal Achieved!",
-          description: responseData.achievementMessage || "Congratulations on reaching your weight goal!",
+          description: data.achievementMessage || "Congratulations on reaching your weight goal!",
           variant: "default",
         });
       }
