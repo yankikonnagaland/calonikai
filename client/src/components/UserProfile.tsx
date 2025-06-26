@@ -233,13 +233,12 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
           </p>
         )}
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Profile Form - Left Side */}
         <div className="lg:col-span-2">
           {existingProfile && !isEditing ? (
             // Display saved profile
-            <Card className="shadow-lg border-green-200 bg-green-50/50 dark:bg-green-950/20">
+            (<Card className="shadow-lg border-green-200 bg-green-50/50 dark:bg-green-950/20">
               <CardHeader>
                 <CardTitle className="flex items-center text-green-800 dark:text-green-200">
                   <UserCircle className="w-5 h-5 mr-2" />
@@ -291,243 +290,243 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                   </Button>
                 </div>
               </CardContent>
-            </Card>
+            </Card>)
           ) : (
             // Show form for new profile or editing
-            <Card className="shadow-lg">
+            (<Card className="shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <UserCircle className="w-5 h-5 mr-2" />
                   {isEditing ? "Update Profile" : "Quick Setup"}
                 </CardTitle>
               </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  {/* Goal Selection */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-lg">What's your goal?</h3>
-                    <FormField
-                      control={form.control}
-                      name="weightGoal"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <div className="grid grid-cols-3 gap-3">
-                              <div 
-                                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                                  field.value === "lose" ? "border-red-500 bg-red-50 dark:bg-red-950" : "border-border hover:border-primary/50"
-                                }`}
-                                onClick={() => field.onChange("lose")}
-                              >
-                                <div className="text-center">
-                                  <TrendingDown className="w-8 h-8 mx-auto mb-2 text-red-500" />
-                                  <span className="font-medium">Lose Weight</span>
-                                </div>
-                              </div>
-                              <div 
-                                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                                  field.value === "gain" ? "border-green-500 bg-green-50 dark:bg-green-950" : "border-border hover:border-primary/50"
-                                }`}
-                                onClick={() => field.onChange("gain")}
-                              >
-                                <div className="text-center">
-                                  <TrendingUp className="w-8 h-8 mx-auto mb-2 text-green-500" />
-                                  <span className="font-medium">Gain Weight</span>
-                                </div>
-                              </div>
-                              <div 
-                                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                                  field.value === "muscle" ? "border-blue-500 bg-blue-50 dark:bg-blue-950" : "border-border hover:border-primary/50"
-                                }`}
-                                onClick={() => field.onChange("muscle")}
-                              >
-                                <div className="text-center">
-                                  <Zap className="w-8 h-8 mx-auto mb-2 text-blue-500" />
-                                  <span className="font-medium">Build Muscle</span>
-                                </div>
-                              </div>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Basic Info Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="gender"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Gender</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+              <CardContent>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    {/* Goal Selection */}
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-lg">What's your goal?</h3>
+                      <FormField
+                        control={form.control}
+                        name="weightGoal"
+                        render={({ field }) => (
+                          <FormItem>
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select" />
-                              </SelectTrigger>
+                              <div className="grid grid-cols-3 gap-3">
+                                <div 
+                                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                                    field.value === "lose" ? "border-red-500 bg-red-50 dark:bg-red-950" : "border-border hover:border-primary/50"
+                                  }`}
+                                  onClick={() => field.onChange("lose")}
+                                >
+                                  <div className="text-center">
+                                    <TrendingDown className="w-8 h-8 mx-auto mb-2 text-red-500" />
+                                    <span className="font-medium">Lose Weight</span>
+                                  </div>
+                                </div>
+                                <div 
+                                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                                    field.value === "gain" ? "border-green-500 bg-green-50 dark:bg-green-950" : "border-border hover:border-primary/50"
+                                  }`}
+                                  onClick={() => field.onChange("gain")}
+                                >
+                                  <div className="text-center">
+                                    <TrendingUp className="w-8 h-8 mx-auto mb-2 text-green-500" />
+                                    <span className="font-medium">Gain Weight</span>
+                                  </div>
+                                </div>
+                                <div 
+                                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                                    field.value === "muscle" ? "border-blue-500 bg-blue-50 dark:bg-blue-950" : "border-border hover:border-primary/50"
+                                  }`}
+                                  onClick={() => field.onChange("muscle")}
+                                >
+                                  <div className="text-center">
+                                    <Zap className="w-8 h-8 mx-auto mb-2 text-blue-500" />
+                                    <span className="font-medium">Build Muscle</span>
+                                  </div>
+                                </div>
+                              </div>
                             </FormControl>
-                            <SelectContent>
-                              <SelectItem value="male">Male</SelectItem>
-                              <SelectItem value="female">Female</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="age"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Age</FormLabel>
-                          <FormControl>
-                            <Input type="number" placeholder="25" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <FormField
-                        control={form.control}
-                        name="heightFeet"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Height (Feet)</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Feet" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {[4, 5, 6, 7].map(feet => (
-                                  <SelectItem key={feet} value={feet.toString()}>{feet} ft</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="heightInches"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Inches</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="In" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {[...Array(12)].map((_, i) => (
-                                  <SelectItem key={i} value={i.toString()}>{i} in</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
 
-                    <FormField
-                      control={form.control}
-                      name="weight"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Weight (kg)</FormLabel>
-                          <FormControl>
-                            <Input type="number" placeholder="70" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {/* Basic Info Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="gender"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Gender</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="male">Male</SelectItem>
+                                <SelectItem value="female">Female</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      control={form.control}
-                      name="activityLevel"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Activity Level</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                      <FormField
+                        control={form.control}
+                        name="age"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Age</FormLabel>
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select activity" />
-                              </SelectTrigger>
+                              <Input type="number" placeholder="25" {...field} />
                             </FormControl>
-                            <SelectContent>
-                              <SelectItem value="sedentary">Sedentary (Desk job)</SelectItem>
-                              <SelectItem value="light">Light (1-3 days/week)</SelectItem>
-                              <SelectItem value="moderate">Moderate (3-5 days/week)</SelectItem>
-                              <SelectItem value="very">Very Active (6-7 days/week)</SelectItem>
-                              <SelectItem value="extra">Extremely Active (2x/day)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      control={form.control}
-                      name="weightTarget"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            {form.watch("weightGoal") === "muscle" 
-                              ? "Target (kg muscle to gain)" 
-                              : `Target (kg to ${form.watch("weightGoal") === "lose" ? "lose" : "gain"})`
-                            }
-                          </FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder={form.watch("weightGoal") === "muscle" ? "3" : "5"} 
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <FormField
+                          control={form.control}
+                          name="heightFeet"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Height (Feet)</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Feet" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {[4, 5, 6, 7].map(feet => (
+                                    <SelectItem key={feet} value={feet.toString()}>{feet} ft</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                  {/* Calculate Button */}
-                  <div className="pt-4">
-                    <Button 
-                      type="submit" 
-                      className="w-full h-12 text-lg"
-                      disabled={calculateMutation.isPending || !isFormComplete}
-                    >
-                      {calculateMutation.isPending ? (
-                        <>
-                          <Calculator className="w-5 h-5 mr-2 animate-spin" />
-                          Calculating...
-                        </>
-                      ) : (
-                        <>
-                          <Zap className="w-5 h-5 mr-2" />
-                          Calculate My Profile
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
+                        <FormField
+                          control={form.control}
+                          name="heightInches"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Inches</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="In" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {[...Array(12)].map((_, i) => (
+                                    <SelectItem key={i} value={i.toString()}>{i} in</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <FormField
+                        control={form.control}
+                        name="weight"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Weight (kg)</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="70" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="activityLevel"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Activity Level</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select activity" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="sedentary">Sedentary (Desk job)</SelectItem>
+                                <SelectItem value="light">Light (1-3 days/week)</SelectItem>
+                                <SelectItem value="moderate">Moderate (3-5 days/week)</SelectItem>
+                                <SelectItem value="very">Very Active (6-7 days/week)</SelectItem>
+                                <SelectItem value="extra">Extremely Active (2x/day)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="weightTarget"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              {form.watch("weightGoal") === "muscle" 
+                                ? "Target (kg muscle to gain)" 
+                                : `Target (kg to ${form.watch("weightGoal") === "lose" ? "lose" : "gain"})`
+                              }
+                            </FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                placeholder={form.watch("weightGoal") === "muscle" ? "3" : "5"} 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* Calculate Button */}
+                    <div className="pt-4">
+                      <Button 
+                        type="submit" 
+                        className="w-full h-12 text-lg"
+                        disabled={calculateMutation.isPending || !isFormComplete}
+                      >
+                        {calculateMutation.isPending ? (
+                          <>
+                            <Calculator className="w-5 h-5 mr-2 animate-spin" />
+                            Calculating...
+                          </>
+                        ) : (
+                          <>
+                            <Zap className="w-5 h-5 mr-2" />
+                            Calculate My Profile
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>)
           )}
         </div>
 
@@ -557,7 +556,7 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                     </div>
                     <div className="bg-white/50 dark:bg-gray-900/30 p-3 rounded-lg text-center">
                       <div className="text-lg font-semibold">{Math.round(existingProfile.tdee)}</div>
-                      <div className="text-xs text-muted-foreground">TDEE</div>
+                      <div className="text-xs text-muted-foreground">TDEE (Total Daily Energy Expenditure)</div>
                     </div>
                   </div>
                 </div>
