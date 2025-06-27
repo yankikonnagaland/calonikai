@@ -58,10 +58,6 @@ export default function Dashboard({ sessionId }: DashboardProps) {
     queryKey: [`/api/profile/${sessionId}`],
   });
 
-  const { data: exercises = [] } = useQuery<Exercise[]>({
-    queryKey: [`/api/exercise/${sessionId}`],
-  });
-
   // Query exercises specifically for the selected date
   const { data: selectedDateExercises = [], refetch: refetchSelectedDateExercises } = useQuery<Exercise[]>({
     queryKey: [`/api/exercise/${sessionId}/${selectedDate}`],
@@ -758,28 +754,18 @@ Powered by Calonik.ai 🚀
     };
   };
 
-  // Helper function to calculate calories burned from exercises for a specific date
+  // Helper function to calculate calories burned from exercises for the selected date only
   const getCaloriesOutForDate = (dateStr: string) => {
-    // For selected date, use the date-specific exercises
+    // Only calculate for the selected date using the date-specific exercises
     if (dateStr === selectedDate) {
       return selectedDateExercises.reduce((total, ex) => {
         return total + (ex.caloriesBurned || 0);
       }, 0);
     }
     
-    // For other dates, filter from all exercises
-    if (!exercises || exercises.length === 0) {
-      return 0;
-    }
-    
-    const filteredExercises = exercises.filter(ex => {
-      const exerciseDate = ex.date || new Date(ex.createdAt || new Date()).toISOString().split('T')[0];
-      return exerciseDate === dateStr;
-    });
-    
-    return filteredExercises.reduce((total, ex) => {
-      return total + (ex.caloriesBurned || 0);
-    }, 0);
+    // For other dates, we don't have the data, so return 0
+    // This ensures exercises only show for their specific dates
+    return 0;
   };
 
   const selectedCaloriesIn = Math.round((selectedSummary?.totalCalories || 0) * 100) / 100;
