@@ -194,11 +194,17 @@ export class DatabaseStorage implements IStorage {
     return newExercise;
   }
 
-  async getExercises(sessionId: string): Promise<Exercise[]> {
+  async getExercises(sessionId: string, date?: string): Promise<Exercise[]> {
+    const conditions = [eq(exercises.sessionId, sessionId)];
+    
+    if (date) {
+      conditions.push(eq(exercises.date, date));
+    }
+    
     return await db
       .select()
       .from(exercises)
-      .where(eq(exercises.sessionId, sessionId))
+      .where(and(...conditions))
       .orderBy(desc(exercises.completedAt));
   }
 
