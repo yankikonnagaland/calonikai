@@ -316,14 +316,17 @@ The application follows a client-server architecture with clear separation of co
 - Weight goal achievement detection now working correctly with congratulations messages
 - Complete weight tracking and goal achievement system fully operational
 
-**June 27, 2025 - Exercise Date Filtering Bug Fix:**
-- RESOLVED: Fixed critical bug where June 26th exercises were showing under "Today's Completed Exercises" on June 27th
-- Removed general exercise query that fetched all exercises regardless of date
-- Updated Dashboard component to use only date-specific exercise queries
-- Modified getCaloriesOutForDate function to calculate calories only for the currently selected date
-- Exercise tracking now works correctly: June 26th exercises only show on June 26th, June 27th exercises only show on June 27th
-- Historical exercise navigation through calendar now displays accurate date-specific exercise data
-- Dashboard calories out calculation is now accurate for each specific date without cross-date contamination
+**June 27, 2025 - Start/End Time Tracking & Complete Exercise Date Filtering Fix:**
+- IMPLEMENTED: Start/End time tracking feature in Quick Exercise Log with automatic duration calculation
+- Added Start/End time buttons with real-time display and manual duration input override capability
+- Enhanced calorie display updates based on final duration (either time tracking or manual input)
+- Clear button to reset all times and visual indicators showing duration source
+- RESOLVED: Critical exercise date filtering bug in DatabaseStorage class
+- Fixed DatabaseStorage getExercises method to properly support optional date parameter filtering
+- Added proper Drizzle query logic with conditional date filtering using and() operator
+- Each date's exercises now properly isolated: June 25th, 26th, and 27th exercises only show on their respective dates
+- Exercise tracking now works correctly with strict date isolation and accurate historical navigation
+- Complete time tracking and date filtering functionality confirmed working by user testing
 
 **June 26, 2025 - "Build Muscle" Goal Implementation with Daily Protein Tracking:**
 - Added "Build Muscle" as third goal option in UserProfile component with 3-column layout design
