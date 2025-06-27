@@ -57,6 +57,11 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
   const [manualTime, setManualTime] = useState("");
   const [showManualInput, setShowManualInput] = useState(false);
   
+  // Start/End time tracking
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [endTime, setEndTime] = useState<Date | null>(null);
+  const [isTracking, setIsTracking] = useState(false);
+  
   // Enhanced AI-powered exercise detection
   const [exerciseQuery, setExerciseQuery] = useState("");
   const [aiAnalysis, setAiAnalysis] = useState<AIExerciseAnalysis | null>(null);
@@ -244,6 +249,51 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
     return 0;
   };
 
+  const handleStartTracking = () => {
+    const now = new Date();
+    setStartTime(now);
+    setEndTime(null);
+    setIsTracking(true);
+    setManualTime(""); // Clear manual time when starting tracking
+  };
+
+  const handleEndTracking = () => {
+    const now = new Date();
+    setEndTime(now);
+    setIsTracking(false);
+    
+    if (startTime) {
+      const durationInMinutes = Math.round((now.getTime() - startTime.getTime()) / 60000);
+      setManualTime(durationInMinutes.toString());
+    }
+  };
+
+  const handleClearTimes = () => {
+    setStartTime(null);
+    setEndTime(null);
+    setIsTracking(false);
+    setManualTime("");
+  };
+
+  const getCalculatedDuration = () => {
+    if (startTime && endTime) {
+      return Math.round((endTime.getTime() - startTime.getTime()) / 60000);
+    }
+    if (startTime && isTracking) {
+      const now = new Date();
+      return Math.round((now.getTime() - startTime.getTime()) / 60000);
+    }
+    return 0;
+  };
+
+  const getFinalDuration = () => {
+    // Manual time input overrides calculated duration
+    if (manualTime && parseInt(manualTime) > 0) {
+      return parseInt(manualTime);
+    }
+    return getCalculatedDuration();
+  };;
+
   const completeExerciseMutation = useMutation({
     mutationFn: async (data: { sessionId: string; type: string; exerciseName: string; duration: number; caloriesBurned: number; date: string }) => {
       return apiRequest("POST", "/api/exercise", data);
@@ -267,6 +317,7 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
       setManualTime("");
       setAiAnalysis(null);
       setExerciseQuery("");
+      handleClearTimes();
     },
     onError: () => {
       toast({
@@ -369,20 +420,20 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
   };
 
   const handleManualTimeSubmit = () => {
-    if (!selectedExercise || !manualTime) {
+    if (!selectedExercise) {
       toast({
         title: "Missing Information",
-        description: "Please select an exercise and enter time duration",
+        description: "Please select an exercise first",
         variant: "destructive",
       });
       return;
     }
 
-    const duration = parseInt(manualTime);
-    if (isNaN(duration) || duration <= 0) {
+    const duration = getFinalDuration();
+    if (duration <= 0) {
       toast({
         title: "Invalid Time",
-        description: "Please enter a valid duration in minutes",
+        description: "Please enter duration manually or use start/end time tracking",
         variant: "destructive",
       });
       return;
@@ -400,6 +451,7 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
 
     setManualTime("");
     setShowManualInput(false);
+    handleClearTimes();
   };
 
   const formatTime = (totalSeconds: number) => {
@@ -599,36 +651,112 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
                     </div>
                   </div>
                   
-                  {/* Duration Input */}
-                  <div className="flex gap-3">
-                    <Input
-                      type="number"
-                      placeholder="Duration (minutes)"
-                      value={manualTime}
-                      onChange={(e) => setManualTime(e.target.value)}
-                      className="flex-1 h-12 text-lg font-medium text-center border-blue-200 dark:border-blue-700"
-                      min="1"
-                    />
-                    <Button 
-                      onClick={handleManualTimeSubmit} 
-                      disabled={!manualTime}
-                      className="h-12 px-6 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg"
-                    >
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Log Exercise
-                    </Button>
+                  {/* Time Tracking Section */}
+                  <div className="space-y-4">
+                    {/* Start/End Time Tracking */}
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-3">Time Tracking</div>
+                      
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div className="text-center">
+                          <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">Start Time</div>
+                          <div className="text-sm font-mono bg-white dark:bg-gray-800 p-2 rounded border">
+                            {startTime ? startTime.toLocaleTimeString('en-US', { 
+                              hour: 'numeric', 
+                              minute: '2-digit',
+                              hour12: true 
+                            }) : '--:--'}
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">End Time</div>
+                          <div className="text-sm font-mono bg-white dark:bg-gray-800 p-2 rounded border">
+                            {endTime ? endTime.toLocaleTimeString('en-US', { 
+                              hour: 'numeric', 
+                              minute: '2-digit',
+                              hour12: true 
+                            }) : isTracking ? 'In Progress...' : '--:--'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 justify-center">
+                        {!isTracking && !startTime && (
+                          <Button 
+                            onClick={handleStartTracking}
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <Play className="w-3 h-3 mr-1" />
+                            Start
+                          </Button>
+                        )}
+                        {isTracking && (
+                          <Button 
+                            onClick={handleEndTracking}
+                            size="sm"
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            <Square className="w-3 h-3 mr-1" />
+                            End
+                          </Button>
+                        )}
+                        {(startTime || endTime) && (
+                          <Button 
+                            onClick={handleClearTimes}
+                            size="sm"
+                            variant="outline"
+                          >
+                            <X className="w-3 h-3 mr-1" />
+                            Clear
+                          </Button>
+                        )}
+                      </div>
+
+                      {(startTime && endTime) && (
+                        <div className="mt-3 text-center">
+                          <div className="text-xs text-blue-600 dark:text-blue-400">Calculated Duration</div>
+                          <div className="text-lg font-bold text-blue-800 dark:text-blue-200">
+                            {getCalculatedDuration()} minutes
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Duration Input */}
+                    <div className="flex gap-3">
+                      <Input
+                        type="number"
+                        placeholder="Duration (minutes) - overrides time tracking"
+                        value={manualTime}
+                        onChange={(e) => setManualTime(e.target.value)}
+                        className="flex-1 h-12 text-lg font-medium text-center border-blue-200 dark:border-blue-700"
+                        min="1"
+                      />
+                      <Button 
+                        onClick={handleManualTimeSubmit} 
+                        disabled={getFinalDuration() <= 0}
+                        className="h-12 px-6 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg"
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Log Exercise
+                      </Button>
+                    </div>
                   </div>
                   
                   {/* Enhanced Calorie Display */}
-                  {manualTime && (
+                  {getFinalDuration() > 0 && (
                     <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
                       <div className="text-center">
                         <div className="text-xs text-orange-600 dark:text-orange-400 mb-1">Estimated Calorie Burn</div>
                         <div className="text-2xl font-bold text-orange-700 dark:text-orange-300 mb-1">
-                          {Math.round(selectedExercise.caloriesPerMin * parseInt(manualTime || '0') * (intensity === "low" ? 0.8 : intensity === "high" ? 1.3 : 1.0))} calories
+                          {Math.round(selectedExercise.caloriesPerMin * getFinalDuration() * (intensity === "low" ? 0.8 : intensity === "high" ? 1.3 : 1.0))} calories
                         </div>
                         <div className="text-xs text-orange-600 dark:text-orange-400">
-                          {selectedExercise.caloriesPerMin} cal/min × {manualTime} min × {intensity === "low" ? "0.8" : intensity === "high" ? "1.3" : "1.0"} ({intensity} intensity)
+                          {selectedExercise.caloriesPerMin} cal/min × {getFinalDuration()} min × {intensity === "low" ? "0.8" : intensity === "high" ? "1.3" : "1.0"} ({intensity} intensity)
+                        </div>
+                        <div className="text-xs text-orange-500 dark:text-orange-400 mt-1">
+                          Duration: {manualTime && parseInt(manualTime) > 0 ? 'Manual input' : 'Time tracking'}
                         </div>
                       </div>
                     </div>
