@@ -316,6 +316,15 @@ The application follows a client-server architecture with clear separation of co
 - Weight goal achievement detection now working correctly with congratulations messages
 - Complete weight tracking and goal achievement system fully operational
 
+**June 27, 2025 - Exercise Date Filtering Bug Fix:**
+- RESOLVED: Fixed critical bug where June 26th exercises were showing under "Today's Completed Exercises" on June 27th
+- Removed general exercise query that fetched all exercises regardless of date
+- Updated Dashboard component to use only date-specific exercise queries
+- Modified getCaloriesOutForDate function to calculate calories only for the currently selected date
+- Exercise tracking now works correctly: June 26th exercises only show on June 26th, June 27th exercises only show on June 27th
+- Historical exercise navigation through calendar now displays accurate date-specific exercise data
+- Dashboard calories out calculation is now accurate for each specific date without cross-date contamination
+
 **June 26, 2025 - "Build Muscle" Goal Implementation with Daily Protein Tracking:**
 - Added "Build Muscle" as third goal option in UserProfile component with 3-column layout design
 - Implemented Zap icon for muscle building goal with blue color scheme (blue-500, blue-50, blue-950)

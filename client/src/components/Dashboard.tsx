@@ -1361,10 +1361,6 @@ Powered by Calonik.ai 🚀
               <CardTitle className="flex items-center gap-2">
                 <Activity className="w-5 h-5 text-orange-600" />
                 {selectedDate === today ? "Today's Completed Exercises" : `${new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} Exercises`}
-                {/* Debug info - remove after fixing */}
-                <span className="text-xs text-gray-500 ml-2">
-                  (selected: {selectedDate}, today: {today}, match: {selectedDate === today ? 'yes' : 'no'})
-                </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
