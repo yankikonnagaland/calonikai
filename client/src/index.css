@@ -37,6 +37,57 @@ iframe[src*="razorpay"] {
   pointer-events: auto !important;
 }
 
+/* Minimal number input spinner styling */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Custom minimal spinner arrows */
+.number-input-container {
+  position: relative;
+}
+
+.number-input-container input[type="number"] {
+  padding-right: 2rem;
+}
+
+.spinner-arrows {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.spinner-arrow {
+  width: 0.75rem;
+  height: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: hsl(var(--muted-foreground));
+  transition: color 0.15s ease;
+  font-size: 0.625rem;
+  line-height: 1;
+}
+
+.spinner-arrow:hover {
+  color: hsl(var(--foreground));
+}
+
+.spinner-arrow:active {
+  transform: scale(0.95);
+}
+
 :root {
   --background: hsl(216, 27%, 7%);
   --foreground: hsl(210, 40%, 96%);

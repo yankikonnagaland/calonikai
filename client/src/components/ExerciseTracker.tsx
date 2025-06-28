@@ -4,6 +4,7 @@ import { Flame, Timer, Play, Pause, Square, CheckCircle, Clock, Brain, Zap, Acti
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
@@ -883,8 +884,7 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
 
                     {/* Duration Input */}
                     <div className="flex gap-3">
-                      <Input
-                        type="number"
+                      <NumberInput
                         placeholder="Duration (minutes) - overrides time tracking"
                         value={manualTime}
                         onChange={(e) => setManualTime(e.target.value)}

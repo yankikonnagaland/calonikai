@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -395,7 +396,7 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                           <FormItem>
                             <FormLabel>Age</FormLabel>
                             <FormControl>
-                              <Input type="number" placeholder="25" {...field} />
+                              <NumberInput placeholder="Enter your age" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -457,7 +458,7 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                           <FormItem>
                             <FormLabel>Weight (kg)</FormLabel>
                             <FormControl>
-                              <Input type="number" placeholder="70" {...field} />
+                              <NumberInput placeholder="Enter weight in kg" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -503,7 +504,7 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                             <FormControl>
                               <Input 
                                 type="number" 
-                                placeholder={form.watch("weightGoal") === "muscle" ? "3" : "5"} 
+                                placeholder={form.watch("weightGoal") === "muscle" ? "Enter muscle gain target" : "Enter weight target"} 
                                 {...field} 
                               />
                             </FormControl>
@@ -519,9 +520,8 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                           <FormItem>
                             <FormLabel>Daily Protein Target (grams)</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="number" 
-                                placeholder={`Auto: ${form.watch("weight") ? Math.round(parseFloat(form.watch("weight")) * 0.8) : 56}g (0.8g per kg)`}
+                              <NumberInput 
+                                placeholder="Enter protein target (optional)"
                                 {...field} 
                               />
                             </FormControl>
