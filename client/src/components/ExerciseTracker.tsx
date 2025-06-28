@@ -296,10 +296,6 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
   };
 
   const getFinalDuration = () => {
-    // Enhanced tracker duration overrides everything when enabled
-    if (useEnhancedTracker && ['running', 'walking', 'cycling'].includes(selectedExercise?.type || '') && durationMin && Number(durationMin) > 0) {
-      return Number(durationMin);
-    }
     // Manual time input overrides calculated duration
     if (manualTime && parseInt(manualTime) > 0) {
       return parseInt(manualTime);
@@ -443,7 +439,6 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
         // Add enhanced fields for running, walking, cycling
         if (['running', 'walking', 'cycling'].includes(selectedExercise.type)) {
           if (distanceKm) exerciseData.distanceKm = Number(distanceKm);
-          if (durationMin) exerciseData.durationMin = Number(durationMin);
           exerciseData.intensityLevel = intensityLevel;
           if (heartRate) exerciseData.heartRate = Number(heartRate);
           if (terrain) exerciseData.terrain = terrain;
@@ -497,7 +492,6 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
     // Add enhanced fields for running, walking, cycling
     if (['running', 'walking', 'cycling'].includes(selectedExercise.type)) {
       if (distanceKm) exerciseData.distanceKm = Number(distanceKm);
-      if (durationMin) exerciseData.durationMin = Number(durationMin);
       exerciseData.intensityLevel = intensityLevel;
       if (heartRate) exerciseData.heartRate = Number(heartRate);
       if (terrain) exerciseData.terrain = terrain;
@@ -739,7 +733,7 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
                       
                       {useEnhancedTracker && (
                         <>
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 gap-3">
                             <div>
                               <Label htmlFor="distance" className="text-xs text-purple-600 dark:text-purple-400">Distance (km)</Label>
                               <Input
@@ -750,22 +744,6 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
                                 value={distanceKm}
                                 onChange={(e) => setDistanceKm(e.target.value ? Number(e.target.value) : "")}
                                 className="h-9 text-sm"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="durationMin" className="text-xs text-purple-600 dark:text-purple-400 flex items-center">
-                                Duration (min) 
-                                <span className="ml-1 text-xs px-1.5 py-0.5 bg-green-100 text-green-700 rounded-full">
-                                  Override
-                                </span>
-                              </Label>
-                              <Input
-                                id="durationMin"
-                                type="number"
-                                placeholder="30"
-                                value={durationMin}
-                                onChange={(e) => setDurationMin(e.target.value ? Number(e.target.value) : "")}
-                                className="h-9 text-sm border-green-300 focus:border-green-500"
                               />
                             </div>
                           </div>
@@ -936,13 +914,7 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
                           {selectedExercise.caloriesPerMin} cal/min × {getFinalDuration()} min × {intensity === "low" ? "0.8" : intensity === "high" ? "1.3" : "1.0"} ({intensity} intensity)
                         </div>
                         <div className="text-xs text-orange-500 dark:text-orange-400 mt-1">
-                          Duration: {
-                            useEnhancedTracker && ['running', 'walking', 'cycling'].includes(selectedExercise?.type || '') && durationMin && Number(durationMin) > 0
-                              ? 'Enhanced Tracker Override'
-                              : manualTime && parseInt(manualTime) > 0 
-                                ? 'Manual input' 
-                                : 'Time tracking'
-                          }
+                          Duration: {manualTime && parseInt(manualTime) > 0 ? 'Manual input' : 'Time tracking'}
                         </div>
                       </div>
                     </div>

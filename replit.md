@@ -316,6 +316,15 @@ The application follows a client-server architecture with clear separation of co
 - Weight goal achievement detection now working correctly with congratulations messages
 - Complete weight tracking and goal achievement system fully operational
 
+**June 28, 2025 - Enhanced Exercise Tracker with Toggle & Duration Override:**
+- IMPLEMENTED: Toggle switch for enhanced running tracker with clean UI design
+- Enhanced fields appear only when toggle is enabled for running, walking, cycling activities
+- Added comprehensive enhanced tracking: Distance (km), Intensity Level (Sub 1/2/3), Heart Rate, Terrain, Smartwatch usage
+- Purple-themed enhanced tracker section with smooth toggle animation
+- REMOVED: Duplicate duration field from enhanced tracker to avoid confusion with main duration input
+- Enhanced tracker stores additional metadata while using main Time Tracking duration for consistency
+- Complete enhanced exercise tracking system with proper database storage and retrieval
+
 **June 27, 2025 - Start/End Time Tracking & Complete Exercise Date Filtering Fix:**
 - IMPLEMENTED: Start/End time tracking feature in Quick Exercise Log with automatic duration calculation
 - Added Start/End time buttons with real-time display and manual duration input override capability
