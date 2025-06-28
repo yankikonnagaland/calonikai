@@ -70,6 +70,14 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showAIMode, setShowAIMode] = useState(false);
   
+  // Enhanced fields for running, walking, cycling
+  const [distanceKm, setDistanceKm] = useState<number | "">("");
+  const [durationMin, setDurationMin] = useState<number | "">("");
+  const [intensityLevel, setIntensityLevel] = useState<'Sub 1' | 'Sub 2' | 'Sub 3'>('Sub 2');
+  const [heartRate, setHeartRate] = useState<number | "">("");
+  const [terrain, setTerrain] = useState("");
+  const [usesSmartwatch, setUsesSmartwatch] = useState(false);
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -295,7 +303,20 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
   };;
 
   const completeExerciseMutation = useMutation({
-    mutationFn: async (data: { sessionId: string; type: string; exerciseName: string; duration: number; caloriesBurned: number; date: string }) => {
+    mutationFn: async (data: { 
+      sessionId: string; 
+      type: string; 
+      exerciseName: string; 
+      duration: number; 
+      caloriesBurned: number; 
+      date: string;
+      distanceKm?: number;
+      durationMin?: number;
+      intensityLevel?: 'Sub 1' | 'Sub 2' | 'Sub 3';
+      heartRate?: number;
+      terrain?: string;
+      usesSmartwatch?: boolean;
+    }) => {
       return apiRequest("POST", "/api/exercise", data);
     },
     onSuccess: () => {
@@ -318,6 +339,13 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
       setAiAnalysis(null);
       setExerciseQuery("");
       handleClearTimes();
+      // Reset enhanced fields
+      setDistanceKm("");
+      setDurationMin("");
+      setIntensityLevel('Sub 2');
+      setHeartRate("");
+      setTerrain("");
+      setUsesSmartwatch(false);
     },
     onError: () => {
       toast({
@@ -398,14 +426,26 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
       const timerDuration = Math.floor(seconds / 60);
       if (timerDuration > 0) {
         const caloriesBurned = calculateCalories(timerDuration);
-        completeExerciseMutation.mutate({
+        const exerciseData: any = {
           sessionId,
           type: selectedExercise.type,
           exerciseName: selectedExercise.name,
           duration: timerDuration,
           caloriesBurned,
           date: selectedDate || new Date().toISOString().split('T')[0],
-        });
+        };
+
+        // Add enhanced fields for running, walking, cycling
+        if (['running', 'walking', 'cycling'].includes(selectedExercise.type)) {
+          if (distanceKm) exerciseData.distanceKm = Number(distanceKm);
+          if (durationMin) exerciseData.durationMin = Number(durationMin);
+          exerciseData.intensityLevel = intensityLevel;
+          if (heartRate) exerciseData.heartRate = Number(heartRate);
+          if (terrain) exerciseData.terrain = terrain;
+          exerciseData.usesSmartwatch = usesSmartwatch;
+        }
+
+        completeExerciseMutation.mutate(exerciseData);
       } else {
         toast({
           title: "Exercise too short",
@@ -440,14 +480,26 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
     }
 
     const caloriesBurned = calculateCalories(duration);
-    completeExerciseMutation.mutate({
+    const exerciseData: any = {
       sessionId,
       type: selectedExercise.type,
       exerciseName: selectedExercise.name,
       duration,
       caloriesBurned,
       date: selectedDate || new Date().toISOString().split('T')[0],
-    });
+    };
+
+    // Add enhanced fields for running, walking, cycling
+    if (['running', 'walking', 'cycling'].includes(selectedExercise.type)) {
+      if (distanceKm) exerciseData.distanceKm = Number(distanceKm);
+      if (durationMin) exerciseData.durationMin = Number(durationMin);
+      exerciseData.intensityLevel = intensityLevel;
+      if (heartRate) exerciseData.heartRate = Number(heartRate);
+      if (terrain) exerciseData.terrain = terrain;
+      exerciseData.usesSmartwatch = usesSmartwatch;
+    }
+
+    completeExerciseMutation.mutate(exerciseData);
 
     setManualTime("");
     setShowManualInput(false);
@@ -650,6 +702,98 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
                       Select intensity based on your effort level
                     </div>
                   </div>
+                  
+                  {/* Enhanced Fields for Running, Walking, Cycling */}
+                  {['running', 'walking', 'cycling'].includes(selectedExercise.type) && (
+                    <div className="space-y-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                      <div className="text-sm font-semibold text-purple-800 dark:text-purple-200 text-center">
+                        Enhanced {selectedExercise.name} Tracking
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label htmlFor="distance" className="text-xs text-purple-600 dark:text-purple-400">Distance (km)</Label>
+                          <Input
+                            id="distance"
+                            type="number"
+                            step="0.1"
+                            placeholder="5.0"
+                            value={distanceKm}
+                            onChange={(e) => setDistanceKm(e.target.value ? Number(e.target.value) : "")}
+                            className="h-9 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="durationMin" className="text-xs text-purple-600 dark:text-purple-400">Duration (min)</Label>
+                          <Input
+                            id="durationMin"
+                            type="number"
+                            placeholder="30"
+                            value={durationMin}
+                            onChange={(e) => setDurationMin(e.target.value ? Number(e.target.value) : "")}
+                            className="h-9 text-sm"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-xs text-purple-600 dark:text-purple-400">Intensity Level</Label>
+                        <div className="grid grid-cols-3 gap-2 mt-1">
+                          {(['Sub 1', 'Sub 2', 'Sub 3'] as const).map((level) => (
+                            <button
+                              key={level}
+                              onClick={() => setIntensityLevel(level)}
+                              className={`p-2 rounded text-xs font-medium transition-all ${
+                                intensityLevel === level
+                                  ? 'bg-purple-600 text-white shadow-lg'
+                                  : 'bg-white dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-purple-950/20 border border-purple-200 dark:border-purple-700'
+                              }`}
+                            >
+                              {level}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label htmlFor="heartRate" className="text-xs text-purple-600 dark:text-purple-400">Heart Rate (bpm)</Label>
+                          <Input
+                            id="heartRate"
+                            type="number"
+                            placeholder="140"
+                            value={heartRate}
+                            onChange={(e) => setHeartRate(e.target.value ? Number(e.target.value) : "")}
+                            className="h-9 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="terrain" className="text-xs text-purple-600 dark:text-purple-400">Terrain</Label>
+                          <Input
+                            id="terrain"
+                            type="text"
+                            placeholder="Road, Trail, Hill..."
+                            value={terrain}
+                            onChange={(e) => setTerrain(e.target.value)}
+                            className="h-9 text-sm"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="smartwatch"
+                          checked={usesSmartwatch}
+                          onChange={(e) => setUsesSmartwatch(e.target.checked)}
+                          className="w-4 h-4 text-purple-600 border-purple-300 rounded focus:ring-purple-500"
+                        />
+                        <Label htmlFor="smartwatch" className="text-sm text-purple-600 dark:text-purple-400">
+                          Used Smartwatch/Fitness Tracker
+                        </Label>
+                      </div>
+                    </div>
+                  )}
                   
                   {/* Time Tracking Section */}
                   <div className="space-y-4">

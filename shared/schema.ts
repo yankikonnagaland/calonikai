@@ -54,6 +54,13 @@ export const exercises = pgTable("exercises", {
   duration: integer("duration").notNull(), // in minutes
   caloriesBurned: real("calories_burned").notNull(),
   date: text("date"), // YYYY-MM-DD format for date-specific tracking
+  // Additional fields for running, walking, cycling
+  distanceKm: real("distance_km"), // Distance in kilometers
+  durationMin: integer("duration_min"), // Duration in minutes (separate from general duration)
+  intensityLevel: text("intensity_level"), // 'Sub 1' | 'Sub 2' | 'Sub 3'
+  heartRate: integer("heart_rate"), // Optional heart rate
+  terrain: text("terrain"), // Optional terrain description
+  usesSmartwatch: boolean("uses_smartwatch").default(false), // Whether smartwatch was used
   completedAt: timestamp("completed_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
 });
