@@ -71,6 +71,7 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
   const [showAIMode, setShowAIMode] = useState(false);
   
   // Enhanced fields for running, walking, cycling
+  const [useEnhancedTracker, setUseEnhancedTracker] = useState(false);
   const [distanceKm, setDistanceKm] = useState<number | "">("");
   const [durationMin, setDurationMin] = useState<number | "">("");
   const [intensityLevel, setIntensityLevel] = useState<'Sub 1' | 'Sub 2' | 'Sub 3'>('Sub 2');
@@ -295,12 +296,16 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
   };
 
   const getFinalDuration = () => {
+    // Enhanced tracker duration overrides everything when enabled
+    if (useEnhancedTracker && ['running', 'walking', 'cycling'].includes(selectedExercise?.type || '') && durationMin && Number(durationMin) > 0) {
+      return Number(durationMin);
+    }
     // Manual time input overrides calculated duration
     if (manualTime && parseInt(manualTime) > 0) {
       return parseInt(manualTime);
     }
     return getCalculatedDuration();
-  };;
+  };
 
   const completeExerciseMutation = useMutation({
     mutationFn: async (data: { 
@@ -706,92 +711,123 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
                   {/* Enhanced Fields for Running, Walking, Cycling */}
                   {['running', 'walking', 'cycling'].includes(selectedExercise.type) && (
                     <div className="space-y-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                      <div className="text-sm font-semibold text-purple-800 dark:text-purple-200 text-center">
-                        Enhanced {selectedExercise.name} Tracking
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label htmlFor="distance" className="text-xs text-purple-600 dark:text-purple-400">Distance (km)</Label>
-                          <Input
-                            id="distance"
-                            type="number"
-                            step="0.1"
-                            placeholder="5.0"
-                            value={distanceKm}
-                            onChange={(e) => setDistanceKm(e.target.value ? Number(e.target.value) : "")}
-                            className="h-9 text-sm"
-                          />
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm font-semibold text-purple-800 dark:text-purple-200">
+                          Enhanced {selectedExercise.name} Tracking
                         </div>
-                        <div>
-                          <Label htmlFor="durationMin" className="text-xs text-purple-600 dark:text-purple-400">Duration (min)</Label>
-                          <Input
-                            id="durationMin"
-                            type="number"
-                            placeholder="30"
-                            value={durationMin}
-                            onChange={(e) => setDurationMin(e.target.value ? Number(e.target.value) : "")}
-                            className="h-9 text-sm"
-                          />
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs text-purple-600 dark:text-purple-400">Enable Enhanced</span>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={useEnhancedTracker}
+                              onChange={(e) => setUseEnhancedTracker(e.target.checked)}
+                              className="sr-only"
+                            />
+                            <div className={`w-11 h-6 rounded-full transition-colors ${
+                              useEnhancedTracker 
+                                ? 'bg-purple-600' 
+                                : 'bg-gray-300 dark:bg-gray-600'
+                            }`}>
+                              <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform ${
+                                useEnhancedTracker ? 'translate-x-5' : 'translate-x-0.5'
+                              } mt-0.5`}></div>
+                            </div>
+                          </label>
                         </div>
                       </div>
                       
-                      <div>
-                        <Label className="text-xs text-purple-600 dark:text-purple-400">Intensity Level</Label>
-                        <div className="grid grid-cols-3 gap-2 mt-1">
-                          {(['Sub 1', 'Sub 2', 'Sub 3'] as const).map((level) => (
-                            <button
-                              key={level}
-                              onClick={() => setIntensityLevel(level)}
-                              className={`p-2 rounded text-xs font-medium transition-all ${
-                                intensityLevel === level
-                                  ? 'bg-purple-600 text-white shadow-lg'
-                                  : 'bg-white dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-purple-950/20 border border-purple-200 dark:border-purple-700'
-                              }`}
-                            >
-                              {level}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                      {useEnhancedTracker && (
+                        <>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label htmlFor="distance" className="text-xs text-purple-600 dark:text-purple-400">Distance (km)</Label>
+                              <Input
+                                id="distance"
+                                type="number"
+                                step="0.1"
+                                placeholder="5.0"
+                                value={distanceKm}
+                                onChange={(e) => setDistanceKm(e.target.value ? Number(e.target.value) : "")}
+                                className="h-9 text-sm"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="durationMin" className="text-xs text-purple-600 dark:text-purple-400 flex items-center">
+                                Duration (min) 
+                                <span className="ml-1 text-xs px-1.5 py-0.5 bg-green-100 text-green-700 rounded-full">
+                                  Override
+                                </span>
+                              </Label>
+                              <Input
+                                id="durationMin"
+                                type="number"
+                                placeholder="30"
+                                value={durationMin}
+                                onChange={(e) => setDurationMin(e.target.value ? Number(e.target.value) : "")}
+                                className="h-9 text-sm border-green-300 focus:border-green-500"
+                              />
+                            </div>
+                          </div>
                       
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label htmlFor="heartRate" className="text-xs text-purple-600 dark:text-purple-400">Heart Rate (bpm)</Label>
-                          <Input
-                            id="heartRate"
-                            type="number"
-                            placeholder="140"
-                            value={heartRate}
-                            onChange={(e) => setHeartRate(e.target.value ? Number(e.target.value) : "")}
-                            className="h-9 text-sm"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="terrain" className="text-xs text-purple-600 dark:text-purple-400">Terrain</Label>
-                          <Input
-                            id="terrain"
-                            type="text"
-                            placeholder="Road, Trail, Hill..."
-                            value={terrain}
-                            onChange={(e) => setTerrain(e.target.value)}
-                            className="h-9 text-sm"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="smartwatch"
-                          checked={usesSmartwatch}
-                          onChange={(e) => setUsesSmartwatch(e.target.checked)}
-                          className="w-4 h-4 text-purple-600 border-purple-300 rounded focus:ring-purple-500"
-                        />
-                        <Label htmlFor="smartwatch" className="text-sm text-purple-600 dark:text-purple-400">
-                          Used Smartwatch/Fitness Tracker
-                        </Label>
-                      </div>
+                          <div>
+                            <Label className="text-xs text-purple-600 dark:text-purple-400">Intensity Level</Label>
+                            <div className="grid grid-cols-3 gap-2 mt-1">
+                              {(['Sub 1', 'Sub 2', 'Sub 3'] as const).map((level) => (
+                                <button
+                                  key={level}
+                                  onClick={() => setIntensityLevel(level)}
+                                  className={`p-2 rounded text-xs font-medium transition-all ${
+                                    intensityLevel === level
+                                      ? 'bg-purple-600 text-white shadow-lg'
+                                      : 'bg-white dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-purple-950/20 border border-purple-200 dark:border-purple-700'
+                                  }`}
+                                >
+                                  {level}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label htmlFor="heartRate" className="text-xs text-purple-600 dark:text-purple-400">Heart Rate (bpm)</Label>
+                              <Input
+                                id="heartRate"
+                                type="number"
+                                placeholder="140"
+                                value={heartRate}
+                                onChange={(e) => setHeartRate(e.target.value ? Number(e.target.value) : "")}
+                                className="h-9 text-sm"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="terrain" className="text-xs text-purple-600 dark:text-purple-400">Terrain</Label>
+                              <Input
+                                id="terrain"
+                                type="text"
+                                placeholder="Road, Trail, Hill..."
+                                value={terrain}
+                                onChange={(e) => setTerrain(e.target.value)}
+                                className="h-9 text-sm"
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id="smartwatch"
+                              checked={usesSmartwatch}
+                              onChange={(e) => setUsesSmartwatch(e.target.checked)}
+                              className="w-4 h-4 text-purple-600 border-purple-300 rounded focus:ring-purple-500"
+                            />
+                            <Label htmlFor="smartwatch" className="text-sm text-purple-600 dark:text-purple-400">
+                              Used Smartwatch/Fitness Tracker
+                            </Label>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                   
@@ -900,7 +936,13 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
                           {selectedExercise.caloriesPerMin} cal/min × {getFinalDuration()} min × {intensity === "low" ? "0.8" : intensity === "high" ? "1.3" : "1.0"} ({intensity} intensity)
                         </div>
                         <div className="text-xs text-orange-500 dark:text-orange-400 mt-1">
-                          Duration: {manualTime && parseInt(manualTime) > 0 ? 'Manual input' : 'Time tracking'}
+                          Duration: {
+                            useEnhancedTracker && ['running', 'walking', 'cycling'].includes(selectedExercise?.type || '') && durationMin && Number(durationMin) > 0
+                              ? 'Enhanced Tracker Override'
+                              : manualTime && parseInt(manualTime) > 0 
+                                ? 'Manual input' 
+                                : 'Time tracking'
+                          }
                         </div>
                       </div>
                     </div>
