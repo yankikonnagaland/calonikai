@@ -741,7 +741,7 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
                                 id="distance"
                                 type="number"
                                 step="0.1"
-                                placeholder="5.0"
+                                placeholder="Enter distance in km"
                                 value={distanceKm}
                                 onChange={(e) => setDistanceKm(e.target.value ? Number(e.target.value) : "")}
                                 className="h-9 text-sm"
@@ -774,7 +774,7 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
                               <Input
                                 id="heartRate"
                                 type="number"
-                                placeholder="140"
+                                placeholder="Enter heart rate"
                                 value={heartRate}
                                 onChange={(e) => setHeartRate(e.target.value ? Number(e.target.value) : "")}
                                 className="h-9 text-sm"
