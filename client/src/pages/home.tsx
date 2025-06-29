@@ -9,6 +9,7 @@ import Dashboard from "@/components/Dashboard";
 import FoodCamera from "@/components/FoodCamera";
 import TrackerNutritionSummary from "@/components/TrackerNutritionSummary";
 import WeightUpdateModal from "@/components/WeightUpdateModal";
+import HourlyNudgeNotification from "@/components/HourlyNudgeNotification";
 import { getSessionId } from "@/lib/session";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,11 @@ export default function Home() {
   // Fetch user profile for weight tracking
   const { data: userProfile } = useQuery({
     queryKey: [`/api/profile/${sessionId}`],
+  });
+
+  // Fetch usage stats to determine premium status
+  const { data: usageStats } = useQuery({
+    queryKey: ["/api/usage-stats"],
   });
 
   // Morning weight reminder logic
@@ -334,6 +340,12 @@ export default function Home() {
         onClose={handleWeightModalClose}
         sessionId={sessionId}
         currentProfile={userProfile}
+      />
+
+      {/* Hourly Activity Nudge Notification */}
+      <HourlyNudgeNotification
+        userId={sessionId}
+        isPremium={usageStats?.isPremium || false}
       />
     </div>
   );
