@@ -26,6 +26,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [unit, setUnit] = useState("serving");
+  const [unitOptions, setUnitOptions] = useState<string[]>(["serving", "piece", "cup"]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
@@ -463,22 +464,30 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     setSelectedFood(food);
     onFoodSelect(food);
     
-    // Use enhanced portion data if available, otherwise fall back to intelligent suggestions
+    // Use enhanced portion data if available, otherwise fall back to backend unit selection
     if (food.smartUnit && food.smartQuantity) {
       console.log(`Using enhanced portion data for ${food.name}: ${food.smartQuantity} ${food.smartUnit}`);
       setUnit(food.smartUnit);
       setQuantity(food.smartQuantity);
     } else {
-      // Get intelligent food analysis
+      // Get unit options from backend API
       try {
-        const suggestion = await getIntelligentFoodSuggestion(food);
-        setUnit(suggestion.unit);
-        setQuantity(suggestion.quantity);
+        const response = await fetch(`/api/unit-selection/${encodeURIComponent(food.name)}?category=${encodeURIComponent(food.category)}`);
+        if (response.ok) {
+          const unitData = await response.json();
+          setUnit(unitData.unit);
+          setUnitOptions(unitData.unitOptions);
+          setQuantity(1); // Default quantity
+        } else {
+          throw new Error('Backend unit selection failed');
+        }
       } catch (error) {
         console.log("Using local suggestion for", food.name);
         const localSuggestion = getIntelligentUnits(food);
         setUnit(localSuggestion.unit);
         setQuantity(localSuggestion.quantity);
+        // Set default unit options with grams included
+        setUnitOptions(["serving", "piece", "cup", "small portion", "medium portion", "large portion", "grams"]);
       }
     }
     
@@ -867,7 +876,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                   onChange={(e) => setUnit(e.target.value)}
                   className="w-full mt-1 px-3 py-2 h-12 border border-input rounded-md bg-white dark:bg-gray-800 text-lg font-semibold focus:ring-2 focus:ring-blue-500 transition-all"
                 >
-                  {getIntelligentUnits(selectedFood).unitOptions.map(option => (
+                  {unitOptions.map(option => (
                     <option key={option} value={option}>{option}</option>
                   ))}
                 </select>

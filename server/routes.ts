@@ -782,6 +782,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Unit selection endpoint
+  app.get("/api/unit-selection/:foodName", async (req, res) => {
+    try {
+      const { foodName } = req.params;
+      const category = req.query.category as string || "";
+      
+      const unitSelection = getLocalUnitSelection(foodName, category);
+      
+      // Also return unit options including "grams"
+      const unitOptions = [...unitSelection.unitOptions];
+      if (!unitOptions.includes("grams")) {
+        unitOptions.push("grams");
+      }
+      
+      res.json({
+        unit: unitSelection.unit,
+        unitOptions: unitOptions
+      });
+    } catch (error) {
+      console.error("Error getting unit selection:", error);
+      res.status(500).json({ message: "Failed to get unit selection" });
+    }
+  });
+
   app.get("/api/foods/search", async (req, res) => {
     try {
       const validation = searchFoodsSchema.safeParse(req.query);
