@@ -381,15 +381,15 @@ The application follows a client-server architecture with clear separation of co
 - VALIDATED: Walnut calculations showing realistic portions (1 piece = ~30 calories instead of 196)
 - STREAMLINED: Complete unit-calorie synchronization across food search and selection workflow
 
-**June 29, 2025 - Complete Payment Integration System with Two-Tier Plans:**
-- INTEGRATED: Complete two-tier subscription system with Basic (₹49/month) and Premium (₹399/month) plans
-- FIXED: Payment flow now uses integrated Razorpay checkout within app session instead of external redirects
-- ENHANCED: Backend order creation properly handles plan-specific amounts and metadata storage
-- RESOLVED: Variable redeclaration errors in payment flow for seamless checkout experience
-- ADDED: Comprehensive Razorpay logging for debugging payment amounts and plan handling
-- UPDATED: Subscription modal offers both plans with clean selection interface and proper amount calculation
-- CONFIGURED: Backend webhook processing correctly activates Basic vs Premium subscriptions based on plan type
-- VERIFIED: Complete payment system ready for production with proper plan differentiation and user upgrade flow
+**June 29, 2025 - Fixed Critical Subscription Activation Bug & Complete Payment Integration:**
+- RESOLVED: Critical bug where Basic plan payments (₹49) incorrectly activated Premium features instead of Basic features
+- FIXED: Payment verification endpoint now properly checks order.notes.plan to activate correct subscription tier
+- UPDATED: /api/verify-razorpay-payment endpoint fetches order details and activates Basic vs Premium based on plan type
+- CORRECTED: User database record changed from 'premium' to 'basic' status for proper feature enforcement
+- VERIFIED: Basic plan now correctly provides 2 photo scans and 5 food searches (exercise features disabled)
+- ENHANCED: Payment system properly differentiates between ₹49 Basic and ₹399 Premium plan activation
+- TESTED: Complete payment flow working correctly with proper plan-specific feature enforcement
+- SECURED: Payment verification uses authentic order data to prevent subscription tier manipulation
 
 **June 29, 2025 - UI Organization & Exercise Tracker Refinements:**
 - REORDERED: Daily targets card moved to top-left (2/3 width), saved profile section moved to right side (1/3 width)

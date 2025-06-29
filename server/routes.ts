@@ -1725,19 +1725,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const isAuthentic = expectedSignature === razorpay_signature;
 
         if (isAuthentic) {
-          // Activate premium subscription using the correct storage
-          const updatedUser = await storage.activatePremiumSubscription(
-            userId,
-            {
-              customerId: razorpay_payment_id,
-              subscriptionId: razorpay_order_id,
-            },
-          );
+          // Get plan type from order to activate correct subscription
+          const razorpay = new Razorpay({
+            key_id: process.env.RAZORPAY_KEY_ID!,
+            key_secret: process.env.RAZORPAY_KEY_SECRET!,
+          });
 
-          console.log(`Premium subscription activated for user: ${userId}`);
+          const order = await razorpay.orders.fetch(razorpay_order_id);
+          const planType = order.notes?.plan || 'premium'; // default to premium for safety
+          
+          console.log(`Plan type from order: ${planType} for user: ${userId}`);
+
+          // Activate subscription based on plan type
+          let updatedUser;
+          let subscriptionType;
+          
+          if (planType === 'basic') {
+            updatedUser = await storage.activateBasicSubscription(
+              userId,
+              {
+                customerId: razorpay_payment_id,
+                subscriptionId: razorpay_order_id,
+              },
+            );
+            subscriptionType = 'basic';
+          } else {
+            updatedUser = await storage.activatePremiumSubscription(
+              userId,
+              {
+                customerId: razorpay_payment_id,
+                subscriptionId: razorpay_order_id,
+              },
+            );
+            subscriptionType = 'premium';
+          }
+
+          console.log(`${subscriptionType} subscription activated for user: ${userId}`);
 
           res.json({
-            message: "Payment verified and premium subscription activated",
+            message: `Payment verified and ${subscriptionType} subscription activated`,
             user: updatedUser,
           });
         } else {
