@@ -711,7 +711,6 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
                           Enhanced {selectedExercise.name} Tracking
                         </div>
                         <div className="flex items-center space-x-2">
-                          <span className="text-xs text-purple-600 dark:text-purple-400">Enable Enhanced</span>
                           <label className="relative inline-flex items-center cursor-pointer">
                             <input
                               type="checkbox"
