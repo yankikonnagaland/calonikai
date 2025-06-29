@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Flame, Timer, Play, Pause, Square, CheckCircle, Clock, Brain, Zap, Activity, Search, Trash2, X, CalendarDays } from "lucide-react";
+import { Flame, Timer, Play, Pause, Square, CheckCircle, Clock, Brain, Zap, Activity, Search, Trash2, X, CalendarDays, Crown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import type { Exercise, MealItemWithFood } from "@shared/schema";
+import SubscriptionModal from "./SubscriptionModal";
 
 interface ExerciseTrackerProps {
   sessionId: string;
@@ -82,9 +83,16 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   
   // Debug logging for selectedDate
   console.log("ExerciseTracker - selectedDate prop:", selectedDate);
+
+  // Fetch usage stats to check subscription status
+  const { data: usageStats } = useQuery({
+    queryKey: ["/api/usage-stats"],
+    refetchInterval: 5000,
+  });
 
   const { data: mealItems = [] } = useQuery<MealItemWithFood[]>({
     queryKey: [`/api/meal/${sessionId}`],
@@ -517,8 +525,69 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
     return Math.ceil(mealCalories / exercise.caloriesPerMin);
   };
 
+  // Check subscription status and restrict Basic users from exercise features
+  const isPremium = usageStats?.isPremium || false;
+  const isBasic = usageStats?.isBasic || false;
+  const exerciseBlocked = isBasic || (!isPremium && !isBasic); // Block both Basic and Free users
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 relative">
+      {/* Exercise Feature Restriction Overlay for Basic/Free Users */}
+      {exerciseBlocked && (
+        <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center p-4 rounded-lg">
+          <Card className="max-w-md w-full">
+            <CardHeader className="text-center">
+              <div className="mx-auto w-16 h-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center mb-4">
+                <Crown className="w-8 h-8 text-white" />
+              </div>
+              <CardTitle className="text-xl">Exercise Tracking Requires Premium</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-center text-muted-foreground">
+                Exercise tracking is a Premium feature. Upgrade to unlock:
+              </p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-orange-500" />
+                  <span className="text-sm">AI-powered exercise analysis</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Timer className="w-4 h-4 text-orange-500" />
+                  <span className="text-sm">Advanced exercise timer</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Flame className="w-4 h-4 text-orange-500" />
+                  <span className="text-sm">Calorie burn tracking</span>
+                </div>
+              </div>
+              <div className="space-y-2 pt-4">
+                <Button 
+                  onClick={() => setShowSubscriptionModal(true)}
+                  className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                >
+                  <Crown className="w-4 h-4 mr-2" />
+                  Upgrade to Premium - ₹399/month
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.history.back()}
+                  className="w-full"
+                >
+                  Go Back
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Subscription Modal */}
+      {showSubscriptionModal && (
+        <SubscriptionModal 
+          isOpen={showSubscriptionModal} 
+          onClose={() => setShowSubscriptionModal(false)} 
+        />
+      )}
       {/* AI-Powered Exercise Input */}
       <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 border-purple-200 dark:border-purple-800">
         <CardHeader>

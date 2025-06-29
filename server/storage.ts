@@ -77,6 +77,7 @@ export interface IStorage {
   getUserUsage(userId: string, actionType: "meal_add" | "photo_analyze", date: string): Promise<number>;
   canUserPerformAction(userId: string, actionType: "meal_add" | "photo_analyze"): Promise<boolean>;
   activatePremiumSubscription(userId: string, razorpayData: { customerId?: string; subscriptionId?: string }): Promise<User>;
+  activateBasicSubscription(userId: string, razorpayData: { customerId?: string; subscriptionId?: string }): Promise<User>;
   
   // Nudge system operations
   getAllUsers(): Promise<User[]>;
@@ -393,11 +394,11 @@ export class DatabaseStorage implements IStorage {
     const user = await this.getUser(userId);
     if (!user) return false;
 
-    // Premium users have higher daily limits
+    const today = new Date().toISOString().split('T')[0];
+    const usage = await this.getUserUsage(userId, actionType, today);
+
+    // Premium users have highest daily limits
     if (user.subscriptionStatus === 'premium') {
-      const today = new Date().toISOString().split('T')[0];
-      const usage = await this.getUserUsage(userId, actionType, today);
-      
       const premiumLimits = {
         meal_add: 20,
         photo_analyze: 5
@@ -406,10 +407,17 @@ export class DatabaseStorage implements IStorage {
       return usage < premiumLimits[actionType];
     }
 
+    // Basic users have moderate daily limits
+    if (user.subscriptionStatus === 'basic') {
+      const basicLimits = {
+        meal_add: 5,  // 5 food searches per day
+        photo_analyze: 2  // 2 photo scans per day
+      };
+      
+      return usage < basicLimits[actionType];
+    }
+
     // For free users, check basic limits
-    const today = new Date().toISOString().split('T')[0];
-    const usage = await this.getUserUsage(userId, actionType, today);
-    
     const freeLimits = {
       meal_add: 1,
       photo_analyze: 2  // Allow 2 free photos before showing subscription
@@ -427,6 +435,27 @@ export class DatabaseStorage implements IStorage {
       .update(users)
       .set({
         subscriptionStatus: 'premium',
+        subscriptionEndsAt: subscriptionEndDate,
+        razorpayCustomerId: razorpayData.customerId,
+        razorpaySubscriptionId: razorpayData.subscriptionId,
+        premiumActivatedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId))
+      .returning();
+
+    return updatedUser;
+  }
+
+  async activateBasicSubscription(userId: string, razorpayData: { customerId?: string; subscriptionId?: string }): Promise<User> {
+    // Set subscription to end 1 month from now
+    const subscriptionEndDate = new Date();
+    subscriptionEndDate.setMonth(subscriptionEndDate.getMonth() + 1);
+
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        subscriptionStatus: 'basic',
         subscriptionEndsAt: subscriptionEndDate,
         razorpayCustomerId: razorpayData.customerId,
         razorpaySubscriptionId: razorpayData.subscriptionId,

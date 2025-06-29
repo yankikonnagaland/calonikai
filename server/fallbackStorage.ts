@@ -397,13 +397,22 @@ export class FallbackStorage {
     const today = new Date().toISOString().split('T')[0];
     const usage = await this.getUserUsage(userId, actionType, today);
     
-    // Premium users have higher limits
+    // Premium users have highest limits
     if (user?.subscriptionStatus === 'premium') {
       const premiumLimits = {
         meal_add: 20,
         photo_analyze: 5
       };
       return usage < premiumLimits[actionType];
+    }
+    
+    // Basic users have moderate limits
+    if (user?.subscriptionStatus === 'basic') {
+      const basicLimits = {
+        meal_add: 5,  // 5 food searches per day
+        photo_analyze: 2  // 2 photo scans per day
+      };
+      return usage < basicLimits[actionType];
     }
     
     // Free limits
@@ -443,6 +452,36 @@ export class FallbackStorage {
 
     memoryUsers.set(userId, premiumUser);
     return premiumUser;
+  }
+
+  async activateBasicSubscription(userId: string, razorpayData: { customerId?: string; subscriptionId?: string }): Promise<User> {
+    const user = await this.getUser(userId) || {
+      id: userId,
+      email: null,
+      firstName: null,
+      lastName: null,
+      profileImageUrl: null,
+      subscriptionStatus: 'free',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    // Set subscription to end 1 month from now
+    const subscriptionEndDate = new Date();
+    subscriptionEndDate.setMonth(subscriptionEndDate.getMonth() + 1);
+
+    const basicUser: User = {
+      ...user,
+      subscriptionStatus: 'basic',
+      subscriptionEndsAt: subscriptionEndDate,
+      razorpayCustomerId: razorpayData.customerId || null,
+      razorpaySubscriptionId: razorpayData.subscriptionId || null,
+      premiumActivatedAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    memoryUsers.set(userId, basicUser);
+    return basicUser;
   }
 
   // Daily weight operations

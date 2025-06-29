@@ -1809,14 +1809,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
               return res.status(404).json({ message: "User not found" });
             }
 
-            // Activate premium subscription
-            const updatedUser = await storage.activatePremiumSubscription(
-              userId,
-              {
-                customerId: paymentId,
-                subscriptionId: orderId,
-              },
-            );
+            // Get plan type from order notes
+            const orderNotes = order.notes || {};
+            const planType = orderNotes.plan === 'basic' ? 'basic' : 'premium';
+            
+            // Activate subscription based on plan type
+            let updatedUser;
+            if (planType === 'basic') {
+              updatedUser = await storage.activateBasicSubscription(
+                userId,
+                {
+                  customerId: paymentId,
+                  subscriptionId: orderId,
+                },
+              );
+            } else {
+              updatedUser = await storage.activatePremiumSubscription(
+                userId,
+                {
+                  customerId: paymentId,
+                  subscriptionId: orderId,
+                },
+              );
+            }
 
             console.log(`Premium activated for user ${userId} via webhook`);
 
@@ -1855,14 +1870,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ]);
 
       const user = await storage.getUser(userId);
-      const isPremium = user?.subscriptionStatus === "premium";
+      const subscriptionStatus = user?.subscriptionStatus || "free";
+      const isPremium = subscriptionStatus === "premium";
+      const isBasic = subscriptionStatus === "basic";
 
       console.log(
-        `Usage stats debug - userId: ${userId}, user found: ${!!user}, subscription: ${user?.subscriptionStatus}, isPremium: ${isPremium}`,
+        `Usage stats debug - userId: ${userId}, user found: ${!!user}, subscription: ${subscriptionStatus}, isPremium: ${isPremium}, isBasic: ${isBasic}`,
       );
 
       const limits = isPremium
         ? { photos: 5, meals: 20 }
+        : isBasic
+        ? { photos: 2, meals: 5 }
         : { photos: 2, meals: 1 };
 
       const remainingPhotos = Math.max(0, limits.photos - photoUsage);
@@ -1884,6 +1903,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           meals: remainingMeals,
         },
         isPremium,
+        isBasic,
+        subscriptionStatus,
       });
     } catch (error) {
       console.error("Error fetching usage stats:", error);

@@ -31,7 +31,7 @@ interface SubscriptionModalProps {
 }
 
 // Razorpay payment component with aggressive performance optimization
-function RazorpayCheckout({ onSuccess }: { onSuccess: () => void }) {
+function RazorpayCheckout({ onSuccess, selectedPlan = 'premium' }: { onSuccess: () => void; selectedPlan?: 'basic' | 'premium' }) {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
@@ -209,12 +209,17 @@ function RazorpayCheckout({ onSuccess }: { onSuccess: () => void }) {
       console.log("Razorpay order created:", orderResponse);
 
       // Configure Razorpay options with better error handling
+      const planAmount = selectedPlan === 'basic' ? 4900 : 39900;
+      const planDescription = selectedPlan === 'basic' 
+        ? "Basic Plan - ₹49/month" 
+        : "Premium Plan - ₹399/month";
+      
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: 39900,
+        amount: planAmount,
         currency: "INR",
         name: "Calonik.ai",
-        description: "Premium Subscription - ₹399/month",
+        description: planDescription,
         order_id: orderId,
         handler: async function (response: any) {
           setIsProcessing(true);
@@ -259,7 +264,7 @@ function RazorpayCheckout({ onSuccess }: { onSuccess: () => void }) {
           email: "user@calonik.ai",
         },
         notes: {
-          plan: "monthly",
+          plan: selectedPlan,
           app: "calonik.ai",
         },
         theme: {
@@ -377,6 +382,7 @@ function SubscriptionContent({
   usageData,
 }: Omit<SubscriptionModalProps, "isOpen">) {
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<'basic' | 'premium'>('premium');
 
   const handlePaymentSuccess = () => {
     setIsLoading(true);
@@ -386,22 +392,37 @@ function SubscriptionContent({
     }, 1000);
   };
 
-  const features = [
+  const basicFeatures = [
+    {
+      icon: <Smartphone className="w-5 h-5" />,
+      text: "2 AI photo scans per day",
+    },
+    {
+      icon: <CreditCard className="w-5 h-5" />,
+      text: "5 food searches per day",
+    },
+    {
+      icon: <CheckCircle className="w-5 h-5" />,
+      text: "Basic meal tracking",
+    },
+  ];
+
+  const premiumFeatures = [
     {
       icon: <Smartphone className="w-5 h-5" />,
       text: "5 AI photo analysis per day",
     },
     {
       icon: <CreditCard className="w-5 h-5" />,
-      text: "Exercise and meal analysis",
+      text: "20 food searches per day",
     },
     {
       icon: <Wallet className="w-5 h-5" />,
-      text: "Advanced nutrition insights",
+      text: "Exercise tracking & analysis",
     },
     {
       icon: <CheckCircle className="w-5 h-5" />,
-      text: "Track Daily & Monthly Progress",
+      text: "Advanced nutrition insights",
     },
   ];
 
@@ -454,17 +475,45 @@ function SubscriptionContent({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Plan Selection */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <button
+              onClick={() => setSelectedPlan('basic')}
+              className={`p-4 rounded-lg border text-left transition-all ${
+                selectedPlan === 'basic'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="font-semibold text-blue-600">Basic Plan</div>
+              <div className="text-lg font-bold">₹49/month</div>
+              <div className="text-sm text-gray-600">2 photos, 5 searches</div>
+            </button>
+            <button
+              onClick={() => setSelectedPlan('premium')}
+              className={`p-4 rounded-lg border text-left transition-all ${
+                selectedPlan === 'premium'
+                  ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="font-semibold text-emerald-600">Premium Plan</div>
+              <div className="text-lg font-bold">₹399/month</div>
+              <div className="text-sm text-gray-600">5 photos, 20 searches + Exercise</div>
+            </button>
+          </div>
+
           <div className="grid gap-3">
-            {features.map((feature, index) => (
+            {(selectedPlan === 'basic' ? basicFeatures : premiumFeatures).map((feature, index) => (
               <div key={index} className="flex items-center gap-3">
-                <div className="text-emerald-500">{feature.icon}</div>
+                <div className={selectedPlan === 'basic' ? 'text-blue-500' : 'text-emerald-500'}>{feature.icon}</div>
                 <span>{feature.text}</span>
               </div>
             ))}
           </div>
 
           <div className="space-y-4">
-            <RazorpayCheckout onSuccess={handlePaymentSuccess} />
+            <RazorpayCheckout onSuccess={handlePaymentSuccess} selectedPlan={selectedPlan} />
           </div>
         </CardContent>
       </Card>

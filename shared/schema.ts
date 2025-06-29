@@ -218,7 +218,7 @@ export const users = pgTable("users", {
   stripeSubscriptionId: varchar("stripe_subscription_id"),
   razorpayCustomerId: varchar("razorpay_customer_id"),
   razorpaySubscriptionId: varchar("razorpay_subscription_id"),
-  subscriptionStatus: varchar("subscription_status").default("free"), // free, premium, cancelled, past_due
+  subscriptionStatus: varchar("subscription_status").default("free"), // free, basic, premium, cancelled, past_due
   subscriptionEndsAt: timestamp("subscription_ends_at"),
   premiumActivatedAt: timestamp("premium_activated_at"),
   freeCreditsUsed: integer("free_credits_used").default(0), // Track free meals used
