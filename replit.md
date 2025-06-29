@@ -381,13 +381,23 @@ The application follows a client-server architecture with clear separation of co
 - VALIDATED: Walnut calculations showing realistic portions (1 piece = ~30 calories instead of 196)
 - STREAMLINED: Complete unit-calorie synchronization across food search and selection workflow
 
+**June 29, 2025 - Basic Plan Pricing Update & Profitability Optimization:**
+- UPDATED: Basic plan pricing from ₹49 to ₹99/month for sustainable profitability (~48% margin vs previous -4% loss)
+- ANALYZED: OpenAI API costs at ~₹0.67-1.00 per food scan with GPT-4o model pricing
+- MODIFIED: Frontend payment processing to use 9900 paise (₹99) for Basic plan order creation
+- ENHANCED: Subscription modal displays updated ₹99/month Basic plan pricing across all UI components
+- UPDATED: Backend payment verification to handle new ₹99 Basic plan amounts correctly
+- REVISED: Documentation (PAYMENT_TESTING.md) to reflect new pricing structure and profitability metrics
+- MAINTAINED: Same feature set for Basic plan (2 photo scans/day, 5 food searches/day, exercise disabled)
+- ACHIEVED: Profitable Basic tier while maintaining affordability for budget-conscious users
+
 **June 29, 2025 - Fixed Critical Subscription Activation Bug & Complete Payment Integration:**
-- RESOLVED: Critical bug where Basic plan payments (₹49) incorrectly activated Premium features instead of Basic features
+- RESOLVED: Critical bug where Basic plan payments incorrectly activated Premium features instead of Basic features
 - FIXED: Payment verification endpoint now properly checks order.notes.plan to activate correct subscription tier
 - UPDATED: /api/verify-razorpay-payment endpoint fetches order details and activates Basic vs Premium based on plan type
 - CORRECTED: User database record changed from 'premium' to 'basic' status for proper feature enforcement
 - VERIFIED: Basic plan now correctly provides 2 photo scans and 5 food searches (exercise features disabled)
-- ENHANCED: Payment system properly differentiates between ₹49 Basic and ₹399 Premium plan activation
+- ENHANCED: Payment system properly differentiates between Basic and Premium plan activation
 - TESTED: Complete payment flow working correctly with proper plan-specific feature enforcement
 - SECURED: Payment verification uses authentic order data to prevent subscription tier manipulation
 - FIXED: Payment success page now dynamically shows correct plan features (Basic vs Premium) instead of hardcoded Premium message

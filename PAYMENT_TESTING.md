@@ -5,8 +5,8 @@ Complete two-tier subscription system with integrated Razorpay checkout within a
 
 ## Plan Structure
 
-### Basic Plan - ₹49/month
-- **Amount**: 4900 paise (₹49)
+### Basic Plan - ₹99/month
+- **Amount**: 9900 paise (₹99)
 - **Features**: 2 photo scans/day, 5 food searches/day
 - **Limitations**: Exercise tracking disabled
 - **Target Users**: Budget-conscious users wanting basic tracking
@@ -20,7 +20,7 @@ Complete two-tier subscription system with integrated Razorpay checkout within a
 
 ### Frontend (SubscriptionModal.tsx)
 - Plan selection with visual indicators
-- Dynamic amount calculation: `selectedPlan === 'basic' ? 4900 : 39900`
+- Dynamic amount calculation: `selectedPlan === 'basic' ? 9900 : 39900`
 - Integrated Razorpay checkout (no external redirects)
 - Comprehensive error handling and user feedback
 
@@ -41,9 +41,9 @@ Complete two-tier subscription system with integrated Razorpay checkout within a
 1. **Basic Plan Order**:
    ```bash
    curl -X POST "/api/create-razorpay-order" \
-     -d '{"amount": 4900, "currency": "INR", "planType": "basic"}'
+     -d '{"amount": 9900, "currency": "INR", "planType": "basic"}'
    ```
-   Expected: Order created with ₹49 amount and basic plan metadata
+   Expected: Order created with ₹99 amount and basic plan metadata
 
 2. **Premium Plan Order**:
    ```bash
@@ -65,7 +65,7 @@ Complete two-tier subscription system with integrated Razorpay checkout within a
 - Food searches: 1/day
 - Exercise tracking: Disabled
 
-### Basic Tier (₹49/month)
+### Basic Tier (₹99/month)
 - Photos: 2/day  
 - Food searches: 5/day
 - Exercise tracking: Disabled

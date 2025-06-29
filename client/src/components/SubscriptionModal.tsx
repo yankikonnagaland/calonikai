@@ -183,7 +183,7 @@ function RazorpayCheckout({ onSuccess, selectedPlan = 'premium' }: { onSuccess: 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-      const planAmount = selectedPlan === 'basic' ? 4900 : 39900;
+      const planAmount = selectedPlan === 'basic' ? 9900 : 39900;
       console.log(`Creating ${selectedPlan} plan order - Amount: ₹${planAmount/100} (${planAmount} paise)`);
       
       const rawResponse = await apiRequest(
@@ -213,7 +213,7 @@ function RazorpayCheckout({ onSuccess, selectedPlan = 'premium' }: { onSuccess: 
 
       // Configure Razorpay options with better error handling
       const planDescription = selectedPlan === 'basic' 
-        ? "Basic Plan - ₹49/month" 
+        ? "Basic Plan - ₹99/month" 
         : "Premium Plan - ₹399/month";
       
       const options = {
@@ -386,7 +386,7 @@ function RazorpayCheckout({ onSuccess, selectedPlan = 'premium' }: { onSuccess: 
             </div>
           ) : (
             <>
-              Subscribe to {selectedPlan === 'basic' ? 'Basic' : 'Premium'} - ₹{selectedPlan === 'basic' ? '49' : '399'}/month
+              Subscribe to {selectedPlan === 'basic' ? 'Basic' : 'Premium'} - ₹{selectedPlan === 'basic' ? '99' : '399'}/month
             </>
           )}
         </Button>
@@ -523,7 +523,7 @@ function SubscriptionContent({
               }`}
             >
               <div className="font-semibold text-blue-600">Basic Plan</div>
-              <div className="text-lg font-bold text-[#a50bba]">₹49/month</div>
+              <div className="text-lg font-bold text-[#a50bba]">₹99/month</div>
               <div className="text-sm text-gray-600">Limited photo search. No exercise Tracking.</div>
             </button>
             <button
