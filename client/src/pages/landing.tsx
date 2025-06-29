@@ -55,7 +55,6 @@ export default function Landing() {
     "5+ AI photo scans",
     "20+ food searches",
     "Enhanced exercise tracking",
-    "Daily & monthly analytics",
     "Goal and progress tracking"
   ];
 
