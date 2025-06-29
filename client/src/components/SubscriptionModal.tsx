@@ -341,18 +341,16 @@ function RazorpayCheckout({ onSuccess }: { onSuccess: () => void }) {
     <div className="space-y-6">
       <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
         <div className="text-center space-y-2">
-          <h3 className="font-semibold text-lg">₹399/month</h3>
+          <h3 className="font-semibold text-lg text-[#083b6e]">₹399/month</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Premium meal tracking and AI photo analysis
           </p>
         </div>
       </div>
-
       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
         <CreditCard className="w-4 h-4" />
         <span>Cards, UPI, Net Banking, Wallets</span>
       </div>
-
       <Button
         onClick={handleRazorpayPayment}
         disabled={isProcessing || !isScriptLoaded}
@@ -362,7 +360,6 @@ function RazorpayCheckout({ onSuccess }: { onSuccess: () => void }) {
          isProcessing ? "Opening Payment Gateway..." : 
          "Subscribe - ₹399/month"}
       </Button>
-      
       {!isScriptLoaded && (
         <div className="text-center text-xs text-gray-500 flex items-center justify-center gap-2">
           <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
