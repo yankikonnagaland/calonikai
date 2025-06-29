@@ -4,6 +4,7 @@ import { createServer, type Server } from "http";
 import { fallbackStorage } from "./fallbackStorage";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { db } from "./db";
 import {
   insertMealItemSchema,
   insertUserProfileSchema,
@@ -12,11 +13,13 @@ import {
   insertDailyWeightSchema,
   searchFoodsSchema,
   calculateProfileSchema,
+  hourlyActivities,
 } from "@shared/schema";
 import { z } from "zod";
 import OpenAI from "openai";
 import crypto from "crypto";
 import { checkWeightGoalAchievement, markGoalAsAchieved } from "./weightGoalChecker";
+import { testHourlyNudge } from "./hourlyNudgeScheduler";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -1930,6 +1933,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error in manual nudge test:", error);
       res.status(500).json({ 
         message: "Failed to run nudge test", 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  // GET /api/hourly-activities - Get all hourly activities  
+  app.get("/api/hourly-activities", async (req, res) => {
+    try {
+      const activities = await db.select().from(hourlyActivities).orderBy(hourlyActivities.activityNumber);
+      res.json(activities);
+    } catch (error) {
+      console.error("Error fetching hourly activities:", error);
+      res.status(500).json({ message: "Failed to fetch hourly activities" });
+    }
+  });
+
+  // GET /api/hourly-activities/random - Get a random hourly activity
+  app.get("/api/hourly-activities/random", async (req, res) => {
+    try {
+      const activities = await db.select().from(hourlyActivities);
+      if (activities.length === 0) {
+        return res.status(404).json({ message: "No activities found" });
+      }
+      const randomActivity = activities[Math.floor(Math.random() * activities.length)];
+      res.json(randomActivity);
+    } catch (error) {
+      console.error("Error fetching random activity:", error);
+      res.status(500).json({ message: "Failed to fetch random activity" });
+    }
+  });
+
+  // POST /api/test-hourly-nudge - Test hourly nudge for a specific email
+  app.post("/api/test-hourly-nudge", async (req, res) => {
+    try {
+      const { email, name } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      const success = await testHourlyNudge(email, name || 'there');
+      
+      if (success) {
+        res.json({ 
+          message: "Hourly nudge test email sent successfully",
+          email,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        res.status(500).json({ message: "Failed to send hourly nudge test email" });
+      }
+    } catch (error) {
+      console.error("Error in hourly nudge test:", error);
+      res.status(500).json({ 
+        message: "Failed to run hourly nudge test", 
         error: error instanceof Error ? error.message : 'Unknown error' 
       });
     }

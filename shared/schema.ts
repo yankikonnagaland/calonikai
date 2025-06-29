@@ -90,6 +90,16 @@ export const dailyWeights = pgTable("daily_weights", {
   sessionDateUnique: unique("daily_weights_session_date_unique").on(table.sessionId, table.date),
 }));
 
+// Hourly calorie-burning activities table
+export const hourlyActivities = pgTable("hourly_activities", {
+  id: serial("id").primaryKey(),
+  activityNumber: integer("activity_number").notNull().unique(),
+  description: text("description").notNull(),
+  emoji: text("emoji").notNull(),
+  category: text("category").notNull().default("general"), // general, kungfu, cleaning, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertFoodSchema = createInsertSchema(foods).omit({
   id: true,
 });
@@ -123,11 +133,17 @@ export const insertDailyWeightSchema = createInsertSchema(dailyWeights).omit({
   createdAt: true,
 });
 
+export const insertHourlyActivitySchema = createInsertSchema(hourlyActivities).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type Food = typeof foods.$inferSelect;
 export type MealItem = typeof mealItems.$inferSelect;
 export type UserProfile = typeof userProfiles.$inferSelect;
 export type Exercise = typeof exercises.$inferSelect;
 export type DailySummary = typeof dailySummaries.$inferSelect;
+export type HourlyActivity = typeof hourlyActivities.$inferSelect;
 
 export type InsertFood = z.infer<typeof insertFoodSchema>;
 export type InsertMealItem = z.infer<typeof insertMealItemSchema>;
@@ -135,6 +151,7 @@ export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
 export type InsertExercise = z.infer<typeof insertExerciseSchema>;
 export type InsertDailySummary = z.infer<typeof insertDailySummarySchema>;
 export type InsertDailyWeight = z.infer<typeof insertDailyWeightSchema>;
+export type InsertHourlyActivity = z.infer<typeof insertHourlyActivitySchema>;
 
 // Daily weight types
 export type DailyWeight = typeof dailyWeights.$inferSelect;

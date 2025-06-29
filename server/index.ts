@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { startNudgeScheduler } from "./nudgeScheduler";
+import { startHourlyNudgeScheduler } from "./hourlyNudgeScheduler";
 import session from "express-session";
 import passport from "passport";
 
@@ -78,6 +79,17 @@ app.use((req, res, next) => {
           log("Application continuing without nudge scheduler");
         }
       }, 2000); // Delay scheduler start to allow storage initialization
+      
+      // Start the hourly nudge scheduler with error handling
+      setTimeout(() => {
+        try {
+          startHourlyNudgeScheduler();
+          log("Hourly nudge scheduler initialized");
+        } catch (error) {
+          console.warn("Failed to start hourly nudge scheduler:", error);
+          log("Application continuing without hourly nudge scheduler");
+        }
+      }, 3000); // Delay after daily scheduler
     });
   } catch (error) {
     console.error("Failed to start server:", error);
