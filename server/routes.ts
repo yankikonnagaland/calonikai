@@ -1643,11 +1643,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        const { planType = "basic" } = req.body;
+        const { planType = "basic", referralCode } = req.body;
         const userId = req.user?.id;
 
         if (!userId) {
           return res.status(401).json({ message: "User not authenticated" });
+        }
+
+        // Validate referral code if provided
+        let referralInfluencer = null;
+        if (referralCode && referralCode.length === 5) {
+          try {
+            referralInfluencer = await storage.getInfluencerByReferralCode(referralCode);
+            if (!referralInfluencer) {
+              return res.status(400).json({ error: "Invalid referral code" });
+            }
+            console.log(`Valid referral code ${referralCode} for influencer: ${referralInfluencer.name}`);
+          } catch (error) {
+            console.error("Error validating referral code:", error);
+            return res.status(400).json({ error: "Invalid referral code" });
+          }
         }
 
         // Get user details for order
@@ -1674,6 +1689,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             subscription: `${planType}_monthly`,
             plan: planType, // Store plan type for webhook processing
             appName: "Calonik.ai",
+            ...(referralInfluencer && { 
+              referralCode: referralCode,
+              influencerId: referralInfluencer.id,
+              influencerName: referralInfluencer.name 
+            }),
           },
         };
 
@@ -1739,8 +1759,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           const order = await razorpay.orders.fetch(razorpay_order_id);
           const planType = order.notes?.plan || 'premium'; // default to premium for safety
+          const referralCode = order.notes?.referralCode;
+          const influencerId = order.notes?.influencerId;
           
           console.log(`Plan type from order: ${planType} for user: ${userId}`);
+          if (referralCode) {
+            console.log(`Processing referral: ${referralCode} (Influencer ID: ${influencerId})`);
+          }
+
+          // Get subscription plan for commission calculation
+          const subscriptionPlan = await storage.getSubscriptionPlan(planType);
+          const subscriptionAmount = subscriptionPlan ? subscriptionPlan.priceInPaise / 100 : (planType === 'basic' ? 99 : 399);
 
           // Activate subscription based on plan type
           let updatedUser;
@@ -1767,6 +1796,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           console.log(`${subscriptionType} subscription activated for user: ${userId}`);
+
+          // Process referral commission if referral code was used
+          if (referralCode && influencerId) {
+            try {
+              const commissionAmount = Math.floor(subscriptionAmount * 0.1); // 10% commission
+              
+              // Update influencer stats
+              await storage.updateInfluencerStats(parseInt(influencerId), subscriptionAmount);
+              
+              // Create referral record
+              await storage.createInfluencerReferral({
+                influencerId: parseInt(influencerId),
+                userId: userId,
+                subscriptionPlan: planType,
+                subscriptionAmount: subscriptionAmount,
+                commissionAmount: commissionAmount,
+                razorpayOrderId: razorpay_order_id,
+                razorpayPaymentId: razorpay_payment_id,
+              });
+              
+              console.log(`Referral processed: ₹${commissionAmount} commission for influencer ${influencerId} from ${referralCode}`);
+            } catch (referralError) {
+              console.error("Error processing referral commission:", referralError);
+              // Don't fail the payment, just log the error
+            }
+          }
 
           res.json({
             message: `Payment verified and ${subscriptionType} subscription activated`,

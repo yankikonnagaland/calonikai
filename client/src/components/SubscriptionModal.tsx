@@ -7,6 +7,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -17,7 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { CheckCircle, CreditCard, Smartphone, Wallet, X } from "lucide-react";
+import { CheckCircle, CreditCard, Smartphone, Wallet, X, Gift } from "lucide-react";
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -31,7 +33,7 @@ interface SubscriptionModalProps {
 }
 
 // Razorpay payment component with aggressive performance optimization
-function RazorpayCheckout({ onSuccess, selectedPlan = 'premium' }: { onSuccess: () => void; selectedPlan?: 'basic' | 'premium' }) {
+function RazorpayCheckout({ onSuccess, selectedPlan = 'premium', referralCode }: { onSuccess: () => void; selectedPlan?: 'basic' | 'premium'; referralCode?: string }) {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
@@ -185,12 +187,21 @@ function RazorpayCheckout({ onSuccess, selectedPlan = 'premium' }: { onSuccess: 
 
       console.log(`Creating ${selectedPlan} plan order`);
       
+      // Create order data with optional referral code
+      const orderData: any = {
+        planType: selectedPlan, // Backend will fetch secure pricing from database
+      };
+      
+      // Include referral code if provided and validated
+      if (referralCode && referralCode.length === 5) {
+        orderData.referralCode = referralCode;
+        console.log("Including referral code in order:", referralCode);
+      }
+
       const rawResponse = await apiRequest(
         "POST",
         "/api/create-razorpay-order",
-        {
-          planType: selectedPlan, // Backend will fetch secure pricing from database
-        },
+        orderData,
       );
 
       clearTimeout(timeoutId);
@@ -417,6 +428,8 @@ function SubscriptionContent({
 }: Omit<SubscriptionModalProps, "isOpen">) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'basic' | 'premium'>('premium');
+  const [referralCode, setReferralCode] = useState('');
+  const [referralValidated, setReferralValidated] = useState<boolean | null>(null);
 
   const handlePaymentSuccess = () => {
     setIsLoading(true);
@@ -424,6 +437,40 @@ function SubscriptionContent({
     setTimeout(() => {
       window.location.reload();
     }, 1000);
+  };
+
+  const validateReferralCode = async (code: string) => {
+    if (!code || code.length !== 5) {
+      setReferralValidated(false);
+      return;
+    }
+    
+    try {
+      const response = await apiRequest("GET", `/api/influencers/${code}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.isActive !== false) {
+          setReferralValidated(true);
+        } else {
+          setReferralValidated(false);
+        }
+      } else {
+        setReferralValidated(false);
+      }
+    } catch (error) {
+      setReferralValidated(false);
+    }
+  };
+
+  const handleReferralCodeChange = (value: string) => {
+    const upperValue = value.toUpperCase();
+    setReferralCode(upperValue);
+    
+    if (upperValue.length === 5) {
+      validateReferralCode(upperValue);
+    } else {
+      setReferralValidated(null);
+    }
   };
 
   const basicFeatures = [
@@ -546,8 +593,55 @@ function SubscriptionContent({
             ))}
           </div>
 
+          {/* Referral Code Input */}
+          <div className="space-y-2">
+            <Label htmlFor="referralCode" className="text-sm font-medium flex items-center gap-2">
+              <Gift className="w-4 h-4 text-purple-500" />
+              Referral Code (Optional)
+            </Label>
+            <div className="relative">
+              <Input
+                id="referralCode"
+                type="text"
+                placeholder="Enter 5-letter code"
+                value={referralCode}
+                onChange={(e) => handleReferralCodeChange(e.target.value)}
+                maxLength={5}
+                className={`uppercase ${
+                  referralValidated === true 
+                    ? 'border-green-500 bg-green-50 dark:bg-green-950/20' 
+                    : referralValidated === false 
+                    ? 'border-red-500 bg-red-50 dark:bg-red-950/20'
+                    : ''
+                }`}
+              />
+              {referralValidated === true && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                </div>
+              )}
+              {referralValidated === false && referralCode.length === 5 && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <X className="w-4 h-4 text-red-500" />
+                </div>
+              )}
+            </div>
+            {referralValidated === true && (
+              <p className="text-xs text-green-600 flex items-center gap-1">
+                <CheckCircle className="w-3 h-3" />
+                Valid referral code! You'll help support an influencer.
+              </p>
+            )}
+            {referralValidated === false && referralCode.length === 5 && (
+              <p className="text-xs text-red-600 flex items-center gap-1">
+                <X className="w-3 h-3" />
+                Invalid referral code. Please check and try again.
+              </p>
+            )}
+          </div>
+
           <div className="space-y-4">
-            <RazorpayCheckout onSuccess={handlePaymentSuccess} selectedPlan={selectedPlan} />
+            <RazorpayCheckout onSuccess={handlePaymentSuccess} selectedPlan={selectedPlan} referralCode={referralCode} />
           </div>
         </CardContent>
       </Card>
