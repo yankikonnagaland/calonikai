@@ -9,7 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import type { Food } from "@shared/schema";
-import { SubscriptionModal } from "./SubscriptionModal";
+import { calculateNutritionFromUnit, formatNutritionDisplay, validateCalorieCalculation } from "@shared/unitCalculations";
+import SubscriptionModal from "./SubscriptionModal";
 
 interface FoodSearchProps {
   sessionId: string;
@@ -896,65 +897,69 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
               </div>
             </div>
 
-            {/* Enhanced Nutrition Display */}
+            {/* Accurate Nutrition Display with Gram Equivalent */}
             <div className="mb-4">
-              <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                Nutrition for {quantity} {unit}:
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-3 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 rounded-lg border border-blue-300 dark:border-blue-700">
-                  <div className="text-xl font-bold text-blue-700 dark:text-blue-300">
-                    {(() => {
-                      // Use enhanced realistic calories if available and unit matches smart unit
-                      if (selectedFood.realisticCalories && selectedFood.smartUnit === unit && quantity === selectedFood.smartQuantity) {
-                        return Math.round(selectedFood.realisticCalories * (quantity / selectedFood.smartQuantity));
-                      }
-                      // Otherwise use base calculation with multiplier
-                      return Math.round((selectedFood.calories || 0) * quantity * getUnitMultiplier(unit, selectedFood));
-                    })()}
+              {(() => {
+                // Calculate accurate nutrition using new unit system
+                const basePer100g = {
+                  calories: selectedFood.calories || 0,
+                  protein: selectedFood.protein || 0,
+                  carbs: selectedFood.carbs || 0,
+                  fat: selectedFood.fat || 0
+                };
+                
+                const calculatedNutrition = calculateNutritionFromUnit(
+                  selectedFood.name,
+                  unit,
+                  quantity,
+                  basePer100g
+                );
+                
+                const validation = validateCalorieCalculation(
+                  selectedFood.name,
+                  calculatedNutrition.calories,
+                  calculatedNutrition.totalGrams
+                );
+                
+                return (
+                  <div>
+                    <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Nutrition for {formatNutritionDisplay(quantity, unit, calculatedNutrition)}:
+                    </div>
+                    {!validation.isValid && (
+                      <div className="text-xs text-amber-600 dark:text-amber-400 mb-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded border">
+                        ⚠️ {validation.warning}
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="p-3 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 rounded-lg border border-blue-300 dark:border-blue-700">
+                        <div className="text-xl font-bold text-blue-700 dark:text-blue-300">
+                          {calculatedNutrition.calories}
+                        </div>
+                        <div className="text-xs font-medium text-blue-600 dark:text-blue-400">Calories</div>
+                      </div>
+                      <div className="p-3 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/40 dark:to-green-800/40 rounded-lg border border-green-300 dark:border-green-700">
+                        <div className="text-xl font-bold text-green-700 dark:text-green-300">
+                          {calculatedNutrition.protein}g
+                        </div>
+                        <div className="text-xs font-medium text-green-600 dark:text-green-400">Protein</div>
+                      </div>
+                      <div className="p-3 bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/40 dark:to-amber-800/40 rounded-lg border border-amber-300 dark:border-amber-700">
+                        <div className="text-xl font-bold text-amber-700 dark:text-amber-300">
+                          {calculatedNutrition.carbs}g
+                        </div>
+                        <div className="text-xs font-medium text-amber-600 dark:text-amber-400">Carbs</div>
+                      </div>
+                      <div className="p-3 bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/40 dark:to-red-800/40 rounded-lg border border-red-300 dark:border-red-700">
+                        <div className="text-xl font-bold text-red-700 dark:text-red-300">
+                          {calculatedNutrition.fat}g
+                        </div>
+                        <div className="text-xs font-medium text-red-600 dark:text-red-400">Fat</div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-xs font-medium text-blue-600 dark:text-blue-400">Calories</div>
-                </div>
-                <div className="p-3 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/40 dark:to-green-800/40 rounded-lg border border-green-300 dark:border-green-700">
-                  <div className="text-xl font-bold text-green-700 dark:text-green-300">
-                    {(() => {
-                      // Use enhanced realistic protein if available and unit matches smart unit
-                      if (selectedFood.realisticProtein && selectedFood.smartUnit === unit && quantity === selectedFood.smartQuantity) {
-                        return Math.round((selectedFood.realisticProtein * (quantity / selectedFood.smartQuantity)) * 10) / 10;
-                      }
-                      // Otherwise use base calculation with multiplier
-                      return Math.round((selectedFood.protein || 0) * quantity * getUnitMultiplier(unit, selectedFood) * 10) / 10;
-                    })()}g
-                  </div>
-                  <div className="text-xs font-medium text-green-600 dark:text-green-400">Protein</div>
-                </div>
-                <div className="p-3 bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/40 dark:to-amber-800/40 rounded-lg border border-amber-300 dark:border-amber-700">
-                  <div className="text-xl font-bold text-amber-700 dark:text-amber-300">
-                    {(() => {
-                      // Use enhanced realistic carbs if available and unit matches smart unit
-                      if (selectedFood.realisticCarbs && selectedFood.smartUnit === unit && quantity === selectedFood.smartQuantity) {
-                        return Math.round((selectedFood.realisticCarbs * (quantity / selectedFood.smartQuantity)) * 10) / 10;
-                      }
-                      // Otherwise use base calculation with multiplier
-                      return Math.round((selectedFood.carbs || 0) * quantity * getUnitMultiplier(unit, selectedFood) * 10) / 10;
-                    })()}g
-                  </div>
-                  <div className="text-xs font-medium text-amber-600 dark:text-amber-400">Carbs</div>
-                </div>
-                <div className="p-3 bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/40 dark:to-red-800/40 rounded-lg border border-red-300 dark:border-red-700">
-                  <div className="text-xl font-bold text-red-700 dark:text-red-300">
-                    {(() => {
-                      // Use enhanced realistic fat if available and unit matches smart unit
-                      if (selectedFood.realisticFat && selectedFood.smartUnit === unit && quantity === selectedFood.smartQuantity) {
-                        return Math.round((selectedFood.realisticFat * (quantity / selectedFood.smartQuantity)) * 10) / 10;
-                      }
-                      // Otherwise use base calculation with multiplier
-                      return Math.round((selectedFood.fat || 0) * quantity * getUnitMultiplier(unit, selectedFood) * 10) / 10;
-                    })()}g
-                  </div>
-                  <div className="text-xs font-medium text-red-600 dark:text-red-400">Fat</div>
-                </div>
-              </div>
+                );
+              })()}
             </div>
 
             <Button 

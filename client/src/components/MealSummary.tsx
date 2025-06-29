@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { calculateNutritionFromUnit } from "@shared/unitCalculations";
 import type { MealItemWithFood, UserProfile, Exercise } from "@shared/schema";
 
 interface MealSummaryProps {
@@ -179,14 +180,27 @@ export default function MealSummary({
     },
   });
 
-  // Calculate nutrition totals
+  // Calculate nutrition totals using accurate unit-to-gram system
   const totals = mealItems.reduce(
     (acc, item) => {
-      const multiplier = getMultiplier(item.unit, item.food);
-      acc.calories += item.food.calories * item.quantity * multiplier;
-      acc.protein += item.food.protein * item.quantity * multiplier;
-      acc.carbs += item.food.carbs * item.quantity * multiplier;
-      acc.fat += item.food.fat * item.quantity * multiplier;
+      const basePer100g = {
+        calories: item.food.calories,
+        protein: item.food.protein,
+        carbs: item.food.carbs,
+        fat: item.food.fat
+      };
+      
+      const calculatedNutrition = calculateNutritionFromUnit(
+        item.food.name,
+        item.unit,
+        item.quantity,
+        basePer100g
+      );
+      
+      acc.calories += calculatedNutrition.calories;
+      acc.protein += calculatedNutrition.protein;
+      acc.carbs += calculatedNutrition.carbs;
+      acc.fat += calculatedNutrition.fat;
       return acc;
     },
     { calories: 0, protein: 0, carbs: 0, fat: 0 }
@@ -375,12 +389,32 @@ export default function MealSummary({
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="font-medium text-sm">{item.food.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {item.quantity} {item.unit}
-                    </div>
-                    <div className="text-xs text-primary mt-1">
-                      {Math.round(item.food.calories * item.quantity * getMultiplier(item.unit, item.food))} cal
-                    </div>
+                    {(() => {
+                      const basePer100g = {
+                        calories: item.food.calories,
+                        protein: item.food.protein,
+                        carbs: item.food.carbs,
+                        fat: item.food.fat
+                      };
+                      
+                      const calculatedNutrition = calculateNutritionFromUnit(
+                        item.food.name,
+                        item.unit,
+                        item.quantity,
+                        basePer100g
+                      );
+                      
+                      return (
+                        <>
+                          <div className="text-xs text-muted-foreground">
+                            {item.quantity} {item.unit} ({calculatedNutrition.gramEquivalent})
+                          </div>
+                          <div className="text-xs text-primary mt-1">
+                            {calculatedNutrition.calories} cal
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                   <div className="flex gap-1">
                     <Button

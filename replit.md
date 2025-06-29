@@ -349,6 +349,18 @@ The application follows a client-server architecture with clear separation of co
 - Enhanced FoodSearch component to accept editingFood prop for seamless meal replacement workflow
 - Edit functionality allows users to modify meal items by searching for replacements
 
+**June 29, 2025 - Major Calorie Calculation Refactor & Unit-Based Accuracy System:**
+- IMPLEMENTED: Complete calorie calculation refactor using realistic unit-to-gram mapping system
+- CREATED: shared/unitCalculations.ts with comprehensive unit-to-gram conversions for 50+ measurement units
+- ENHANCED: Accurate nutrition calculations based on per-100g data to prevent inflated calorie numbers
+- ADDED: Gram equivalent transparency - displays "1 piece (~2g) = 8.1 cal" for better user understanding
+- INTEGRATED: New calculation system across FoodSearch and MealSummary components
+- REMOVED: Old multiplier-based calculation logic that caused inaccurate portion sizes
+- VALIDATED: Calorie calculation warnings for unreasonable values based on food categories
+- IMPROVED: Food category-specific adjustments (nuts, fruits, meats, beverages) for realistic portions
+- STANDARDIZED: Unit mapping supports pieces, handfuls, cups, bowls, slices, and portion descriptions
+- TRANSPARENT: Users now see exact gram weights for every food item with realistic calorie calculations
+
 **June 29, 2025 - UI Organization & Exercise Tracker Refinements:**
 - REORDERED: Daily targets card moved to top-left (2/3 width), saved profile section moved to right side (1/3 width)
 - ENHANCED: Smooth tooltip hover effects with 200ms delay and seamless color transitions from subtle gray to primary

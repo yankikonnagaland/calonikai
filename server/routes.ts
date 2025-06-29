@@ -16,6 +16,7 @@ import {
   hourlyActivities,
 } from "@shared/schema";
 import { z } from "zod";
+import { calculateNutritionFromUnit, validateCalorieCalculation } from "@shared/unitCalculations";
 import OpenAI from "openai";
 import crypto from "crypto";
 import { checkWeightGoalAchievement, markGoalAsAchieved } from "./weightGoalChecker";
