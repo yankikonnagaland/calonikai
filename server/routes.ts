@@ -2129,6 +2129,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== INFLUENCER REFERRAL TRACKING API ENDPOINTS =====
+
+  // POST /api/influencers - Create a new influencer
+  app.post("/api/influencers", async (req, res) => {
+    try {
+      const { name, email, phoneNumber } = req.body;
+      
+      if (!name || !email || !phoneNumber) {
+        return res.status(400).json({ message: "Name, email, and phone number are required" });
+      }
+
+      const influencer = await storage.createInfluencer({
+        name,
+        email,
+        phoneNumber,
+      });
+
+      res.status(201).json(influencer);
+    } catch (error) {
+      console.error("Error creating influencer:", error);
+      res.status(500).json({ message: "Failed to create influencer" });
+    }
+  });
+
+  // GET /api/influencers - Get all influencers
+  app.get("/api/influencers", async (req, res) => {
+    try {
+      const influencers = await storage.getAllInfluencers();
+      res.json(influencers);
+    } catch (error) {
+      console.error("Error fetching influencers:", error);
+      res.status(500).json({ message: "Failed to fetch influencers" });
+    }
+  });
+
+  // GET /api/influencers/:referralCode - Get influencer by referral code
+  app.get("/api/influencers/:referralCode", async (req, res) => {
+    try {
+      const { referralCode } = req.params;
+      
+      if (!referralCode || referralCode.length !== 5) {
+        return res.status(400).json({ message: "Valid 5-letter referral code required" });
+      }
+
+      const influencer = await storage.getInfluencerByReferralCode(referralCode);
+      
+      if (!influencer) {
+        return res.status(404).json({ message: "Influencer not found" });
+      }
+
+      res.json(influencer);
+    } catch (error) {
+      console.error("Error fetching influencer:", error);
+      res.status(500).json({ message: "Failed to fetch influencer" });
+    }
+  });
+
+  // GET /api/influencers/:influencerId/referrals - Get referrals for an influencer
+  app.get("/api/influencers/:influencerId/referrals", async (req, res) => {
+    try {
+      const { influencerId } = req.params;
+      
+      if (!influencerId || isNaN(Number(influencerId))) {
+        return res.status(400).json({ message: "Valid influencer ID required" });
+      }
+
+      const referrals = await storage.getInfluencerReferrals(Number(influencerId));
+      res.json(referrals);
+    } catch (error) {
+      console.error("Error fetching influencer referrals:", error);
+      res.status(500).json({ message: "Failed to fetch referrals" });
+    }
+  });
+
+  // POST /api/influencer-referrals - Create a new influencer referral
+  app.post("/api/influencer-referrals", async (req, res) => {
+    try {
+      const { influencerId, userId, subscriptionAmount, commissionAmount } = req.body;
+      
+      if (!influencerId || !userId || !subscriptionAmount || !commissionAmount) {
+        return res.status(400).json({ 
+          message: "Influencer ID, user ID, subscription amount, and commission amount are required" 
+        });
+      }
+
+      const referral = await storage.createInfluencerReferral({
+        influencerId,
+        userId,
+        subscriptionAmount,
+        commissionAmount,
+      });
+
+      res.status(201).json(referral);
+    } catch (error) {
+      console.error("Error creating influencer referral:", error);
+      res.status(500).json({ message: "Failed to create referral" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

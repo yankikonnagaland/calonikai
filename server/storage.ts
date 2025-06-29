@@ -8,6 +8,8 @@ import {
   User,
   UsageTracking,
   SubscriptionPlan,
+  Influencer,
+  InfluencerReferral,
   InsertFood, 
   InsertMealItem, 
   InsertUserProfile, 
@@ -16,6 +18,8 @@ import {
   InsertDailyWeight,
   UpsertUser,
   InsertUsageTracking,
+  InsertInfluencer,
+  InsertInfluencerReferral,
   MealItemWithFood 
 } from "@shared/schema";
 import { db } from "./db";
@@ -29,7 +33,9 @@ import {
   dailyWeights,
   users,
   usageTracking,
-  subscriptionPlans
+  subscriptionPlans,
+  influencers,
+  influencerReferrals
 } from "@shared/schema";
 
 export interface IStorage {
@@ -87,6 +93,14 @@ export interface IStorage {
   // Subscription plan operations
   getSubscriptionPlan(planName: string): Promise<SubscriptionPlan | undefined>;
   getAllSubscriptionPlans(): Promise<SubscriptionPlan[]>;
+  
+  // Influencer referral operations
+  createInfluencer(influencer: InsertInfluencer): Promise<Influencer>;
+  getAllInfluencers(): Promise<Influencer[]>;
+  getInfluencerByReferralCode(referralCode: string): Promise<Influencer | undefined>;
+  updateInfluencerStats(influencerId: number, subscriptionAmount: number): Promise<void>;
+  createInfluencerReferral(referral: InsertInfluencerReferral): Promise<InfluencerReferral>;
+  getInfluencerReferrals(influencerId: number): Promise<InfluencerReferral[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -533,6 +547,90 @@ export class DatabaseStorage implements IStorage {
       .from(subscriptionPlans)
       .where(eq(subscriptionPlans.isActive, true))
       .orderBy(subscriptionPlans.priceInPaise);
+  }
+
+  // Influencer referral operations
+  async createInfluencer(influencer: InsertInfluencer): Promise<Influencer> {
+    // Generate a unique 5-letter referral code
+    const referralCode = this.generateReferralCode();
+    
+    const [newInfluencer] = await db
+      .insert(influencers)
+      .values({
+        ...influencer,
+        referralCode,
+      })
+      .returning();
+    
+    return newInfluencer;
+  }
+
+  async getAllInfluencers(): Promise<Influencer[]> {
+    return await db
+      .select()
+      .from(influencers)
+      .where(eq(influencers.isActive, true))
+      .orderBy(desc(influencers.totalRevenue));
+  }
+
+  async getInfluencerByReferralCode(referralCode: string): Promise<Influencer | undefined> {
+    const [influencer] = await db
+      .select()
+      .from(influencers)
+      .where(and(
+        eq(influencers.referralCode, referralCode.toUpperCase()),
+        eq(influencers.isActive, true)
+      ));
+    
+    return influencer || undefined;
+  }
+
+  async updateInfluencerStats(influencerId: number, subscriptionAmount: number): Promise<void> {
+    const commissionAmount = Math.floor(subscriptionAmount * 0.1); // 10% commission
+
+    // Get current stats first
+    const [currentInfluencer] = await db
+      .select()
+      .from(influencers)
+      .where(eq(influencers.id, influencerId));
+
+    if (currentInfluencer) {
+      await db
+        .update(influencers)
+        .set({
+          totalSubscriptions: currentInfluencer.totalSubscriptions + 1,
+          totalRevenue: currentInfluencer.totalRevenue + subscriptionAmount,
+          totalCommission: currentInfluencer.totalCommission + commissionAmount,
+          updatedAt: new Date(),
+        })
+        .where(eq(influencers.id, influencerId));
+    }
+  }
+
+  async createInfluencerReferral(referral: InsertInfluencerReferral): Promise<InfluencerReferral> {
+    const [newReferral] = await db
+      .insert(influencerReferrals)
+      .values(referral)
+      .returning();
+    
+    return newReferral;
+  }
+
+  async getInfluencerReferrals(influencerId: number): Promise<InfluencerReferral[]> {
+    return await db
+      .select()
+      .from(influencerReferrals)
+      .where(eq(influencerReferrals.influencerId, influencerId))
+      .orderBy(desc(influencerReferrals.createdAt));
+  }
+
+  private generateReferralCode(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let result = '';
+    for (let i = 0; i < 5; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
   }
 }
 

@@ -12,6 +12,7 @@ import OAuthRedirect from "@/pages/oauth-redirect";
 import OAuthCallback from "@/pages/oauth-callback";
 import PaymentSuccess from "@/pages/payment-success";
 import HourlyActivitiesPage from "@/pages/hourly-activities";
+import InfluencerDashboard from "@/pages/InfluencerDashboard";
 import NotFound from "@/pages/not-found";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsConditions from "@/pages/TermsConditions";
@@ -58,6 +59,7 @@ function Router() {
       <Route path="/terms-conditions" component={TermsConditions} />
       <Route path="/refund-policy" component={RefundPolicy} />
       <Route path="/hourly-activities" component={HourlyActivitiesPage} />
+      <Route path="/admin/influencers" component={InfluencerDashboard} />
       {!isAuthenticated ? (
         <Route path="/" component={Landing} />
       ) : (

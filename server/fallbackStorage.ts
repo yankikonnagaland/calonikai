@@ -14,7 +14,11 @@ import type {
   UpsertUser,
   SubscriptionPlan,
   DailyWeight,
-  InsertDailyWeight
+  InsertDailyWeight,
+  Influencer,
+  InfluencerReferral,
+  InsertInfluencer,
+  InsertInfluencerReferral
 } from "@shared/schema";
 
 // In-memory storage maps
@@ -27,6 +31,8 @@ const memoryUsers = new Map<string, User>();
 const memoryUsage = new Map<string, number>();
 const memoryDailyWeights = new Map<string, DailyWeight>();
 const memorySubscriptionPlans = new Map<string, SubscriptionPlan>();
+const memoryInfluencers = new Map<number, Influencer>();
+const memoryInfluencerReferrals = new Map<number, InfluencerReferral>();
 
 // Initialize with some basic Indian foods
 const initializeFoods = () => {
@@ -568,6 +574,87 @@ export class FallbackStorage {
 
   async getAllSubscriptionPlans(): Promise<SubscriptionPlan[]> {
     return Array.from(memorySubscriptionPlans.values()).filter(plan => plan.isActive);
+  }
+
+  // Influencer referral operations
+  async createInfluencer(influencer: InsertInfluencer): Promise<Influencer> {
+    // Generate a unique 5-letter referral code
+    const referralCode = this.generateReferralCode();
+    const id = Math.max(0, ...Array.from(memoryInfluencers.keys())) + 1;
+    
+    const newInfluencer: Influencer = {
+      id,
+      ...influencer,
+      referralCode,
+      totalSubscriptions: 0,
+      totalRevenue: 0,
+      totalCommission: 0,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    
+    memoryInfluencers.set(id, newInfluencer);
+    return newInfluencer;
+  }
+
+  async getAllInfluencers(): Promise<Influencer[]> {
+    return Array.from(memoryInfluencers.values())
+      .filter(influencer => influencer.isActive)
+      .sort((a, b) => b.totalRevenue - a.totalRevenue);
+  }
+
+  async getInfluencerByReferralCode(referralCode: string): Promise<Influencer | undefined> {
+    return Array.from(memoryInfluencers.values())
+      .find(influencer => 
+        influencer.referralCode === referralCode.toUpperCase() && 
+        influencer.isActive
+      );
+  }
+
+  async updateInfluencerStats(influencerId: number, subscriptionAmount: number): Promise<void> {
+    const influencer = memoryInfluencers.get(influencerId);
+    if (influencer) {
+      const commissionAmount = Math.floor(subscriptionAmount * 0.1); // 10% commission
+      
+      const updatedInfluencer: Influencer = {
+        ...influencer,
+        totalSubscriptions: influencer.totalSubscriptions + 1,
+        totalRevenue: influencer.totalRevenue + subscriptionAmount,
+        totalCommission: influencer.totalCommission + commissionAmount,
+        updatedAt: new Date(),
+      };
+      
+      memoryInfluencers.set(influencerId, updatedInfluencer);
+    }
+  }
+
+  async createInfluencerReferral(referral: InsertInfluencerReferral): Promise<InfluencerReferral> {
+    const id = Math.max(0, ...Array.from(memoryInfluencerReferrals.keys())) + 1;
+    
+    const newReferral: InfluencerReferral = {
+      id,
+      ...referral,
+      createdAt: new Date(),
+    };
+    
+    memoryInfluencerReferrals.set(id, newReferral);
+    return newReferral;
+  }
+
+  async getInfluencerReferrals(influencerId: number): Promise<InfluencerReferral[]> {
+    return Array.from(memoryInfluencerReferrals.values())
+      .filter(referral => referral.influencerId === influencerId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  private generateReferralCode(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let result = '';
+    for (let i = 0; i < 5; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
   }
 }
 

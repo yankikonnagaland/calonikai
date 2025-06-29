@@ -123,6 +123,33 @@ export const hourlyActivities = pgTable("hourly_activities", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Influencer referral tracking tables
+export const influencers = pgTable("influencers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  phoneNumber: text("phone_number"),
+  referralCode: text("referral_code").notNull().unique(), // 5-letter code
+  totalSubscriptions: integer("total_subscriptions").notNull().default(0),
+  totalRevenue: integer("total_revenue").notNull().default(0), // In paise
+  totalCommission: integer("total_commission").notNull().default(0), // In paise (10% of revenue)
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const influencerReferrals = pgTable("influencer_referrals", {
+  id: serial("id").primaryKey(),
+  influencerId: integer("influencer_id").notNull(),
+  userId: text("user_id").notNull(), // User who subscribed
+  subscriptionPlan: text("subscription_plan").notNull(), // 'basic' or 'premium'
+  subscriptionAmount: integer("subscription_amount").notNull(), // In paise
+  commissionAmount: integer("commission_amount").notNull(), // 10% of subscription amount
+  razorpayOrderId: text("razorpay_order_id"),
+  razorpayPaymentId: text("razorpay_payment_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertFoodSchema = createInsertSchema(foods).omit({
   id: true,
 });
@@ -161,12 +188,28 @@ export const insertHourlyActivitySchema = createInsertSchema(hourlyActivities).o
   createdAt: true,
 });
 
+export const insertInfluencerSchema = createInsertSchema(influencers).omit({
+  id: true,
+  totalSubscriptions: true,
+  totalRevenue: true,
+  totalCommission: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertInfluencerReferralSchema = createInsertSchema(influencerReferrals).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type Food = typeof foods.$inferSelect;
 export type MealItem = typeof mealItems.$inferSelect;
 export type UserProfile = typeof userProfiles.$inferSelect;
 export type Exercise = typeof exercises.$inferSelect;
 export type DailySummary = typeof dailySummaries.$inferSelect;
 export type HourlyActivity = typeof hourlyActivities.$inferSelect;
+export type Influencer = typeof influencers.$inferSelect;
+export type InfluencerReferral = typeof influencerReferrals.$inferSelect;
 
 export type InsertFood = z.infer<typeof insertFoodSchema>;
 export type InsertMealItem = z.infer<typeof insertMealItemSchema>;
@@ -175,6 +218,8 @@ export type InsertExercise = z.infer<typeof insertExerciseSchema>;
 export type InsertDailySummary = z.infer<typeof insertDailySummarySchema>;
 export type InsertDailyWeight = z.infer<typeof insertDailyWeightSchema>;
 export type InsertHourlyActivity = z.infer<typeof insertHourlyActivitySchema>;
+export type InsertInfluencer = z.infer<typeof insertInfluencerSchema>;
+export type InsertInfluencerReferral = z.infer<typeof insertInfluencerReferralSchema>;
 
 // Daily weight types
 export type DailyWeight = typeof dailyWeights.$inferSelect;
