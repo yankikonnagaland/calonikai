@@ -337,6 +337,14 @@ The application follows a client-server architecture with clear separation of co
 - Enhanced tracker stores additional metadata while using main Time Tracking duration for consistency
 - Complete enhanced exercise tracking system with proper database storage and retrieval
 
+**June 29, 2025 - Fixed Calorie Calculation Accuracy & Unit Mapping System:**
+- RESOLVED: Walnut calorie calculation error - 1 piece now shows ~20 calories instead of 196 calories
+- FIXED: Unit-to-gram mapping for "pieces" was missing, causing fallback to 100g serving size
+- ENHANCED: Food-specific multipliers for accurate portion calculations (walnut piece = 3g)
+- ADDED: "grams" unit support in unit mapping table for precise custom measurements
+- IMPROVED: Chicken calculation accuracy - 1 gram now correctly shows 1.65 calories
+- VERIFIED: All unit calculations use realistic gram weights for accurate calorie tracking
+
 **June 29, 2025 - Fixed Admin Authentication & Meal Editing Implementation:**
 - RESOLVED: Admin login authentication issue - session-based authentication now working properly
 - Fixed Passport.js session management to properly handle admin login with custom middleware
