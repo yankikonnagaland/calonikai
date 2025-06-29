@@ -60,6 +60,7 @@ function Router() {
       <Route path="/refund-policy" component={RefundPolicy} />
       <Route path="/hourly-activities" component={HourlyActivitiesPage} />
       <Route path="/admin/influencers" component={InfluencerDashboard} />
+      <Route path="/influencer-dashboard" component={InfluencerDashboard} />
       {!isAuthenticated ? (
         <Route path="/" component={Landing} />
       ) : (
