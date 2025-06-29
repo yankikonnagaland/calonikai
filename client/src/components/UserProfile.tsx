@@ -247,8 +247,117 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
         )}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Form - Left Side */}
-        <div className="lg:col-span-2">
+        {/* Results Panel - Left Side when profile exists */}
+        {profileData && (
+          <div className="lg:col-span-2 space-y-6">
+            <Card className="bg-gradient-to-br from-primary/5 to-purple-500/5 border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Target className="w-5 h-5 mr-2" />
+                  Your Daily Targets
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className={`grid gap-4 ${profileData.weightGoal === 'muscle' && profileData.targetProtein ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                  <div className="text-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
+                    <div className="text-2xl font-bold text-primary">{profileData.bmr}</div>
+                    <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                      BMR (cal/day)
+                      <Tooltip delayDuration={200}>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/40 hover:text-primary transition-colors duration-200 ease-in-out" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs bg-popover border shadow-lg">
+                          <p className="text-sm">
+                            Basal Metabolic Rate (BMR)- The minimum calories your body needs to function at rest (breathing, blood circulation, brain function). Even if you do not exercise, your body will still burn calories to perform these functions
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </div>
+                  <div className="text-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
+                    <div className="text-2xl font-bold text-primary">{profileData.tdee}</div>
+                    <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                      TDEE (cal/day)
+                      <Tooltip delayDuration={200}>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/40 hover:text-primary transition-colors duration-200 ease-in-out" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs bg-popover border shadow-lg">
+                          <p className="text-sm">
+                            Total Daily Energy Expenditure - Amount of energy spent by your body which is your BMR plus calories burned through daily activities and exercise
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </div>
+                  {profileData.weightGoal === 'muscle' && profileData.targetProtein && (
+                    <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="text-2xl font-bold text-blue-600">{profileData.targetProtein}g</div>
+                      <div className="text-xs text-blue-600 dark:text-blue-400">Protein Target</div>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="text-center p-4 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-lg border">
+                  <div className="text-3xl font-bold text-primary">{profileData.targetCalories}</div>
+                  <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
+                    Daily Target Calories
+                    <Tooltip delayDuration={200}>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/40 hover:text-primary transition-colors duration-200 ease-in-out" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs bg-popover border shadow-lg">
+                        <p className="text-sm">
+                          This is the number of calories you should eat each day based on your goal
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <Badge variant={
+                    profileData.weightGoal === 'lose' ? 'destructive' : 
+                    profileData.weightGoal === 'muscle' ? 'secondary' : 'default'
+                  } className="mt-2">
+                    {profileData.weightGoal === 'lose' ? 'Deficit' : 
+                     profileData.weightGoal === 'muscle' ? 'Lean Surplus' : 'Surplus'}: {Math.abs(profileData.tdee - profileData.targetCalories)} cal
+                  </Badge>
+                </div>
+                
+                {/* Protein Target for Muscle Building */}
+                {profileData.weightGoal === 'muscle' && profileData.targetProtein && (
+                  <div className="text-center p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="text-3xl font-bold text-blue-600">{profileData.targetProtein}g</div>
+                    <div className="text-sm text-muted-foreground">Daily Protein Target</div>
+                    <Badge variant="outline" className="mt-2 border-blue-500 text-blue-600">
+                      Muscle Building: 2g per kg body weight
+                    </Badge>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* AI Insights */}
+            {aiInsights && (
+              <Card className="border-purple-200 dark:border-purple-800">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-lg">
+                    <Brain className="w-5 h-5 mr-2 text-purple-600" />
+                    AI Insights
+                    <Sparkles className="w-4 h-4 ml-1 text-yellow-500" />
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    {aiInsights}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {/* Profile Form - Right Side */}
+        <div className={profileData ? "" : "lg:col-span-2"}>
           {existingProfile && !isEditing ? (
             // Display saved profile
             (<Card className="shadow-lg border-green-200 bg-green-50/50 dark:bg-green-950/20">
@@ -561,12 +670,8 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
               </CardContent>
             </Card>)
           )}
-        </div>
-
-        {/* Results Panel - Right Side */}
-        <div className="space-y-6">
           {/* Show placeholder when no profile data */}
-          {!profileData ? (
+          {!profileData && (
             <Card className="border-dashed border-2 border-muted-foreground/20">
               <CardContent className="pt-6">
                 <div className="text-center text-muted-foreground">
@@ -575,115 +680,6 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                 </div>
               </CardContent>
             </Card>
-          ) : null}
-
-          {/* Results */}
-          {profileData && (
-            <>
-              <Card className="bg-gradient-to-br from-primary/5 to-purple-500/5 border-primary/20">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-lg">
-                    <Target className="w-5 h-5 mr-2" />
-                    Your Daily Targets
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className={`grid gap-4 ${profileData.weightGoal === 'muscle' && profileData.targetProtein ? 'grid-cols-3' : 'grid-cols-2'}`}>
-                    <div className="text-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
-                      <div className="text-2xl font-bold text-primary">{profileData.bmr}</div>
-                      <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                        BMR (cal/day)
-                        <Tooltip delayDuration={200}>
-                          <TooltipTrigger asChild>
-                            <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/40 hover:text-primary transition-colors duration-200 ease-in-out" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs bg-popover border shadow-lg">
-                            <p className="text-sm">
-                              Basal Metabolic Rate - The minimum calories your body needs to function at rest (breathing, circulation, cell production)
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                    </div>
-                    <div className="text-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
-                      <div className="text-2xl font-bold text-primary">{profileData.tdee}</div>
-                      <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                        TDEE (cal/day)
-                        <Tooltip delayDuration={200}>
-                          <TooltipTrigger asChild>
-                            <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/40 hover:text-primary transition-colors duration-200 ease-in-out" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs bg-popover border shadow-lg">
-                            <p className="text-sm">
-                              Total Daily Energy Expenditure - Your BMR plus calories burned through daily activities and exercise
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                    </div>
-                    {profileData.weightGoal === 'muscle' && profileData.targetProtein && (
-                      <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <div className="text-2xl font-bold text-blue-600">{profileData.targetProtein}g</div>
-                        <div className="text-xs text-blue-600 dark:text-blue-400">Protein Target</div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="text-center p-4 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-lg border">
-                    <div className="text-3xl font-bold text-primary">{profileData.targetCalories}</div>
-                    <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
-                      Daily Target Calories
-                      <Tooltip delayDuration={200}>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/40 hover:text-primary transition-colors duration-200 ease-in-out" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs bg-popover border shadow-lg">
-                          <p className="text-sm">
-                            Your personalized daily calorie goal based on your TDEE and weight objectives (deficit for weight loss, surplus for weight gain)
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <Badge variant={
-                      profileData.weightGoal === 'lose' ? 'destructive' : 
-                      profileData.weightGoal === 'muscle' ? 'secondary' : 'default'
-                    } className="mt-2">
-                      {profileData.weightGoal === 'lose' ? 'Deficit' : 
-                       profileData.weightGoal === 'muscle' ? 'Lean Surplus' : 'Surplus'}: {Math.abs(profileData.tdee - profileData.targetCalories)} cal
-                    </Badge>
-                  </div>
-                  
-                  {/* Protein Target for Muscle Building */}
-                  {profileData.weightGoal === 'muscle' && profileData.targetProtein && (
-                    <div className="text-center p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <div className="text-3xl font-bold text-blue-600">{profileData.targetProtein}g</div>
-                      <div className="text-sm text-muted-foreground">Daily Protein Target</div>
-                      <Badge variant="outline" className="mt-2 border-blue-500 text-blue-600">
-                        Muscle Building: 2g per kg body weight
-                      </Badge>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* AI Insights */}
-              {aiInsights && (
-                <Card className="border-purple-200 dark:border-purple-800">
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-lg">
-                      <Brain className="w-5 h-5 mr-2 text-purple-600" />
-                      AI Insights
-                      <Sparkles className="w-4 h-4 ml-1 text-yellow-500" />
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm leading-relaxed text-muted-foreground">
-                      {aiInsights}
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </>
           )}
         </div>
       </div>
