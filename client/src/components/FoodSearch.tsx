@@ -610,9 +610,9 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       "can": 3.3, // Standard can 330ml
       
       // Portion descriptions
-      "small portion": 0.7,
-      "medium portion": 1.0,
-      "large portion": 1.5,
+      "small portion": 0.75,
+      "medium portion": 1.5,
+      "large portion": 2.0,
       "handful": 0.3,
       
       // Measurement units

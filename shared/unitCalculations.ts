@@ -72,6 +72,13 @@ export const unitToGramMap: Record<string, number> = {
   "half serving": 50,   // Half serving
   "quarter serving": 25,// Quarter serving
   
+  // Portion sizes
+  "portion": 100,       // Standard portion (100g)
+  "small portion": 75,  // Small portion (75g)
+  "medium portion": 150,// Medium portion (150g)
+  "large portion": 200, // Large portion (200g)
+  "extra large portion": 250, // Extra large portion (250g)
+  
   // Tablespoon and teaspoon
   "tablespoon": 15,     // Standard tablespoon
   "tbsp": 15,          // Abbreviation
@@ -209,9 +216,20 @@ export const calculateNutritionFromUnit = (
     gramsPerUnit = extractedGrams;
   } else {
     // Use mapping table with food category adjustments
-    const baseGrams = unitToGramMap[unit.toLowerCase()] || unitToGramMap["serving"];
+    const unitLower = unit.toLowerCase();
+    const baseGrams = unitToGramMap[unitLower] || unitToGramMap["serving"];
     const categoryMultiplier = getFoodCategoryMultiplier(foodName, unit);
     gramsPerUnit = baseGrams * categoryMultiplier;
+    
+    // Debug logging for portion size verification
+    console.log(`Unit calculation for ${foodName}:`, {
+      unit: unitLower,
+      baseGrams,
+      categoryMultiplier,
+      finalGramsPerUnit: gramsPerUnit,
+      quantity,
+      totalGrams: gramsPerUnit * quantity
+    });
   }
   
   // Calculate total grams
