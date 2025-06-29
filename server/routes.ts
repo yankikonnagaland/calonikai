@@ -1643,10 +1643,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        const { amount, currency, planType = "monthly" } = req.body;
+        const { planType = "basic" } = req.body;
         const userId = req.user?.id;
-
-        console.log(`Razorpay order creation request - Amount: ₹${amount/100}, Plan: ${planType}, User: ${userId}`);
 
         if (!userId) {
           return res.status(401).json({ message: "User not authenticated" });
@@ -1658,9 +1656,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: "User not found" });
         }
 
+        // Get subscription plan pricing from database
+        const subscriptionPlan = await storage.getSubscriptionPlan(planType);
+        if (!subscriptionPlan) {
+          return res.status(400).json({ error: `Invalid plan type: ${planType}` });
+        }
+
+        console.log(`Razorpay order creation request - Amount: ₹${subscriptionPlan.priceInPaise/100}, Plan: ${planType}, User: ${userId}`);
+
         const options = {
-          amount: amount, // amount in paise (₹49 = 4900, ₹399 = 39900 paise)
-          currency: currency || "INR",
+          amount: subscriptionPlan.priceInPaise, // amount in paise from database
+          currency: subscriptionPlan.currency || "INR",
           receipt: `calonik_${planType}_${Date.now()}`,
           notes: {
             userId: userId,

@@ -183,16 +183,13 @@ function RazorpayCheckout({ onSuccess, selectedPlan = 'premium' }: { onSuccess: 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-      const planAmount = selectedPlan === 'basic' ? 9900 : 39900;
-      console.log(`Creating ${selectedPlan} plan order - Amount: ₹${planAmount/100} (${planAmount} paise)`);
+      console.log(`Creating ${selectedPlan} plan order`);
       
       const rawResponse = await apiRequest(
         "POST",
         "/api/create-razorpay-order",
         {
-          amount: planAmount, // Dynamic amount based on selected plan
-          currency: "INR",
-          planType: selectedPlan,
+          planType: selectedPlan, // Backend will fetch secure pricing from database
         },
       );
 

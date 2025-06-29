@@ -7,6 +7,7 @@ import {
   DailyWeight,
   User,
   UsageTracking,
+  SubscriptionPlan,
   InsertFood, 
   InsertMealItem, 
   InsertUserProfile, 
@@ -27,7 +28,8 @@ import {
   dailySummaries,
   dailyWeights,
   users,
-  usageTracking
+  usageTracking,
+  subscriptionPlans
 } from "@shared/schema";
 
 export interface IStorage {
@@ -81,6 +83,10 @@ export interface IStorage {
   
   // Nudge system operations
   getAllUsers(): Promise<User[]>;
+  
+  // Subscription plan operations
+  getSubscriptionPlan(planName: string): Promise<SubscriptionPlan | undefined>;
+  getAllSubscriptionPlans(): Promise<SubscriptionPlan[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -510,6 +516,23 @@ export class DatabaseStorage implements IStorage {
       .from(dailyWeights)
       .where(eq(dailyWeights.sessionId, sessionId))
       .orderBy(desc(dailyWeights.date));
+  }
+
+  // Subscription plan operations
+  async getSubscriptionPlan(planName: string): Promise<SubscriptionPlan | undefined> {
+    const [plan] = await db
+      .select()
+      .from(subscriptionPlans)
+      .where(and(eq(subscriptionPlans.planName, planName), eq(subscriptionPlans.isActive, true)));
+    return plan;
+  }
+
+  async getAllSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+    return await db
+      .select()
+      .from(subscriptionPlans)
+      .where(eq(subscriptionPlans.isActive, true))
+      .orderBy(subscriptionPlans.priceInPaise);
   }
 }
 

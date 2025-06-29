@@ -381,15 +381,17 @@ The application follows a client-server architecture with clear separation of co
 - VALIDATED: Walnut calculations showing realistic portions (1 piece = ~30 calories instead of 196)
 - STREAMLINED: Complete unit-calorie synchronization across food search and selection workflow
 
-**June 29, 2025 - Basic Plan Pricing Update & Profitability Optimization:**
-- UPDATED: Basic plan pricing from ₹49 to ₹99/month for sustainable profitability (~48% margin vs previous -4% loss)
-- ANALYZED: OpenAI API costs at ~₹0.67-1.00 per food scan with GPT-4o model pricing
-- MODIFIED: Frontend payment processing to use 9900 paise (₹99) for Basic plan order creation
-- ENHANCED: Subscription modal displays updated ₹99/month Basic plan pricing across all UI components
-- UPDATED: Backend payment verification to handle new ₹99 Basic plan amounts correctly
-- REVISED: Documentation (PAYMENT_TESTING.md) to reflect new pricing structure and profitability metrics
-- MAINTAINED: Same feature set for Basic plan (2 photo scans/day, 5 food searches/day, exercise disabled)
-- ACHIEVED: Profitable Basic tier while maintaining affordability for budget-conscious users
+**June 29, 2025 - Secure Database-Stored Pricing System Implementation:**
+- IMPLEMENTED: Complete security enhancement moving subscription pricing from hardcoded values to database storage
+- CREATED: subscription_plans table with secure pricing configuration (₹99 Basic, ₹399 Premium)
+- ENHANCED: Backend order creation endpoint to fetch pricing from database instead of frontend-provided amounts
+- ADDED: getSubscriptionPlan and getAllSubscriptionPlans methods to both DatabaseStorage and FallbackStorage
+- SECURED: Payment system against code manipulation by storing all pricing data in protected database
+- UPDATED: Frontend SubscriptionModal to remove hardcoded amounts and use backend-determined pricing
+- VERIFIED: Database contains Basic Plan (₹99/month, 2 photos, 5 searches) and Premium Plan (₹399/month, unlimited)
+- ENHANCED: Anti-tampering architecture prevents users from modifying subscription amounts in code
+- DOCUMENTED: Security improvements in PAYMENT_TESTING.md highlighting database-stored pricing benefits
+- ACHIEVED: Production-ready payment security preventing pricing manipulation vulnerabilities
 
 **June 29, 2025 - Fixed Critical Subscription Activation Bug & Complete Payment Integration:**
 - RESOLVED: Critical bug where Basic plan payments incorrectly activated Premium features instead of Basic features

@@ -80,14 +80,17 @@ Complete two-tier subscription system with integrated Razorpay checkout within a
 - Session-based authentication
 - Encrypted payment processing through Razorpay
 - Plan validation in backend before activation
+- **NEW: Database-stored pricing prevents code manipulation**
+- **NEW: Secure subscription plan configuration**
 
 ## Production Readiness
 ✅ Integrated payment flow (no external redirects)
-✅ Plan-specific amount handling 
+✅ **Secure database-stored pricing (no hardcoded amounts)**
 ✅ Comprehensive error handling
 ✅ Database persistence
 ✅ Usage limit enforcement
 ✅ Webhook security
+✅ **Anti-tampering pricing architecture**
 ✅ Logging for debugging
 
 ## Test Results

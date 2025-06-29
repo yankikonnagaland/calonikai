@@ -97,6 +97,22 @@ export const dailyWeights = pgTable("daily_weights", {
   sessionDateUnique: unique("daily_weights_session_date_unique").on(table.sessionId, table.date),
 }));
 
+// Subscription pricing configuration table
+export const subscriptionPlans = pgTable("subscription_plans", {
+  id: serial("id").primaryKey(),
+  planName: text("plan_name").notNull().unique(), // 'basic', 'premium'
+  displayName: text("display_name").notNull(), // 'Basic Plan', 'Premium Plan'
+  priceInPaise: integer("price_in_paise").notNull(), // Amount in paise (₹99 = 9900 paise)
+  currency: text("currency").notNull().default("INR"),
+  billingPeriod: text("billing_period").notNull().default("monthly"), // 'monthly', 'yearly'
+  photoLimit: integer("photo_limit").notNull(), // Daily photo scan limit
+  mealLimit: integer("meal_limit").notNull(), // Daily meal search limit
+  exerciseEnabled: boolean("exercise_enabled").notNull().default(false),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Hourly calorie-burning activities table
 export const hourlyActivities = pgTable("hourly_activities", {
   id: serial("id").primaryKey(),
@@ -248,6 +264,11 @@ export const usageTrackingRelations = relations(usageTracking, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+// Subscription plan schemas and types
+export const insertSubscriptionPlanSchema = createInsertSchema(subscriptionPlans);
+export type InsertSubscriptionPlan = z.infer<typeof insertSubscriptionPlanSchema>;
+export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
 
 // User types
 export type UpsertUser = typeof users.$inferInsert;

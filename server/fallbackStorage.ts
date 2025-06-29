@@ -11,7 +11,10 @@ import type {
   InsertExercise, 
   InsertDailySummary,
   User,
-  UpsertUser
+  UpsertUser,
+  SubscriptionPlan,
+  DailyWeight,
+  InsertDailyWeight
 } from "@shared/schema";
 
 // In-memory storage maps
@@ -22,6 +25,8 @@ const memoryExercises = new Map<string, Exercise[]>();
 const memoryDailySummaries = new Map<string, DailySummary>();
 const memoryUsers = new Map<string, User>();
 const memoryUsage = new Map<string, number>();
+const memoryDailyWeights = new Map<string, DailyWeight>();
+const memorySubscriptionPlans = new Map<string, SubscriptionPlan>();
 
 // Initialize with some basic Indian foods
 const initializeFoods = () => {
@@ -39,6 +44,44 @@ const initializeFoods = () => {
 };
 
 initializeFoods();
+
+// Initialize subscription plans
+const initializeSubscriptionPlans = () => {
+  const plans: SubscriptionPlan[] = [
+    {
+      id: 1,
+      planName: 'basic',
+      displayName: 'Basic Plan',
+      priceInPaise: 9900,
+      currency: 'INR',
+      billingPeriod: 'monthly',
+      photoLimit: 2,
+      mealLimit: 5,
+      exerciseEnabled: false,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    },
+    {
+      id: 2,
+      planName: 'premium',
+      displayName: 'Premium Plan',
+      priceInPaise: 39900,
+      currency: 'INR',
+      billingPeriod: 'monthly',
+      photoLimit: 999,
+      mealLimit: 999,
+      exerciseEnabled: true,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+  ];
+  
+  plans.forEach(plan => memorySubscriptionPlans.set(plan.planName, plan));
+};
+
+initializeSubscriptionPlans();
 
 export class FallbackStorage {
   // Food operations
@@ -515,7 +558,16 @@ export class FallbackStorage {
   }
 
   async getAllUsers(): Promise<User[]> {
-    return Array.from(this.memoryUsers.values());
+    return Array.from(memoryUsers.values());
+  }
+
+  // Subscription plan operations
+  async getSubscriptionPlan(planName: string): Promise<SubscriptionPlan | undefined> {
+    return memorySubscriptionPlans.get(planName);
+  }
+
+  async getAllSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+    return Array.from(memorySubscriptionPlans.values()).filter(plan => plan.isActive);
   }
 }
 
