@@ -304,9 +304,25 @@ export async function setupAuth(app: Express) {
   });
 }
 
-export const isAuthenticated: RequestHandler = (req, res, next) => {
+export const isAuthenticated: RequestHandler = async (req: any, res, next) => {
+  // Check for admin session first
+  if (req.session && req.session.userId === "admin_testing_user" && req.session.isAdmin) {
+    // Get admin user from storage and set on request
+    try {
+      const adminUser = await storage.getUser("admin_testing_user");
+      if (adminUser) {
+        req.user = adminUser;
+        return next();
+      }
+    } catch (error) {
+      console.error("Error fetching admin user:", error);
+    }
+  }
+  
+  // Fall back to standard Passport.js authentication
   if (req.isAuthenticated()) {
     return next();
   }
+  
   res.status(401).json({ message: "Unauthorized" });
 };

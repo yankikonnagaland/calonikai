@@ -22,14 +22,14 @@ export default function AdminLogin() {
       const response = await fetch('/api/admin-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Important for session cookies
         body: JSON.stringify({ adminKey })
       });
       
       const data = await response.json();
 
       if (data.success) {
-        // Store admin session
-        localStorage.setItem('session_id', data.sessionId);
+        // Store admin mode flag in localStorage for UI purposes
         localStorage.setItem('admin_mode', 'true');
         
         toast({
@@ -40,7 +40,7 @@ export default function AdminLogin() {
         // Force page reload to trigger auth state change
         window.location.href = '/';
       } else {
-        throw new Error('Invalid admin key');
+        throw new Error(data.error || 'Invalid admin key');
       }
     } catch (error: any) {
       toast({

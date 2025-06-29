@@ -614,7 +614,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin testing route - bypasses all usage limits
-  app.post("/api/admin-login", async (req, res) => {
+  app.post("/api/admin-login", async (req: any, res) => {
     try {
       const { adminKey } = req.body;
 
@@ -638,10 +638,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ), // 10 years
       });
 
-      res.json({
-        success: true,
-        sessionId: "admin_testing_user",
-        message: "Admin access granted with unlimited usage",
+      // Set admin session manually
+      req.session.userId = adminUser.id;
+      req.session.isAdmin = true;
+      
+      // Save session explicitly
+      req.session.save((err: any) => {
+        if (err) {
+          console.error("Admin session save error:", err);
+          return res.status(500).json({ error: "Failed to create admin session" });
+        }
+
+        console.log("Admin session created successfully for user:", adminUser.id);
+        
+        res.json({
+          success: true,
+          sessionId: adminUser.id,
+          message: "Admin access granted with unlimited usage",
+          user: {
+            id: adminUser.id,
+            email: adminUser.email,
+            firstName: adminUser.firstName,
+            lastName: adminUser.lastName,
+            subscriptionStatus: adminUser.subscriptionStatus,
+            premiumActivated: adminUser.premiumActivatedAt,
+          }
+        });
       });
     } catch (error) {
       console.error("Admin login error:", error);
