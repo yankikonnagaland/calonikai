@@ -1646,6 +1646,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { amount, currency, planType = "monthly" } = req.body;
         const userId = req.user?.id;
 
+        console.log(`Razorpay order creation request - Amount: ₹${amount/100}, Plan: ${planType}, User: ${userId}`);
+
         if (!userId) {
           return res.status(401).json({ message: "User not authenticated" });
         }

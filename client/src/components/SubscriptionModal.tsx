@@ -184,6 +184,8 @@ function RazorpayCheckout({ onSuccess, selectedPlan = 'premium' }: { onSuccess: 
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
       const planAmount = selectedPlan === 'basic' ? 4900 : 39900;
+      console.log(`Creating ${selectedPlan} plan order - Amount: ₹${planAmount/100} (${planAmount} paise)`);
+      
       const rawResponse = await apiRequest(
         "POST",
         "/api/create-razorpay-order",
