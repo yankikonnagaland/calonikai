@@ -487,7 +487,7 @@ function SubscriptionContent({
             >
               <div className="font-semibold text-blue-600">Basic Plan</div>
               <div className="text-lg font-bold">₹49/month</div>
-              <div className="text-sm text-gray-600">2 photos, 5 searches</div>
+              <div className="text-sm text-gray-600">Limited photo search. No exercise Tracking.</div>
             </button>
             <button
               onClick={() => setSelectedPlan('premium')}
