@@ -36,7 +36,7 @@ export default function Navigation({ activeTab, onTabChange }: NavigationProps) 
                         <Crown className="w-3 h-3 text-yellow-500 inline ml-0.5" />
                       )}
                       {user.subscriptionStatus === 'basic' && (
-                        <span className="inline ml-1">🟢</span>
+                        <span className="inline ml-1">🔰</span>
                       )}
                     </span>
                   </div>
