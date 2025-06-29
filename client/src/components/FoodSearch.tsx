@@ -821,65 +821,41 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                 <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">
                   Quantity
                 </label>
-                <div className="relative">
-                  <Input
-                    type="number"
-                    min={unit.toLowerCase().includes("piece") ? "1" : "0.1"}
-                    step={unit.toLowerCase().includes("piece") ? "1" : "0.1"}
-                    value={quantity}
-                    onChange={(e) => {
-                      const value = parseFloat(e.target.value);
-                      if (!isNaN(value) && value > 0) {
-                        // For piece units, only allow integers
-                        if (unit.toLowerCase().includes("piece")) {
-                          setQuantity(Math.round(value));
-                        } else {
-                          setQuantity(value);
-                        }
-                      } else if (e.target.value === "") {
-                        setQuantity(1);
+                <Input
+                  type="number"
+                  min={unit.toLowerCase().includes("piece") ? "1" : "0.1"}
+                  step={unit.toLowerCase().includes("piece") ? "1" : "0.1"}
+                  value={quantity}
+                  onChange={(e) => {
+                    const value = parseFloat(e.target.value);
+                    if (!isNaN(value) && value > 0) {
+                      // For piece units, only allow integers
+                      if (unit.toLowerCase().includes("piece")) {
+                        setQuantity(Math.round(value));
+                      } else {
+                        setQuantity(value);
                       }
-                    }}
-                    onBlur={(e) => {
-                      if (e.target.value === "" || isNaN(parseFloat(e.target.value))) {
-                        setQuantity(1);
-                      } else if (unit.toLowerCase().includes("piece")) {
-                        // Ensure pieces are always integers
-                        setQuantity(Math.round(parseFloat(e.target.value)));
-                      }
-                    }}
-                    className="mt-1 bg-white dark:bg-gray-800 text-lg font-semibold h-12 text-center pr-16"
-                    placeholder="1"
-                  />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col gap-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (unit.toLowerCase().includes("piece")) {
-                          setQuantity(prev => prev + 1); // Increment by 1 for pieces
-                        } else {
-                          setQuantity(prev => Math.round((prev + 0.5) * 10) / 10); // Increment by 0.5 for other units
-                        }
-                      }}
-                      className="w-6 h-4 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded flex items-center justify-center transition-colors"
-                    >
-                      +
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (unit.toLowerCase().includes("piece")) {
-                          setQuantity(prev => Math.max(1, prev - 1)); // Decrement by 1 for pieces, minimum 1
-                        } else {
-                          setQuantity(prev => Math.max(0.1, Math.round((prev - 0.5) * 10) / 10)); // Decrement by 0.5 for other units
-                        }
-                      }}
-                      className="w-6 h-4 hover:bg-red-600 text-white text-xs rounded flex items-center justify-center transition-colors bg-[#8c9195]"
-                    >
-                      -
-                    </button>
-                  </div>
-                </div>
+                    } else if (e.target.value === "") {
+                      setQuantity(1);
+                    }
+                  }}
+                  onFocus={(e) => {
+                    // Clear field when user focuses if it contains placeholder value
+                    if (e.target.value === "1") {
+                      e.target.select(); // Select all text so it gets replaced when user types
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (e.target.value === "" || isNaN(parseFloat(e.target.value))) {
+                      setQuantity(1);
+                    } else if (unit.toLowerCase().includes("piece")) {
+                      // Ensure pieces are always integers
+                      setQuantity(Math.round(parseFloat(e.target.value)));
+                    }
+                  }}
+                  className="mt-1 bg-white dark:bg-gray-800 text-lg font-semibold h-12 text-center"
+                  placeholder="1"
+                />
               </div>
               <div>
                 <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">

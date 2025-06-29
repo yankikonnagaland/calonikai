@@ -360,6 +360,8 @@ The application follows a client-server architecture with clear separation of co
 - IMPROVED: Food category-specific adjustments (nuts, fruits, meats, beverages) for realistic portions
 - STANDARDIZED: Unit mapping supports pieces, handfuls, cups, bowls, slices, and portion descriptions
 - TRANSPARENT: Users now see exact gram weights for every food item with realistic calorie calculations
+- STREAMLINED: Removed quantity increment/decrement buttons for cleaner interface
+- ENHANCED: Quantity field auto-selects text on focus for quick replacement
 
 **June 29, 2025 - UI Organization & Exercise Tracker Refinements:**
 - REORDERED: Daily targets card moved to top-left (2/3 width), saved profile section moved to right side (1/3 width)
