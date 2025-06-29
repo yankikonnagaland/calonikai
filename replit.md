@@ -337,6 +337,16 @@ The application follows a client-server architecture with clear separation of co
 - Enhanced tracker stores additional metadata while using main Time Tracking duration for consistency
 - Complete enhanced exercise tracking system with proper database storage and retrieval
 
+**June 29, 2025 - Question Mark Tooltips for Profile Metrics & UI Cleanup:**
+- ADDED: Question mark tooltips next to BMR, TDEE, and Daily Target Calories indicators in "Your Targets" section
+- Tooltips provide clear explanations: BMR (minimum calories at rest), TDEE (total daily energy expenditure), Daily Target (personalized calorie goal)
+- IMPLEMENTED: TooltipProvider wrapper with HelpCircle icons for educational user experience
+- REMOVED: Duplicate "Your Nutrition Plan" card that showed same information as "Your Targets" section
+- FINALIZED: Complete placeholder text cleanup - all enhanced tracker fields now use descriptive guidance
+- Updated distance field from "5.0" to "Enter distance in km" and heart rate from "140" to "Enter heart rate"
+- Complete UI consistency with minimal question mark tooltips using 3x3 HelpCircle icons
+- Professional tooltip design with hover effects and comprehensive metric explanations
+
 **June 28, 2025 - Minimal Number Input Spinner Design & Enhanced Placeholders:**
 - CREATED: Custom NumberInput component with minimal spinner arrow design using ChevronUp/ChevronDown icons
 - REPLACED: All default browser number input spinners with clean, custom +/- buttons across UserProfile and ExerciseTracker

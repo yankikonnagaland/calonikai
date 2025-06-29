@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { UserCircle, Calculator, Target, TrendingDown, TrendingUp, Brain, Sparkles, Zap } from "lucide-react";
+import { UserCircle, Calculator, Target, TrendingDown, TrendingUp, Brain, Sparkles, Zap, HelpCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { NumberInput } from "@/components/ui/number-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { calculateProfileSchema } from "@shared/schema";
@@ -219,7 +220,8 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                         form.watch('weightGoal') && form.watch('weightTarget');
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 p-4">
+    <TooltipProvider>
+      <div className="max-w-4xl mx-auto space-y-6 p-4">
       {/* Header */}
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
@@ -589,11 +591,35 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                   <div className={`grid gap-4 ${profileData.weightGoal === 'muscle' && profileData.targetProtein ? 'grid-cols-3' : 'grid-cols-2'}`}>
                     <div className="text-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
                       <div className="text-2xl font-bold text-primary">{profileData.bmr}</div>
-                      <div className="text-xs text-muted-foreground">Basal Metabolic Rate BMR (cal/day) </div>
+                      <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                        BMR (cal/day)
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/50 hover:text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-sm max-w-xs">
+                              Basal Metabolic Rate - The minimum calories your body needs to function at rest (breathing, circulation, cell production)
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                     </div>
                     <div className="text-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
                       <div className="text-2xl font-bold text-primary">{profileData.tdee}</div>
-                      <div className="text-xs text-muted-foreground">Total Daily Energy Expenditure (cal/day)</div>
+                      <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                        TDEE (cal/day)
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/50 hover:text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-sm max-w-xs">
+                              Total Daily Energy Expenditure - Your BMR plus calories burned through daily activities and exercise
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                     </div>
                     {profileData.weightGoal === 'muscle' && profileData.targetProtein && (
                       <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
@@ -605,7 +631,19 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                   
                   <div className="text-center p-4 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-lg border">
                     <div className="text-3xl font-bold text-primary">{profileData.targetCalories}</div>
-                    <div className="text-sm text-muted-foreground">Daily Target Calories</div>
+                    <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
+                      Daily Target Calories
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/50 hover:text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-sm max-w-xs">
+                            Your personalized daily calorie goal based on your TDEE and weight objectives (deficit for weight loss, surplus for weight gain)
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <Badge variant={
                       profileData.weightGoal === 'lose' ? 'destructive' : 
                       profileData.weightGoal === 'muscle' ? 'secondary' : 'default'
@@ -650,5 +688,6 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
         </div>
       </div>
     </div>
+    </TooltipProvider>
   );
 }
