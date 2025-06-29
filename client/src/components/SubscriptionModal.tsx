@@ -349,15 +349,7 @@ function RazorpayCheckout({ onSuccess, selectedPlan = 'premium' }: { onSuccess: 
         <CreditCard className="w-4 h-4" />
         <span>Cards, UPI, Net Banking, Wallets</span>
       </div>
-      <Button
-        onClick={handleRazorpayPayment}
-        disabled={isProcessing || !isScriptLoaded}
-        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-all duration-200 razorpay-payment-button"
-      >
-        {!isScriptLoaded ? "Loading Payment Service..." : 
-         isProcessing ? "Opening Payment Gateway..." : 
-         "Subscribe - ₹399/month"}
-      </Button>
+      
       {!isScriptLoaded && (
         <div className="text-center text-xs text-gray-500 flex items-center justify-center gap-2">
           <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
