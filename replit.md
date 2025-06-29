@@ -372,6 +372,15 @@ The application follows a client-server architecture with clear separation of co
 - STREAMLINED: Removed quantity increment/decrement buttons for cleaner interface
 - ENHANCED: Quantity field auto-selects text on focus for quick replacement
 
+**June 29, 2025 - Unit Synchronization Fix & Accurate Calorie Calculations:**
+- RESOLVED: Unit selection synchronization issue where search results showed one portion size but unit dropdown defaulted to different unit
+- FIXED: Mutton now correctly shows "medium portion (150g)" in both search results (588 cal) and unit dropdown
+- ENHANCED: Unit selection endpoint now uses same smart portion logic as search results for consistency
+- IMPROVED: Both "piece" and "pieces" unit forms properly supported for nuts with 0.3x multiplier
+- SYNCHRONIZED: Enhanced portion data from search results now matches default unit selection
+- VALIDATED: Walnut calculations showing realistic portions (1 piece = ~30 calories instead of 196)
+- STREAMLINED: Complete unit-calorie synchronization across food search and selection workflow
+
 **June 29, 2025 - UI Organization & Exercise Tracker Refinements:**
 - REORDERED: Daily targets card moved to top-left (2/3 width), saved profile section moved to right side (1/3 width)
 - ENHANCED: Smooth tooltip hover effects with 200ms delay and seamless color transitions from subtle gray to primary
