@@ -17,7 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { CheckCircle, CreditCard, Smartphone, Wallet } from "lucide-react";
+import { CheckCircle, CreditCard, Smartphone, Wallet, X } from "lucide-react";
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -356,28 +356,51 @@ function RazorpayCheckout({ onSuccess, selectedPlan = 'premium' }: { onSuccess: 
     }
   };
 
+  const handleClosePayment = () => {
+    if (razorpayInstanceRef.current) {
+      try {
+        razorpayInstanceRef.current.close();
+      } catch (e) {
+        console.log("Razorpay instance already closed");
+      }
+    }
+    setIsProcessing(false);
+  };
+
   return (
     <div className="space-y-4">
-      <Button
-        onClick={handleRazorpayPayment}
-        disabled={!isScriptLoaded || isProcessing}
-        className={`w-full h-12 text-lg font-semibold ${
-          selectedPlan === 'basic'
-            ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
-            : 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700'
-        }`}
-      >
-        {isProcessing ? (
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            Processing...
-          </div>
-        ) : (
-          <>
-            Subscribe to {selectedPlan === 'basic' ? 'Basic' : 'Premium'} - ₹{selectedPlan === 'basic' ? '49' : '399'}/month
-          </>
+      <div className="flex gap-2">
+        <Button
+          onClick={handleRazorpayPayment}
+          disabled={!isScriptLoaded || isProcessing}
+          className={`flex-1 h-12 text-lg font-semibold ${
+            selectedPlan === 'basic'
+              ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+              : 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700'
+          }`}
+        >
+          {isProcessing ? (
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Processing...
+            </div>
+          ) : (
+            <>
+              Subscribe to {selectedPlan === 'basic' ? 'Basic' : 'Premium'} - ₹{selectedPlan === 'basic' ? '49' : '399'}/month
+            </>
+          )}
+        </Button>
+        
+        {isProcessing && (
+          <Button
+            onClick={handleClosePayment}
+            variant="outline"
+            className="h-12 px-4 border-red-200 hover:bg-red-50 hover:border-red-300"
+          >
+            <X className="w-5 h-5 text-red-500" />
+          </Button>
         )}
-      </Button>
+      </div>
       
       {!isScriptLoaded && (
         <div className="text-center text-xs text-gray-500 flex items-center justify-center gap-2">
