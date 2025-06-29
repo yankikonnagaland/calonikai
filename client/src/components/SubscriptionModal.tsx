@@ -278,9 +278,9 @@ function RazorpayCheckout({ onSuccess, selectedPlan = 'premium' }: { onSuccess: 
             setIsProcessing(false);
           },
           animation: false, // Disable animations to reduce performance overhead
-          confirm_close: false,
+          confirm_close: true, // Show confirmation before closing
           escape: true,
-          backdrop_close: false, // Prevent accidental backdrop closing
+          backdrop_close: true, // Allow backdrop closing for better UX
           focus_input: true, // Ensure input focus
         },
         retry: {
