@@ -593,7 +593,7 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                     </div>
                     <div className="text-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
                       <div className="text-2xl font-bold text-primary">{profileData.tdee}</div>
-                      <div className="text-xs text-muted-foreground">TDEE (cal/day)</div>
+                      <div className="text-xs text-muted-foreground">Total Daily Energy Expenditure (cal/day)</div>
                     </div>
                     {profileData.weightGoal === 'muscle' && profileData.targetProtein && (
                       <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
