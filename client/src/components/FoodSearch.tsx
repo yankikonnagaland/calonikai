@@ -49,6 +49,40 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Handle external food selection (when editing via pencil button)
+  useEffect(() => {
+    if (onFoodSelect && typeof onFoodSelect === 'function') {
+      // This sets up the callback to receive external food selection
+      onFoodSelect(selectedFood);
+    }
+  }, [onFoodSelect]);
+
+  // Handle external food data passed from parent component
+  const [lastExternalFood, setLastExternalFood] = useState<any>(null);
+  
+  useEffect(() => {
+    // Check for external food selection from parent (pencil button)
+    const checkForExternalFood = () => {
+      // Listen for changes in selectedFood that come from external source
+      if (selectedFood && selectedFood.isEditing && selectedFood !== lastExternalFood) {
+        setSearchQuery(selectedFood.name || "");
+        setQuantity(selectedFood.quantity || 1);
+        setUnit(selectedFood.unit || "serving");
+        setShowSuggestions(false);
+        setLastExternalFood(selectedFood);
+        
+        // Focus the search input for immediate editing
+        setTimeout(() => {
+          if (searchInputRef.current) {
+            searchInputRef.current.focus();
+          }
+        }, 100);
+      }
+    };
+    
+    checkForExternalFood();
+  }, [selectedFood, lastExternalFood]);
+
   const { data: searchResults = [] } = useQuery<Food[]>({
     queryKey: [`/api/foods/search`, debouncedQuery],
     queryFn: async () => {

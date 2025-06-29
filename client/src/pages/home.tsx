@@ -27,6 +27,7 @@ export default function Home() {
   const [selectedFood, setSelectedFood] = useState<any>(null);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [editingMealItem, setEditingMealItem] = useState<any>(null);
   const { user } = useAuth();
   const sessionId = user?.id || getSessionId();
   const queryClient = useQueryClient();
@@ -146,6 +147,36 @@ export default function Home() {
     queryClient.invalidateQueries({ queryKey: [`/api/daily-summary`] });
   };
 
+  // Handle editing a meal item
+  const handleEditMeal = async (mealItem: any) => {
+    try {
+      // Remove the current meal item first
+      await apiRequest("DELETE", `/api/meal/${mealItem.id}`);
+      
+      // Pre-populate the food search with the meal item's food data
+      setSelectedFood({
+        ...mealItem.food,
+        quantity: mealItem.quantity,
+        unit: mealItem.unit,
+        isEditing: true
+      });
+      
+      // Invalidate queries to refresh the meal list
+      queryClient.invalidateQueries({ queryKey: [`/api/meal/${sessionId}/${selectedDateString}`] });
+      
+      toast({
+        title: "Edit Mode",
+        description: `${mealItem.food.name} moved to Food Search for editing`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to start editing meal item",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleWeightModalClose = () => {
     setShowWeightModal(false);
     // Mark as updated for today
@@ -221,6 +252,7 @@ export default function Home() {
                   onClear={() => clearMealMutation.mutate()}
                   isSubmitting={submitMealMutation.isPending}
                   isClearing={clearMealMutation.isPending}
+                  onEditMeal={handleEditMeal}
                 />
               </div>
             </div>
