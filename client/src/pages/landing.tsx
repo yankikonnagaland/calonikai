@@ -117,9 +117,7 @@ export default function Landing() {
             <h2 className="text-3xl font-bold text-white mb-4">
               Powerful Features for Optimizing Nutrition
             </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">
-              Everything you need to track calories and maintain a healthy diet with all kind of foods
-            </p>
+            <p className="text-gray-400 max-w-2xl mx-auto">Everything you need to track calories and maintain a healthy diet with all kind of foods. Micro Nutrient tracking and other advanced features will be also released soon.</p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
