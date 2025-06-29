@@ -861,18 +861,7 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
                             </div>
                           </div>
                           
-                          <div className="flex items-center justify-center space-x-2">
-                            <input
-                              type="checkbox"
-                              id="smartwatch"
-                              checked={usesSmartwatch}
-                              onChange={(e) => setUsesSmartwatch(e.target.checked)}
-                              className="w-4 h-4 text-purple-600 border-purple-300 rounded focus:ring-purple-500"
-                            />
-                            <Label htmlFor="smartwatch" className="text-sm text-purple-600 dark:text-purple-400">
-                              Used Smartwatch/Fitness Tracker
-                            </Label>
-                          </div>
+                          
                         </>
                       )}
                     </div>
