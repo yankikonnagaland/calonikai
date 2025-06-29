@@ -450,10 +450,10 @@ function SubscriptionContent({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <span className="text-2xl">🚀</span>
-            Premium Plan
+            Start your fitness journey
           </CardTitle>
           <CardDescription>
-            Unlock premium access to all features
+            Become a disciplined and better version of yourself
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -514,9 +514,9 @@ export default function SubscriptionModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span className="text-2xl">👑</span>
-            Upgrade to Premium
+            SUBSCRIBE TO CALONIK
           </DialogTitle>
-          <DialogDescription>Get access to all features</DialogDescription>
+          <DialogDescription>Kickstart your fitness journey</DialogDescription>
         </DialogHeader>
 
         <SubscriptionContent onClose={onClose} usageData={usageData} />
