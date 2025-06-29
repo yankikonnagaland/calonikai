@@ -357,9 +357,27 @@ function RazorpayCheckout({ onSuccess, selectedPlan = 'premium' }: { onSuccess: 
   };
 
   return (
-    <div className="space-y-6">
-      
-      
+    <div className="space-y-4">
+      <Button
+        onClick={handleRazorpayPayment}
+        disabled={!isScriptLoaded || isProcessing}
+        className={`w-full h-12 text-lg font-semibold ${
+          selectedPlan === 'basic'
+            ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+            : 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700'
+        }`}
+      >
+        {isProcessing ? (
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            Processing...
+          </div>
+        ) : (
+          <>
+            Subscribe to {selectedPlan === 'basic' ? 'Basic' : 'Premium'} - ₹{selectedPlan === 'basic' ? '49' : '399'}/month
+          </>
+        )}
+      </Button>
       
       {!isScriptLoaded && (
         <div className="text-center text-xs text-gray-500 flex items-center justify-center gap-2">
