@@ -703,7 +703,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
   });
 
   return (
-    <Card className="search-container">
+    <Card className="search-container" data-food-search-card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Search className="h-5 w-5" />

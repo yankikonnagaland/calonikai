@@ -174,6 +174,41 @@ export default function Home() {
       // Invalidate queries to refresh the meal list
       queryClient.invalidateQueries({ queryKey: [`/api/meal/${sessionId}/${selectedDateString}`] });
       
+      // Auto-scroll to Food Search section and focus input for mobile UX
+      setTimeout(() => {
+        // Find the Food Search card container for better scroll positioning
+        const foodSearchCard = document.querySelector('[data-food-search-card]') as HTMLElement;
+        const foodSearchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
+        
+        if (foodSearchCard || foodSearchInput) {
+          const scrollTarget = foodSearchCard || foodSearchInput;
+          
+          // Scroll to the Food Search section smoothly with mobile-optimized positioning
+          scrollTarget.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start', // Position at top for mobile screens
+            inline: 'nearest'
+          });
+          
+          // Focus on the input after scrolling with enhanced mobile support
+          setTimeout(() => {
+            if (foodSearchInput) {
+              foodSearchInput.focus();
+              foodSearchInput.select(); // Select any existing text for easier editing
+              
+              // Additional mobile keyboard support
+              if (navigator.userAgent.match(/iPhone|iPad|iPod|Android/i)) {
+                foodSearchInput.setAttribute('readonly', 'readonly');
+                setTimeout(() => {
+                  foodSearchInput.removeAttribute('readonly');
+                  foodSearchInput.focus();
+                }, 100);
+              }
+            }
+          }, 600); // Extended wait for scroll animation on slower devices
+        }
+      }, 150); // Slightly longer delay to ensure DOM updates complete
+      
       toast({
         title: "Edit Mode",
         description: `${mealItem.food.name} ready for editing in Food Search`,

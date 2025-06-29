@@ -387,7 +387,7 @@ export default function MealSummary({
                       variant="ghost"
                       size="sm"
                       onClick={() => onEditMeal?.(item)}
-                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/20 p-1"
+                      className="edit-meal-button text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/20 p-1"
                       title="Edit this meal item"
                     >
                       <Pencil className="w-3 h-3" />
