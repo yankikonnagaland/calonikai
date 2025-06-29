@@ -464,31 +464,40 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     setSelectedFood(food);
     onFoodSelect(food);
     
-    // Use enhanced portion data if available, otherwise fall back to backend unit selection
-    if (food.smartUnit && food.smartQuantity) {
-      console.log(`Using enhanced portion data for ${food.name}: ${food.smartQuantity} ${food.smartUnit}`);
-      setUnit(food.smartUnit);
-      setQuantity(food.smartQuantity);
-    } else {
-      // Get unit options from backend API
-      try {
-        const response = await fetch(`/api/unit-selection/${encodeURIComponent(food.name)}?category=${encodeURIComponent(food.category)}`);
-        if (response.ok) {
-          const unitData = await response.json();
-          setUnit(unitData.unit);
-          setUnitOptions(unitData.unitOptions);
-          setQuantity(1); // Default quantity
+    // Always fetch unit options from backend, but use enhanced portion data if available
+    try {
+      const response = await fetch(`/api/unit-selection/${encodeURIComponent(food.name)}?category=${encodeURIComponent(food.category)}`);
+      if (response.ok) {
+        const unitData = await response.json();
+        setUnitOptions(unitData.unitOptions);
+        
+        // Use enhanced portion data if available, otherwise use backend defaults
+        if (food.smartUnit && food.smartQuantity) {
+          console.log(`Using enhanced portion data for ${food.name}: ${food.smartQuantity} ${food.smartUnit}`);
+          setUnit(food.smartUnit);
+          setQuantity(food.smartQuantity);
         } else {
-          throw new Error('Backend unit selection failed');
+          setUnit(unitData.unit);
+          setQuantity(1);
         }
-      } catch (error) {
-        console.log("Using local suggestion for", food.name);
-        const localSuggestion = getIntelligentUnits(food);
+      } else {
+        throw new Error('Backend unit selection failed');
+      }
+    } catch (error) {
+      console.log("Using local suggestion for", food.name);
+      const localSuggestion = getIntelligentUnits(food);
+      
+      // Use enhanced portion data if available, otherwise use local suggestions
+      if (food.smartUnit && food.smartQuantity) {
+        console.log(`Using enhanced portion data for ${food.name}: ${food.smartQuantity} ${food.smartUnit}`);
+        setUnit(food.smartUnit);
+        setQuantity(food.smartQuantity);
+      } else {
         setUnit(localSuggestion.unit);
         setQuantity(localSuggestion.quantity);
-        // Set default unit options with grams included
-        setUnitOptions(["serving", "piece", "cup", "small portion", "medium portion", "large portion", "grams"]);
       }
+      // Set default unit options with grams included
+      setUnitOptions(["serving", "piece", "cup", "small portion", "medium portion", "large portion", "grams"]);
     }
     
     // Clear search and hide suggestions
