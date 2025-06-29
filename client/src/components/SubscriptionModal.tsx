@@ -344,14 +344,7 @@ function RazorpayCheckout({ onSuccess, selectedPlan = 'premium' }: { onSuccess: 
 
   return (
     <div className="space-y-6">
-      <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-        <div className="text-center space-y-2">
-          <h3 className="font-semibold text-lg text-[#083b6e]">₹399/month</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Premium meal tracking and AI photo analysis
-          </p>
-        </div>
-      </div>
+      
       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
         <CreditCard className="w-4 h-4" />
         <span>Cards, UPI, Net Banking, Wallets</span>
@@ -410,11 +403,11 @@ function SubscriptionContent({
   const premiumFeatures = [
     {
       icon: <Smartphone className="w-5 h-5" />,
-      text: "5 AI photo analysis per day",
+      text: "AI photo analysis",
     },
     {
       icon: <CreditCard className="w-5 h-5" />,
-      text: "20 food searches per day",
+      text: "Calories and macro tracking",
     },
     {
       icon: <Wallet className="w-5 h-5" />,
@@ -422,7 +415,7 @@ function SubscriptionContent({
     },
     {
       icon: <CheckCircle className="w-5 h-5" />,
-      text: "Advanced nutrition insights",
+      text: "Hourly fun activities",
     },
   ];
 
