@@ -382,15 +382,27 @@ export default function MealSummary({
                       {Math.round(item.food.calories * item.quantity * getMultiplier(item.unit, item.food))} cal
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onEditMeal?.(item)}
-                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/20 p-1"
-                    title="Edit this meal item"
-                  >
-                    <Pencil className="w-3 h-3" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onEditMeal?.(item)}
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/20 p-1"
+                      title="Edit this meal item"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeMealItemMutation.mutate(item.id)}
+                      disabled={removeMealItemMutation.isPending}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 p-1"
+                      title="Remove this meal item"
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))
