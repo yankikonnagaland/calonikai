@@ -563,46 +563,8 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
 
         {/* Results Panel - Right Side */}
         <div className="space-y-6">
-          {/* Show saved profile results or fill instructions */}
-          {existingProfile && existingProfile.bmr ? (
-            <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20 shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center text-green-800 dark:text-green-200">
-                  <Calculator className="w-5 h-5 mr-2" />
-                  Your Nutrition Plan
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="bg-white/50 dark:bg-gray-900/30 p-4 rounded-lg">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">{existingProfile.targetCalories ? Math.round(existingProfile.targetCalories) : 0}</div>
-                      <div className="text-sm text-muted-foreground">Target Daily Calories</div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="bg-white/50 dark:bg-gray-900/30 p-3 rounded-lg text-center">
-                      <div className="text-lg font-semibold">{Math.round(existingProfile.bmr || 0)}</div>
-                      <div className="text-xs text-muted-foreground">BMR</div>
-                    </div>
-                    <div className="bg-white/50 dark:bg-gray-900/30 p-3 rounded-lg text-center">
-                      <div className="text-lg font-semibold">{Math.round(existingProfile.tdee || 0)}</div>
-                      <div className="text-xs text-muted-foreground">TDEE</div>
-                    </div>
-                    <div className="bg-white/50 dark:bg-gray-900/30 p-3 rounded-lg text-center">
-                      <div className="text-lg font-semibold text-blue-600">{existingProfile.targetProtein || Math.floor((existingProfile.weight || 70) * 0.8)}g</div>
-                      <div className="text-xs text-muted-foreground">Daily Protein</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="pt-2">
-                  <Badge variant="secondary" className="w-full justify-center py-2">
-                    Profile Active & Saved
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          ) : !profileData ? (
+          {/* Show placeholder when no profile data */}
+          {!profileData ? (
             <Card className="border-dashed border-2 border-muted-foreground/20">
               <CardContent className="pt-6">
                 <div className="text-center text-muted-foreground">
