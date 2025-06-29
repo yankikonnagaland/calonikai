@@ -1861,12 +1861,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               );
             }
 
-            console.log(`Premium activated for user ${userId} via webhook`);
+            console.log(`${planType} subscription activated for user ${userId} via webhook`);
 
             // For webhook, we need to respond to Razorpay but we can't redirect the user directly
             // The frontend payment handler will handle the redirect
             res.status(200).json({
-              message: "Premium subscription activated successfully",
+              message: `${planType} subscription activated successfully`,
               userId: userId,
               redirectUrl: "https://calonik.ai/payment-success",
             });
