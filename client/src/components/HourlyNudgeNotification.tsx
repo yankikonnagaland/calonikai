@@ -17,10 +17,10 @@ interface HourlyActivity {
 
 interface HourlyNudgeNotificationProps {
   userId: string;
-  isPremium: boolean;
+  isPremium?: boolean; // Optional since all users can now see nudges
 }
 
-export default function HourlyNudgeNotification({ userId, isPremium }: HourlyNudgeNotificationProps) {
+export default function HourlyNudgeNotification({ userId }: HourlyNudgeNotificationProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [dismissedAt, setDismissedAt] = useState<string | null>(null);
   const [currentActivity, setCurrentActivity] = useState<HourlyActivity | null>(null);
@@ -33,8 +33,6 @@ export default function HourlyNudgeNotification({ userId, isPremium }: HourlyNud
 
   // Check if user should see hourly nudge
   const shouldShowNudge = () => {
-    if (!isPremium) return false;
-    
     const now = new Date();
     const currentHour = now.getHours();
     const currentMinutes = now.getMinutes();
@@ -73,7 +71,7 @@ export default function HourlyNudgeNotification({ userId, isPremium }: HourlyNud
     checkNudge(); // Initial check
 
     return () => clearInterval(interval);
-  }, [isPremium, isVisible, dismissedAt, getRandomActivity]);
+  }, [isVisible, dismissedAt, getRandomActivity]);
 
   // Update current activity when random activity is fetched
   useEffect(() => {
@@ -111,7 +109,7 @@ export default function HourlyNudgeNotification({ userId, isPremium }: HourlyNud
     }
   };
 
-  if (!isPremium || !isVisible || !currentActivity) {
+  if (!isVisible || !currentActivity) {
     return null;
   }
 

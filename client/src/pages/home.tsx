@@ -345,7 +345,6 @@ export default function Home() {
       {/* Hourly Activity Nudge Notification */}
       <HourlyNudgeNotification
         userId={sessionId}
-        isPremium={usageStats?.isPremium || false}
       />
     </div>
   );
