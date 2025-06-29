@@ -452,7 +452,7 @@ export default function FoodCamera({ sessionId, selectedDate, onFoodDetected, on
       // Get intelligent unit selection for this food
       const intelligentUnit = getIntelligentUnitForFood(detectedFood.name);
 
-      // Store the AI food in the database first with intelligent unit
+      // Store the AI food in the database with smart portion data
       await apiRequest("POST", "/api/ai-food", {
         id: hashId,
         name: detectedFood.name,
@@ -462,7 +462,14 @@ export default function FoodCamera({ sessionId, selectedDate, onFoodDetected, on
         fat: detectedFood.fat,
         portionSize: intelligentUnit.unit,
         category: "AI Detected",
-        defaultUnit: intelligentUnit.unit
+        defaultUnit: intelligentUnit.unit,
+        // Include smart portion data if detected by AI
+        smartPortionGrams: detectedFood.smartPortionGrams || null,
+        smartCalories: detectedFood.smartCalories || null,
+        smartProtein: detectedFood.smartProtein || null,
+        smartCarbs: detectedFood.smartCarbs || null,
+        smartFat: detectedFood.smartFat || null,
+        aiConfidence: detectedFood.aiConfidence || detectedFood.confidence
       });
 
       // Add to meal using intelligent unit selection

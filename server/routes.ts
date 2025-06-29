@@ -121,6 +121,12 @@ Consider regional variations and authentic preparation methods.`,
       category: foodData.category || categorizeFood(query),
       defaultUnit:
         foodData.defaultUnit || getSmartDefaultUnit(query, foodData.category),
+      smartPortionGrams: null,
+      smartCalories: null,
+      smartProtein: null,
+      smartCarbs: null,
+      smartFat: null,
+      aiConfidence: null,
     };
 
     // Store for future searches
@@ -151,6 +157,12 @@ function createFallbackFood(query: string) {
     portionSize: "100g",
     category: categorizeFood(query),
     defaultUnit: getSmartDefaultUnit(query, categorizeFood(query)),
+    smartPortionGrams: null,
+    smartCalories: null,
+    smartProtein: null,
+    smartCarbs: null,
+    smartFat: null,
+    aiConfidence: null,
   };
 }
 
@@ -701,6 +713,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         defaultUnit,
       } = req.body;
 
+      const {
+        smartPortionGrams,
+        smartCalories, 
+        smartProtein,
+        smartCarbs,
+        smartFat,
+        aiConfidence
+      } = req.body;
+
       const aiFood = {
         id: id || Date.now(),
         name: name || "Unknown Food",
@@ -711,6 +732,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         portionSize: portionSize || "100g",
         category: category || "AI Detected",
         defaultUnit: defaultUnit || "serving",
+        smartPortionGrams: smartPortionGrams || null,
+        smartCalories: smartCalories || null,
+        smartProtein: smartProtein || null,
+        smartCarbs: smartCarbs || null,
+        smartFat: smartFat || null,
+        aiConfidence: aiConfidence || null,
       };
 
       await storage.storeAiFood(aiFood);
@@ -1249,14 +1276,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           {
             role: "system",
             content:
-              "You are a food recognition expert specializing in Indian, Asian, and international cuisines. Analyze food images and provide detailed nutritional information. Always return valid JSON format.",
+              "You are a food recognition expert specializing in Indian, Asian, and international cuisines. Analyze food images and provide detailed nutritional information with smart portion detection. Always return valid JSON format.",
           },
           {
             role: "user",
             content: [
               {
                 type: "text",
-                text: 'Analyze this food image and identify all visible food items. For each food provide: name, calories (per 100g), protein (g), carbs (g), fat (g), confidence (0-100), estimatedQuantity. Return JSON: {"foods": [{"name": "food name", "calories": number, "protein": number, "carbs": number, "fat": number, "confidence": number, "estimatedQuantity": "serving description"}], "suggestions": ["tips or recommendations"]}',
+                text: 'Analyze this food image and identify all visible food items. For each food, estimate the actual portion weight and provide both per-100g nutritional data AND the specific nutrition for the detected portion. Return JSON: {"foods": [{"name": "food name", "calories": number, "protein": number, "carbs": number, "fat": number, "confidence": number, "estimatedQuantity": "serving description", "portionWeightGrams": number, "portionCalories": number, "portionProtein": number, "portionCarbs": number, "portionFat": number}], "suggestions": ["tips or recommendations"]}',
               },
               {
                 type: "image_url",
@@ -1286,7 +1313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Enhanced validation and normalization
+      // Enhanced validation and normalization with smart portion data
       const validatedFoods = result.foods.map((food: any) => {
         const normalizedFood = {
           name: food.name || "Unknown Food",
@@ -1319,8 +1346,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             Math.max(10, Math.round(Number(food.confidence) || 75)),
           ),
           estimatedQuantity: food.estimatedQuantity || "1 serving",
+          // Extract smart portion data from AI analysis
+          smartPortionGrams: food.portionWeightGrams ? Math.round(Number(food.portionWeightGrams) * 10) / 10 : null,
+          smartCalories: food.portionCalories ? Math.round(Number(food.portionCalories) * 10) / 10 : null,
+          smartProtein: food.portionProtein ? Math.round(Number(food.portionProtein) * 10) / 10 : null,
+          smartCarbs: food.portionCarbs ? Math.round(Number(food.portionCarbs) * 10) / 10 : null,
+          smartFat: food.portionFat ? Math.round(Number(food.portionFat) * 10) / 10 : null,
+          aiConfidence: Math.min(100, Math.max(10, Math.round(Number(food.confidence) || 75))),
         };
-        console.log("Validated food:", normalizedFood);
+        console.log("Validated food with smart portion data:", normalizedFood);
         return normalizedFood;
       });
 

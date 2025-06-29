@@ -13,6 +13,13 @@ export const foods = pgTable("foods", {
   portionSize: text("portion_size").notNull(),
   category: text("category").notNull(),
   defaultUnit: text("default_unit").notNull(),
+  // AI-detected smart portion data (optional)
+  smartPortionGrams: real("smart_portion_grams"), // AI-detected portion weight
+  smartCalories: real("smart_calories"), // AI-detected calories for that portion
+  smartProtein: real("smart_protein"), // AI-detected protein for that portion
+  smartCarbs: real("smart_carbs"), // AI-detected carbs for that portion
+  smartFat: real("smart_fat"), // AI-detected fat for that portion
+  aiConfidence: real("ai_confidence"), // Confidence level (0-100)
 });
 
 export const mealItems = pgTable("meal_items", {

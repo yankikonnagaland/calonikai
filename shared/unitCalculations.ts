@@ -12,9 +12,20 @@ export interface NutritionData {
   fat: number;
 }
 
+export interface SmartPortionData {
+  smartPortionGrams?: number;    // AI-detected portion weight (e.g., 25g for handful)
+  smartCalories?: number;        // AI-detected calories for that portion
+  smartProtein?: number;         // AI-detected protein for that portion
+  smartCarbs?: number;           // AI-detected carbs for that portion
+  smartFat?: number;             // AI-detected fat for that portion
+  aiConfidence?: number;         // Confidence level of AI detection (0-100)
+}
+
 export interface CalculatedNutrition extends NutritionData {
   totalGrams: number;
   gramEquivalent: string;
+  usedSmartPortion?: boolean;    // Indicates if smart AI data was used
+  smartPortionInfo?: string;     // Description of smart portion used
 }
 
 // Comprehensive unit-to-gram mapping for accurate calorie calculations
@@ -153,14 +164,42 @@ export const extractGramFromUnit = (unit: string): number | null => {
 
 /**
  * Calculate accurate nutrition based on unit and quantity
+ * Prioritizes AI-detected smart portion data when available
  */
 export const calculateNutritionFromUnit = (
   foodName: string,
   unit: string,
   quantity: number,
-  basePer100g: NutritionData
+  basePer100g: NutritionData,
+  smartPortion?: SmartPortionData
 ): CalculatedNutrition => {
-  // First, try to extract grams from unit description
+  // Priority 1: Use AI-detected smart portion data if available
+  if (smartPortion?.smartPortionGrams && smartPortion?.smartCalories) {
+    const unitWeight = unitToGramMap[unit.toLowerCase()] || unitToGramMap["serving"];
+    const totalGrams = unitWeight * quantity;
+    
+    // Calculate calories per gram from AI data
+    const calPerGram = smartPortion.smartCalories / smartPortion.smartPortionGrams;
+    
+    // Scale nutrition based on user's actual selection
+    const calories = Math.round(calPerGram * totalGrams * 10) / 10;
+    const protein = smartPortion.smartProtein ? Math.round((smartPortion.smartProtein / smartPortion.smartPortionGrams) * totalGrams * 10) / 10 : Math.round(basePer100g.protein * (totalGrams / 100) * 10) / 10;
+    const carbs = smartPortion.smartCarbs ? Math.round((smartPortion.smartCarbs / smartPortion.smartPortionGrams) * totalGrams * 10) / 10 : Math.round(basePer100g.carbs * (totalGrams / 100) * 10) / 10;
+    const fat = smartPortion.smartFat ? Math.round((smartPortion.smartFat / smartPortion.smartPortionGrams) * totalGrams * 10) / 10 : Math.round(basePer100g.fat * (totalGrams / 100) * 10) / 10;
+    
+    return {
+      calories,
+      protein,
+      carbs,
+      fat,
+      totalGrams,
+      gramEquivalent: `~${totalGrams}g`,
+      usedSmartPortion: true,
+      smartPortionInfo: `AI detected: ${smartPortion.smartPortionGrams}g = ${smartPortion.smartCalories} cal`
+    };
+  }
+  
+  // Priority 2: Extract grams from unit description
   const extractedGrams = extractGramFromUnit(unit);
   
   let gramsPerUnit: number;
@@ -198,7 +237,8 @@ export const calculateNutritionFromUnit = (
     carbs,
     fat,
     totalGrams: Math.round(totalGrams * 10) / 10,
-    gramEquivalent
+    gramEquivalent,
+    usedSmartPortion: false
   };
 };
 

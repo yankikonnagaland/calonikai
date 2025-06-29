@@ -190,11 +190,22 @@ export default function MealSummary({
         fat: item.food.fat
       };
       
+      // Create smart portion data if available from AI detection
+      const smartPortion = item.food.smartPortionGrams ? {
+        smartPortionGrams: item.food.smartPortionGrams,
+        smartCalories: item.food.smartCalories,
+        smartProtein: item.food.smartProtein,
+        smartCarbs: item.food.smartCarbs,
+        smartFat: item.food.smartFat,
+        aiConfidence: item.food.aiConfidence
+      } : undefined;
+      
       const calculatedNutrition = calculateNutritionFromUnit(
         item.food.name,
         item.unit,
         item.quantity,
-        basePer100g
+        basePer100g,
+        smartPortion
       );
       
       acc.calories += calculatedNutrition.calories;
