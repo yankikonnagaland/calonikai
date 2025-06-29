@@ -1,4 +1,4 @@
-import { Apple, Camera, BarChart3, Crown, Check, Zap, LogIn, AlertTriangle, Copy } from "lucide-react";
+import { Apple, Camera, BarChart3, Crown, Check, Zap, LogIn, AlertTriangle, Copy, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -173,7 +173,11 @@ export default function Landing() {
                 <ul className="space-y-3 mb-6">
                   {basicFeatures.map((feature, index) => (
                     <li key={index} className="flex items-center space-x-2">
-                      <Check className="w-4 h-4 text-blue-400" />
+                      {feature === "No Exercise Tracking" ? (
+                        <X className="w-4 h-4 text-red-400" />
+                      ) : (
+                        <Check className="w-4 h-4 text-blue-400" />
+                      )}
                       <span className="text-gray-300">{feature}</span>
                     </li>
                   ))}
