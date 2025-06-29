@@ -788,21 +788,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { foodName } = req.params;
       const category = req.query.category as string || "";
       
-      const unitSelection = getLocalUnitSelection(foodName, category);
+      // Use the same smart unit selection logic as in search results
+      const smartUnits = await getSmartUnitSelection(foodName, category);
       
-      // Also return unit options including "grams"
+      // Also return unit options including "grams" and "pieces"
+      const unitOptions = [...smartUnits.unitOptions];
+      if (!unitOptions.includes("grams")) {
+        unitOptions.push("grams");
+      }
+      if (!unitOptions.includes("pieces")) {
+        unitOptions.push("pieces");
+      }
+      
+      res.json({
+        unit: smartUnits.unit,
+        unitOptions: unitOptions
+      });
+    } catch (error) {
+      console.error("Error getting unit selection:", error);
+      // Fallback to local selection if smart selection fails
+      const unitSelection = getLocalUnitSelection(foodName, category);
       const unitOptions = [...unitSelection.unitOptions];
       if (!unitOptions.includes("grams")) {
         unitOptions.push("grams");
+      }
+      if (!unitOptions.includes("pieces")) {
+        unitOptions.push("pieces");
       }
       
       res.json({
         unit: unitSelection.unit,
         unitOptions: unitOptions
       });
-    } catch (error) {
-      console.error("Error getting unit selection:", error);
-      res.status(500).json({ message: "Failed to get unit selection" });
     }
   });
 
