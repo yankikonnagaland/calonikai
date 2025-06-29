@@ -472,12 +472,11 @@ function SubscriptionContent({
           {/* Plan Selection */}
           <div className="grid grid-cols-2 gap-3 mb-6">
             <button
-              onClick={() => setSelectedPlan('basic')}
-              className={`p-4 rounded-lg border text-left transition-all ${
-                selectedPlan === 'basic'
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
+              onClick={() => {
+                console.log("Basic Plan selected - redirecting to Razorpay: https://rzp.io/rzp/rh9zVBZO");
+                window.open('https://rzp.io/rzp/rh9zVBZO', '_blank');
+              }}
+              className={`p-4 rounded-lg border text-left transition-all hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20 cursor-pointer`}
             >
               <div className="font-semibold text-blue-600">Basic Plan</div>
               <div className="text-lg font-bold text-[#a50bba]">₹49/month</div>
