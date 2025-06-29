@@ -17,12 +17,12 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { calculateNutritionFromUnit, validateCalorieCalculation } from "@shared/unitCalculations";
-import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 import crypto from "crypto";
 import { checkWeightGoalAchievement, markGoalAsAchieved } from "./weightGoalChecker";
 import { testHourlyNudge } from "./hourlyNudgeScheduler";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const genai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 // Razorpay configuration (optional)
 import Razorpay from "razorpay";
@@ -59,21 +59,13 @@ async function searchFoodWithAI(query: string) {
       if (bestMatch) return bestMatch;
     }
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.GEMINI_API_KEY) {
       return createFallbackFood(query);
     }
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a nutrition expert specializing in Indian, Asian, and international cuisines. Provide accurate nutritional information. Return only valid JSON with exact fields: name, calories, protein, carbs, fat, portionSize, category, defaultUnit. Focus on realistic values for authentic dishes.",
-        },
-        {
-          role: "user",
-          content: `Analyze this food item and provide comprehensive nutrition data: "${query}"
+    const prompt = `You are a nutrition expert specializing in Indian, Asian, and international cuisines. Provide accurate nutritional information. Return only valid JSON with exact fields: name, calories, protein, carbs, fat, portionSize, category, defaultUnit. Focus on realistic values for authentic dishes.
+
+Analyze this food item and provide comprehensive nutrition data: "${query}"
 
 Return JSON format:
 {
@@ -87,15 +79,31 @@ Return JSON format:
   "defaultUnit": "best measurement unit (pieces/cups/portions/grams)"
 }
 
-Consider regional variations and authentic preparation methods.`,
+Consider regional variations and authentic preparation methods.`;
+
+    const response = await genai.models.generateContent({
+      model: "gemini-2.5-flash",
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            calories: { type: "number" },
+            protein: { type: "number" },
+            carbs: { type: "number" },
+            fat: { type: "number" },
+            portionSize: { type: "string" },
+            category: { type: "string" },
+            defaultUnit: { type: "string" },
+          },
+          required: ["name", "calories", "protein", "carbs", "fat", "portionSize", "category", "defaultUnit"],
         },
-      ],
-      response_format: { type: "json_object" },
-      max_tokens: 600,
-      temperature: 0.3, // Lower temperature for more consistent results
+      },
+      contents: prompt,
     });
 
-    const foodData = JSON.parse(response.choices[0].message.content || "{}");
+    const foodData = JSON.parse(response.text || "{}");
 
     // Generate consistent hash-based ID
     const foodHash = crypto
@@ -282,34 +290,42 @@ function getDefaultFat(foodName: string): number {
   return 3;
 }
 
-// Direct AI search without database dependency
+// Direct AI search without database dependency using Gemini
 async function searchFoodDirectly(query: string) {
   const normalizedQuery = query.toLowerCase().trim();
 
-  if (!process.env.OPENAI_API_KEY) {
+  if (!process.env.GEMINI_API_KEY) {
     return createFallbackFood(query);
   }
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a nutrition expert. Provide accurate nutritional information for foods. Return only valid JSON with exact fields: name, calories, protein, carbs, fat, portionSize, category, defaultUnit. Focus on realistic values.",
+    const prompt = `You are a nutrition expert. Provide accurate nutritional information for foods. Return only valid JSON with exact fields: name, calories, protein, carbs, fat, portionSize, category, defaultUnit. Focus on realistic values.
+
+Provide nutrition data for: "${query}". Return JSON: {"name": "food name", "calories": number (per 100g), "protein": number, "carbs": number, "fat": number, "portionSize": "serving size", "category": "food category", "defaultUnit": "measurement unit"}`;
+
+    const response = await genai.models.generateContent({
+      model: "gemini-2.5-flash",
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            calories: { type: "number" },
+            protein: { type: "number" },
+            carbs: { type: "number" },
+            fat: { type: "number" },
+            portionSize: { type: "string" },
+            category: { type: "string" },
+            defaultUnit: { type: "string" },
+          },
+          required: ["name", "calories", "protein", "carbs", "fat", "portionSize", "category", "defaultUnit"],
         },
-        {
-          role: "user",
-          content: `Provide nutrition data for: "${query}". Return JSON: {"name": "food name", "calories": number (per 100g), "protein": number, "carbs": number, "fat": number, "portionSize": "serving size", "category": "food category", "defaultUnit": "measurement unit"}`,
-        },
-      ],
-      response_format: { type: "json_object" },
-      max_tokens: 400,
-      temperature: 0.2,
+      },
+      contents: prompt,
     });
 
-    const foodData = JSON.parse(response.choices[0].message.content || "{}");
+    const foodData = JSON.parse(response.text || "{}");
     const foodHash = crypto
       .createHash("md5")
       .update(normalizedQuery)
@@ -335,7 +351,7 @@ async function searchFoodDirectly(query: string) {
         foodData.defaultUnit || getSmartDefaultUnit(query, foodData.category),
     };
   } catch (error) {
-    console.error("Direct AI search failed:", error);
+    console.error("Gemini AI search failed:", error);
     return createFallbackFood(query);
   }
 }
@@ -345,17 +361,9 @@ async function getSmartUnitSelection(
   category: string = "",
 ): Promise<{ unit: string; unitOptions: string[]; quantity: number }> {
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a nutrition expert specializing in realistic portion calculations. Return JSON with 'unit' (with exact ml/g amounts), 'unitOptions' (array with sizes), and 'quantity' (realistic default quantity for typical consumption).",
-        },
-        {
-          role: "user",
-          content: `For "${foodName}" in category "${category}", determine:
+    const prompt = `You are a nutrition expert specializing in realistic portion calculations. Return JSON with 'unit' (with exact ml/g amounts), 'unitOptions' (array with sizes), and 'quantity' (realistic default quantity for typical consumption).
+
+For "${foodName}" in category "${category}", determine:
 1. Best default unit with exact measurements (e.g., "can (500ml)", "medium portion (150g)")
 2. Unit options with realistic sizes 
 3. Default quantity for typical consumption
@@ -365,14 +373,29 @@ Examples:
 - Rice: unit="medium portion (150g)", quantity=1 (because 1 portion = 150g = 1.5x the 100g database value)
 - Apple: unit="medium (120g)", quantity=1 (because 1 apple = 120g = 1.2x the 100g database value)
 
-Return JSON: {"unit": "exact_unit_with_size", "unitOptions": ["option1", "option2", "option3"], "quantity": realistic_number}`,
+Return JSON: {"unit": "exact_unit_with_size", "unitOptions": ["option1", "option2", "option3"], "quantity": realistic_number}`;
+
+    const response = await genai.models.generateContent({
+      model: "gemini-2.5-flash",
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "object",
+          properties: {
+            unit: { type: "string" },
+            unitOptions: { 
+              type: "array",
+              items: { type: "string" }
+            },
+            quantity: { type: "number" },
+          },
+          required: ["unit", "unitOptions", "quantity"],
         },
-      ],
-      response_format: { type: "json_object" },
-      max_tokens: 300,
+      },
+      contents: prompt,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || "{}");
+    const result = JSON.parse(response.text || "{}");
     const fallback = getLocalUnitSelection(foodName, category);
     
     return {
@@ -1308,45 +1331,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.trackUsage(userId, "photo_analyze");
       }
 
-      if (!process.env.OPENAI_API_KEY) {
+      if (!process.env.GEMINI_API_KEY) {
         return res
           .status(400)
           .json({ message: "AI analysis service not available" });
       }
 
-      console.log("Starting food image analysis...");
+      console.log("Starting food image analysis with Gemini...");
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a food recognition expert specializing in Indian, Asian, and international cuisines. Analyze food images and provide detailed nutritional information with smart portion detection. Always return valid JSON format.",
+      const imageData = Buffer.from(image, 'base64');
+
+      const response = await genai.models.generateContent({
+        model: "gemini-2.5-flash",
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "object",
+            properties: {
+              foods: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    name: { type: "string" },
+                    calories: { type: "number" },
+                    protein: { type: "number" },
+                    carbs: { type: "number" },
+                    fat: { type: "number" },
+                    confidence: { type: "number" },
+                    estimatedQuantity: { type: "string" },
+                  },
+                  required: ["name", "calories", "protein", "carbs", "fat", "confidence", "estimatedQuantity"],
+                },
+              },
+              suggestions: {
+                type: "array",
+                items: { type: "string" },
+              },
+            },
+            required: ["foods", "suggestions"],
           },
+        },
+        contents: [
           {
-            role: "user",
-            content: [
+            parts: [
               {
-                type: "text",
-                text: 'Analyze this food image and identify all visible food items. For each food, estimate the actual portion weight and provide both per-100g nutritional data AND the specific nutrition for the detected portion. Return JSON: {"foods": [{"name": "food name", "calories": number, "protein": number, "carbs": number, "fat": number, "confidence": number, "estimatedQuantity": "serving description", "portionWeightGrams": number, "portionCalories": number, "portionProtein": number, "portionCarbs": number, "portionFat": number}], "suggestions": ["tips or recommendations"]}',
+                inlineData: {
+                  data: imageData.toString("base64"),
+                  mimeType: "image/jpeg",
+                },
               },
               {
-                type: "image_url",
-                image_url: {
-                  url: `data:image/jpeg;base64,${image}`,
-                },
+                text: 'Analyze this food image and identify all visible food items. For each food, estimate the actual portion and provide nutritional data per 100g. Return JSON: {"foods": [{"name": "food name", "calories": number (per 100g), "protein": number, "carbs": number, "fat": number, "confidence": number (0-100), "estimatedQuantity": "serving description"}], "suggestions": ["tips or recommendations"]}',
               },
             ],
           },
         ],
-        response_format: { type: "json_object" },
-        max_tokens: 1200,
-        temperature: 0.3,
       });
 
-      console.log("OpenAI analysis complete");
-      const result = JSON.parse(response.choices[0].message.content || "{}");
+      console.log("Gemini analysis complete");
+      const result = JSON.parse(response.text || "{}");
       console.log("Parsed result:", result);
 
       if (!result.foods || !Array.isArray(result.foods)) {
@@ -1573,25 +1617,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       Be encouraging and specific to their profile.`;
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a certified nutrition expert providing personalized health insights. Be specific, encouraging, and scientifically accurate.",
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        max_tokens: 200,
-        temperature: 0.7,
+      const systemPrompt = "You are a certified nutrition expert providing personalized health insights. Be specific, encouraging, and scientifically accurate.";
+      const fullPrompt = `${systemPrompt}\n\n${prompt}`;
+
+      const response = await genai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: fullPrompt,
       });
 
       const insights =
-        response.choices[0].message.content ||
+        response.text ||
         "Your profile looks good! Focus on consistency with your nutrition and exercise plan.";
 
       res.json({

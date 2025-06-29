@@ -442,6 +442,16 @@ The application follows a client-server architecture with clear separation of co
 - UPDATED: Navigation component now shows Japanese Beginner Symbol 🔰 for Basic users alongside crown 👑 for Premium users
 - CONFIRMED: Database subscription status correctly updated to 'basic' tier with proper feature enforcement
 
+**June 29, 2025 - Complete OpenAI to Google Gemini API Migration:**
+- MIGRATED: Complete replacement of OpenAI GPT-4 with Google Gemini 2.5 Flash for all AI functionality
+- UPDATED: Food image analysis endpoint now uses Gemini's vision capabilities with structured JSON schema
+- ENHANCED: Smart unit selection system migrated to Gemini with proper response parsing
+- CONFIGURED: GEMINI_API_KEY environment variable for secure API access
+- IMPROVED: All AI food search, portion recommendations, and nutritional insights now powered by Gemini
+- VERIFIED: Food camera detection, smart unit selection, and profile insights working with new API
+- REMOVED: All OpenAI dependencies and references from active codebase
+- MAINTAINED: Same user experience with enhanced reliability and performance through Gemini integration
+
 **June 29, 2025 - UI Organization & Exercise Tracker Refinements:**
 - REORDERED: Daily targets card moved to top-left (2/3 width), saved profile section moved to right side (1/3 width)
 - ENHANCED: Smooth tooltip hover effects with 200ms delay and seamless color transitions from subtle gray to primary
