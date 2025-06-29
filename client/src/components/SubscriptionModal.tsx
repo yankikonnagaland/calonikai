@@ -499,7 +499,7 @@ function SubscriptionContent({
             >
               <div className="font-semibold text-emerald-600">Premium Plan</div>
               <div className="text-lg font-bold">₹399/month</div>
-              <div className="text-sm text-gray-600">5 photos, 20 searches + Exercise</div>
+              <div className="text-sm text-gray-600">Unlock all features including exercise tracker</div>
             </button>
           </div>
 
