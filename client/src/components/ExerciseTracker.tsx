@@ -884,7 +884,7 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
                     {/* Duration Input */}
                     <div className="space-y-3">
                       <NumberInput
-                        placeholder="Enter exercise duration in minutes (overrides automatic time tracking above)"
+                        placeholder="Enter in mins (overrides automatic time tracking above)"
                         value={manualTime}
                         onChange={(e) => setManualTime(e.target.value)}
                         className="w-full h-12 text-lg font-medium text-center border-blue-200 dark:border-blue-700"
