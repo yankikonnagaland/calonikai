@@ -945,9 +945,9 @@ export default function FoodCamera({
             )}
           </CardTitle>
           {isLimitReached && isAuthenticated && (
-            <div className="text-sm text-orange-600 bg-orange-50 p-2 rounded-md border border-orange-200 mt-2 flex items-center justify-between">
+            <div className="text-sm text-orange-600 p-2 rounded-md border border-orange-200 mt-2 flex items-center justify-between bg-[#ffffff]">
               <span>
-                Daily Limit Reached.{" "}
+                Camera Daily Limit Reached.{" "}
                 {isPremium
                   ? "Use the Food Search."
                   : "Upgrade to premium for more scans."}
@@ -1234,7 +1234,6 @@ export default function FoodCamera({
           )}
         </CardContent>
       </Card>
-
       <SubscriptionModal
         isOpen={showSubscriptionModal}
         onClose={() => setShowSubscriptionModal(false)}
