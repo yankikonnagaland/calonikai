@@ -862,7 +862,7 @@ Powered by Calonik.ai 🚀
               
               {/* Selected Date Weight Display */}
               {(selectedDateWeight || userProfile?.weight) && (
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 p-4 rounded-xl border border-blue-200 dark:border-blue-800">
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 p-4 rounded-xl">
                   <div className="flex items-center gap-3">
                     <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full">
                       <Scale className="w-5 h-5 text-blue-600" />
