@@ -345,10 +345,7 @@ function RazorpayCheckout({ onSuccess, selectedPlan = 'premium' }: { onSuccess: 
   return (
     <div className="space-y-6">
       
-      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-        <CreditCard className="w-4 h-4" />
-        <span>Cards, UPI, Net Banking, Wallets</span>
-      </div>
+      
       
       {!isScriptLoaded && (
         <div className="text-center text-xs text-gray-500 flex items-center justify-center gap-2">
