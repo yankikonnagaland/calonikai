@@ -45,11 +45,10 @@ export default function Landing() {
   ];
 
   const basicFeatures = [
-    "2 AI photo scans per day",
-    "5 food searches per day", 
-    "Basic nutrition tracking",
-    "Daily progress reports",
-    "Email support"
+    "Limited AI photo scans per day",
+    "Limited food searches per day",
+    "Daily calorie tracking",
+    "No Exercise Tracking"
   ];
 
   const premiumFeatures = [
