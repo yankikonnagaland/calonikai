@@ -456,8 +456,13 @@ function calculatePortionNutrition(food: any, unit: string, quantity: number) {
   // Extract weight/volume from unit descriptions and calculate multiplier
   const unitLower = unit.toLowerCase();
   
+  // For grams unit, calculate direct multiplier based on gram amount
+  if (unitLower === 'grams' || unit === 'grams') {
+    // For raw gram units, divide by 100 to get the multiplier (since base is per 100g)
+    multiplier = quantity / 100;
+  }
   // For beverages with ml units, calculate proper multiplier based on volume
-  if (unitLower === 'ml' || unit === 'ml') {
+  else if (unitLower === 'ml' || unit === 'ml') {
     // For raw ml units, divide by 100 to get the multiplier (since base is per 100ml)
     multiplier = quantity / 100;
   }
@@ -578,7 +583,7 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
   ) {
     return {
       unit: "medium portion (150g)",
-      unitOptions: ["small portion (100g)", "medium portion (150g)", "large portion (200g)", "bowl", "grams"],
+      unitOptions: ["grams", "small portion (75g)", "medium portion (150g)", "large portion (200g)", "bowl"],
     };
   }
 

@@ -616,6 +616,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       "handful": 0.3,
       
       // Measurement units
+      "grams": 0.01, // Direct gram input: divide by 100 for per-100g calculation
       "tablespoon": 0.15,
       "teaspoon": 0.05,
       "ml": 0.01,
