@@ -183,13 +183,14 @@ function RazorpayCheckout({ onSuccess, selectedPlan = 'premium' }: { onSuccess: 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
+      const planAmount = selectedPlan === 'basic' ? 4900 : 39900;
       const rawResponse = await apiRequest(
         "POST",
         "/api/create-razorpay-order",
         {
-          amount: 39900, // ₹399 in paise
+          amount: planAmount, // Dynamic amount based on selected plan
           currency: "INR",
-          planType: "monthly",
+          planType: selectedPlan,
         },
       );
 
@@ -209,14 +210,13 @@ function RazorpayCheckout({ onSuccess, selectedPlan = 'premium' }: { onSuccess: 
       console.log("Razorpay order created:", orderResponse);
 
       // Configure Razorpay options with better error handling
-      const planAmount = selectedPlan === 'basic' ? 4900 : 39900;
       const planDescription = selectedPlan === 'basic' 
         ? "Basic Plan - ₹49/month" 
         : "Premium Plan - ₹399/month";
       
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: planAmount,
+        amount: orderResponse.amount,
         currency: "INR",
         name: "Calonik.ai",
         description: planDescription,
@@ -472,11 +472,12 @@ function SubscriptionContent({
           {/* Plan Selection */}
           <div className="grid grid-cols-2 gap-3 mb-6">
             <button
-              onClick={() => {
-                console.log("Basic Plan selected - redirecting to Razorpay: https://rzp.io/rzp/rh9zVBZO");
-                window.open('https://rzp.io/rzp/rh9zVBZO', '_blank');
-              }}
-              className={`p-4 rounded-lg border text-left transition-all hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20 cursor-pointer`}
+              onClick={() => setSelectedPlan('basic')}
+              className={`p-4 rounded-lg border text-left transition-all ${
+                selectedPlan === 'basic'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
             >
               <div className="font-semibold text-blue-600">Basic Plan</div>
               <div className="text-lg font-bold text-[#a50bba]">₹49/month</div>

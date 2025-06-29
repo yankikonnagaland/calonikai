@@ -1657,14 +1657,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const options = {
-          amount: amount, // amount in paise (₹399 = 39900 paise)
+          amount: amount, // amount in paise (₹49 = 4900, ₹399 = 39900 paise)
           currency: currency || "INR",
           receipt: `calonik_${planType}_${Date.now()}`,
           notes: {
             userId: userId,
             userEmail: user.email || "",
-            subscription: `premium_${planType}`,
-            planType: planType,
+            subscription: `${planType}_monthly`,
+            plan: planType, // Store plan type for webhook processing
             appName: "Calonik.ai",
           },
         };
