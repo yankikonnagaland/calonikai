@@ -288,10 +288,22 @@ function RazorpayCheckout({ onSuccess, selectedPlan = 'premium' }: { onSuccess: 
         timeout: 180, // 3 minutes timeout (reduced for better UX)
       };
 
+      // Log complete Razorpay options including any generated URLs
+      console.log("=== RAZORPAY PAYMENT OPTIONS ===");
+      console.log("Full Razorpay options:", JSON.stringify(options, null, 2));
+      console.log("Razorpay Key ID:", options.key);
+      console.log("Order ID:", options.order_id);
+      console.log("Amount:", options.amount);
+      console.log("Selected Plan:", selectedPlan);
+      console.log("Plan Description:", planDescription);
+      
       // Create and open Razorpay instance with aggressive performance optimization
       try {
         // Create instance immediately
         razorpayInstanceRef.current = new (window as any).Razorpay(options);
+        
+        console.log("Razorpay instance created successfully");
+        console.log("Opening Razorpay payment modal...");
         
         // Open immediately and ensure focus
         razorpayInstanceRef.current.open();
