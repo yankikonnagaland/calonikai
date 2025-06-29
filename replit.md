@@ -365,7 +365,7 @@ The application follows a client-server architecture with clear separation of co
 - UPDATED: Landing page pricing section to display only Basic and Premium subscription tiers
 - REMOVED: Free plan card from landing page per user request for cleaner paid subscription focus
 - Basic Plan (₹99/month) with 2 AI photo scans, 5 food searches, basic nutrition tracking
-- Premium Plan (₹399/month) with unlimited AI scans, unlimited searches, advanced features
+- Premium Plan (₹399/month) updated features: 5+ AI photo scans, 20+ food searches, enhanced exercise tracking, daily & monthly analytics, goal and progress tracking
 - Restructured pricing grid back to 2-column layout for better visual balance
 - Updated description text to "Choose the perfect plan for your nutrition tracking needs"
 - Added visual distinction with color-coded badges (🔰 for Basic, Crown for Premium)

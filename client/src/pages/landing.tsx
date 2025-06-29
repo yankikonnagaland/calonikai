@@ -53,12 +53,11 @@ export default function Landing() {
   ];
 
   const premiumFeatures = [
-    "Unlimited AI photo scans",
-    "Unlimited food searches",
-    "Advanced exercise tracking",
+    "5+ AI photo scans",
+    "20+ food searches",
+    "Enhanced exercise tracking",
     "Daily & monthly analytics",
-    "Priority support",
-    "Export data features"
+    "Goal and progress tracking"
   ];
 
   const copyToClipboard = (text: string) => {
