@@ -593,12 +593,12 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                       <div className="text-2xl font-bold text-primary">{profileData.bmr}</div>
                       <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
                         BMR (cal/day)
-                        <Tooltip>
+                        <Tooltip delayDuration={200}>
                           <TooltipTrigger asChild>
-                            <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/50 hover:text-muted-foreground" />
+                            <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/40 hover:text-primary transition-colors duration-200 ease-in-out" />
                           </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="text-sm max-w-xs">
+                          <TooltipContent className="max-w-xs bg-popover border shadow-lg">
+                            <p className="text-sm">
                               Basal Metabolic Rate - The minimum calories your body needs to function at rest (breathing, circulation, cell production)
                             </p>
                           </TooltipContent>
@@ -609,12 +609,12 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                       <div className="text-2xl font-bold text-primary">{profileData.tdee}</div>
                       <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
                         TDEE (cal/day)
-                        <Tooltip>
+                        <Tooltip delayDuration={200}>
                           <TooltipTrigger asChild>
-                            <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/50 hover:text-muted-foreground" />
+                            <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/40 hover:text-primary transition-colors duration-200 ease-in-out" />
                           </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="text-sm max-w-xs">
+                          <TooltipContent className="max-w-xs bg-popover border shadow-lg">
+                            <p className="text-sm">
                               Total Daily Energy Expenditure - Your BMR plus calories burned through daily activities and exercise
                             </p>
                           </TooltipContent>
@@ -633,12 +633,12 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                     <div className="text-3xl font-bold text-primary">{profileData.targetCalories}</div>
                     <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
                       Daily Target Calories
-                      <Tooltip>
+                      <Tooltip delayDuration={200}>
                         <TooltipTrigger asChild>
-                          <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/50 hover:text-muted-foreground" />
+                          <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/40 hover:text-primary transition-colors duration-200 ease-in-out" />
                         </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-sm max-w-xs">
+                        <TooltipContent className="max-w-xs bg-popover border shadow-lg">
+                          <p className="text-sm">
                             Your personalized daily calorie goal based on your TDEE and weight objectives (deficit for weight loss, surplus for weight gain)
                           </p>
                         </TooltipContent>
