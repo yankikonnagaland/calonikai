@@ -158,15 +158,19 @@ export default function Home() {
         ...mealItem.food,
         quantity: mealItem.quantity,
         unit: mealItem.unit,
-        isEditing: true
+        isEditing: true,
+        originalMealItem: mealItem
       });
+      
+      // Set editing state
+      setEditingMealItem(mealItem);
       
       // Invalidate queries to refresh the meal list
       queryClient.invalidateQueries({ queryKey: [`/api/meal/${sessionId}/${selectedDateString}`] });
       
       toast({
         title: "Edit Mode",
-        description: `${mealItem.food.name} moved to Food Search for editing`,
+        description: `${mealItem.food.name} ready for editing in Food Search`,
       });
     } catch (error) {
       toast({
@@ -236,6 +240,7 @@ export default function Home() {
                   onFoodSelect={setSelectedFood}
                   onMealAdded={handleMealItemAdded}
                   onRedirectToDashboard={() => setActiveTab("dashboard")}
+                  editingFood={selectedFood}
                 />
                 <FoodCamera 
                   sessionId={sessionId}

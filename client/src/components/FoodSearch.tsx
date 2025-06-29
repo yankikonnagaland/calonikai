@@ -17,9 +17,10 @@ interface FoodSearchProps {
   onFoodSelect: (food: Food | null) => void;
   onMealAdded?: () => void;
   onRedirectToDashboard?: () => void;
+  editingFood?: any; // Food item being edited from pencil button
 }
 
-export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMealAdded, onRedirectToDashboard }: FoodSearchProps) {
+export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMealAdded, onRedirectToDashboard, editingFood }: FoodSearchProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -49,39 +50,34 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Handle external food selection (when editing via pencil button)
+  // Handle external food selection from parent (pencil button editing)
   useEffect(() => {
-    if (onFoodSelect && typeof onFoodSelect === 'function') {
-      // This sets up the callback to receive external food selection
+    if (onFoodSelect) {
       onFoodSelect(selectedFood);
     }
   }, [onFoodSelect]);
 
-  // Handle external food data passed from parent component
-  const [lastExternalFood, setLastExternalFood] = useState<any>(null);
-  
+  // Handle editing food prop changes from parent component
   useEffect(() => {
-    // Check for external food selection from parent (pencil button)
-    const checkForExternalFood = () => {
-      // Listen for changes in selectedFood that come from external source
-      if (selectedFood && selectedFood.isEditing && selectedFood !== lastExternalFood) {
-        setSearchQuery(selectedFood.name || "");
-        setQuantity(selectedFood.quantity || 1);
-        setUnit(selectedFood.unit || "serving");
-        setShowSuggestions(false);
-        setLastExternalFood(selectedFood);
-        
-        // Focus the search input for immediate editing
-        setTimeout(() => {
-          if (searchInputRef.current) {
-            searchInputRef.current.focus();
-          }
-        }, 100);
-      }
-    };
-    
-    checkForExternalFood();
-  }, [selectedFood, lastExternalFood]);
+    if (editingFood && editingFood.isEditing) {
+      // Pre-populate the form with editing data
+      setSearchQuery(editingFood.name || "");
+      setQuantity(editingFood.quantity || 1);
+      setUnit(editingFood.unit || "serving");
+      setShowSuggestions(false);
+      
+      // Set the selected food for the nutrition display
+      setSelectedFood(editingFood);
+      
+      // Focus the search input and select text for easy replacement
+      setTimeout(() => {
+        if (searchInputRef.current) {
+          searchInputRef.current.focus();
+          searchInputRef.current.select();
+        }
+      }, 200);
+    }
+  }, [editingFood]);
 
   const { data: searchResults = [] } = useQuery<Food[]>({
     queryKey: [`/api/foods/search`, debouncedQuery],
