@@ -882,18 +882,18 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
                     </div>
 
                     {/* Duration Input */}
-                    <div className="flex gap-3">
+                    <div className="space-y-3">
                       <NumberInput
-                        placeholder="Duration (minutes) - overrides time tracking"
+                        placeholder="Enter exercise duration in minutes (overrides automatic time tracking above)"
                         value={manualTime}
                         onChange={(e) => setManualTime(e.target.value)}
-                        className="flex-1 h-12 text-lg font-medium text-center border-blue-200 dark:border-blue-700"
+                        className="w-full h-12 text-lg font-medium text-center border-blue-200 dark:border-blue-700"
                         min="1"
                       />
                       <Button 
                         onClick={handleManualTimeSubmit} 
                         disabled={getFinalDuration() <= 0}
-                        className="h-12 px-6 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg"
+                        className="w-full h-12 px-6 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg"
                       >
                         <CheckCircle className="w-4 h-4 mr-2" />
                         Log Exercise

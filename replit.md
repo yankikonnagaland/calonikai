@@ -337,13 +337,14 @@ The application follows a client-server architecture with clear separation of co
 - Enhanced tracker stores additional metadata while using main Time Tracking duration for consistency
 - Complete enhanced exercise tracking system with proper database storage and retrieval
 
-**June 29, 2025 - Profile Card Reordering & Enhanced Tooltip UX:**
+**June 29, 2025 - UI Organization & Exercise Tracker Refinements:**
 - REORDERED: Daily targets card moved to top-left (2/3 width), saved profile section moved to right side (1/3 width)
 - ENHANCED: Smooth tooltip hover effects with 200ms delay and seamless color transitions from subtle gray to primary
 - ADDED: Question mark tooltips next to BMR, TDEE, and Daily Target Calories with comprehensive explanations
 - IMPROVED: Layout logic - daily targets prominent when profile exists, form spans full width when no profile
-- REMOVED: Duplicate "Your Nutrition Plan" card and cleaned up redundant results sections
-- FINALIZED: Complete placeholder text cleanup across all enhanced tracker fields
+- REMOVED: Duplicate "Your Nutrition Plan" card and "Enable Enhanced" text for cleaner design
+- RESTRUCTURED: Exercise duration input with longer descriptive placeholder and Log Exercise button positioned below
+- FINALIZED: Complete placeholder text cleanup and vertical layout organization for better visual hierarchy
 - Professional tooltip design with shadow effects and educational content for user guidance
 
 **June 28, 2025 - Minimal Number Input Spinner Design & Enhanced Placeholders:**
