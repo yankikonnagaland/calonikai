@@ -582,14 +582,14 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                 <CardHeader>
                   <CardTitle className="flex items-center text-lg">
                     <Target className="w-5 h-5 mr-2" />
-                    Your Targets
+                    Your Daily Targets
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className={`grid gap-4 ${profileData.weightGoal === 'muscle' && profileData.targetProtein ? 'grid-cols-3' : 'grid-cols-2'}`}>
                     <div className="text-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
                       <div className="text-2xl font-bold text-primary">{profileData.bmr}</div>
-                      <div className="text-xs text-muted-foreground">BMR (cal/day)</div>
+                      <div className="text-xs text-muted-foreground">Basal Metabolic Rate BMR (cal/day) </div>
                     </div>
                     <div className="text-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
                       <div className="text-2xl font-bold text-primary">{profileData.tdee}</div>
