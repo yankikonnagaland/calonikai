@@ -338,11 +338,12 @@ The application follows a client-server architecture with clear separation of co
 - Complete enhanced exercise tracking system with proper database storage and retrieval
 
 **June 29, 2025 - Fixed Calorie Calculation Accuracy & Unit Mapping System:**
-- RESOLVED: Walnut calorie calculation error - 1 piece now shows ~20 calories instead of 196 calories
+- RESOLVED: Walnut calorie calculation error - 1 piece now shows ~30 calories instead of 196 calories
 - FIXED: Unit-to-gram mapping for "pieces" was missing, causing fallback to 100g serving size
-- ENHANCED: Food-specific multipliers for accurate portion calculations (walnut piece = 3g)
-- ADDED: "grams" unit support in unit mapping table for precise custom measurements
+- ENHANCED: Food-specific multipliers for accurate portion calculations (nuts: piece = 0.3x, handful = 0.6x)
+- ADDED: "grams" and "pieces" unit support in unit mapping table for precise custom measurements
 - IMPROVED: Chicken calculation accuracy - 1 gram now correctly shows 1.65 calories
+- REVERTED: To optimized system that includes both handful and pieces options for all nuts
 - VERIFIED: All unit calculations use realistic gram weights for accurate calorie tracking
 
 **June 29, 2025 - Fixed Admin Authentication & Meal Editing Implementation:**
