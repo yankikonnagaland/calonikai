@@ -50,14 +50,28 @@ export default function WeightUpdateModal({ isOpen, onClose, sessionId, currentP
         date: today
       });
 
-      // Also update profile with new weight
-      const updatedProfile = {
-        ...currentProfile,
-        weight: weightValue,
-        sessionId: sessionId,
-      };
+      // Only update profile weight if all required fields are present
+      if (currentProfile && currentProfile.gender && currentProfile.age && currentProfile.height && currentProfile.activityLevel && currentProfile.weightGoal) {
+        const updatedProfile = {
+          gender: currentProfile.gender,
+          age: currentProfile.age,
+          height: currentProfile.height,
+          weight: weightValue,
+          bodyType: currentProfile.bodyType || 'average',
+          activityLevel: currentProfile.activityLevel,
+          weightGoal: currentProfile.weightGoal,
+          weightTarget: currentProfile.weightTarget || null,
+          targetProtein: currentProfile.targetProtein || null,
+          sessionId: sessionId,
+        };
 
-      await apiRequest("POST", "/api/profile/calculate", updatedProfile);
+        try {
+          await apiRequest("POST", "/api/profile/calculate", updatedProfile);
+        } catch (profileError) {
+          console.log("Profile update skipped - will continue with weight logging");
+          // Continue execution even if profile update fails
+        }
+      }
 
       // Check for weight goal progress
       let congratsMessage = "";
