@@ -40,6 +40,9 @@ export default function TrackerNutritionSummary({ sessionId, selectedDate }: Tra
   const { data: currentDateWeight } = useQuery<DailyWeight | null>({
     queryKey: [`/api/daily-weight/${sessionId}/${currentDate}`],
   });
+  
+  // Log weight data for debugging
+  console.log(`Weight data for ${currentDate}:`, currentDateWeight);
 
   // Calculate current date's nutrition data
   const currentCaloriesIn = Math.round((currentSummary?.totalCalories || 0) * 100) / 100;
@@ -175,7 +178,16 @@ export default function TrackerNutritionSummary({ sessionId, selectedDate }: Tra
                 </p>
                 <div className="flex items-center gap-2">
                   <p className="text-xl font-bold text-purple-800 dark:text-purple-200">
-                    {currentDateWeight?.weight || profile?.weight || '--'} kg
+                    {(() => {
+                      console.log('Weight display logic:', {
+                        currentDateWeight,
+                        currentDateWeightValue: currentDateWeight?.weight,
+                        profileWeight: profile?.weight,
+                        currentDate,
+                        today
+                      });
+                      return currentDateWeight?.weight || profile?.weight || '--';
+                    })()} kg
                   </p>
                   <Dialog open={isWeightModalOpen} onOpenChange={setIsWeightModalOpen}>
                     <DialogTrigger asChild>

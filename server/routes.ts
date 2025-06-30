@@ -2036,6 +2036,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get daily weight for specific date
+  app.get("/api/daily-weight/:sessionId/:date", async (req, res) => {
+    try {
+      const { sessionId, date } = req.params;
+      console.log(`Fetching daily weight for session ${sessionId} on date ${date}`);
+      
+      // Use authenticated user ID if available, otherwise use session ID
+      const effectiveSessionId = req.user?.id || sessionId;
+      const dailyWeight = await storage.getDailyWeight(effectiveSessionId, date);
+      
+      console.log(`Daily weight result:`, dailyWeight);
+      res.json(dailyWeight);
+    } catch (error) {
+      console.error("Error fetching daily weight:", error);
+      res.status(500).json({ message: "Failed to fetch daily weight" });
+    }
+  });
+
   // Save daily weight
   app.post("/api/daily-weight", async (req, res) => {
     try {
