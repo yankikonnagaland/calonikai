@@ -420,20 +420,41 @@ export default function MealSummary({
                         fat: item.food.fat
                       };
                       
+                      // Include smart portion data if available from AI detection
+                      const smartPortion = item.food.smartPortionGrams ? {
+                        smartPortionGrams: item.food.smartPortionGrams,
+                        smartCalories: item.food.smartCalories,
+                        smartProtein: item.food.smartProtein,
+                        smartCarbs: item.food.smartCarbs,
+                        smartFat: item.food.smartFat,
+                        aiConfidence: item.food.aiConfidence
+                      } : undefined;
+                      
                       const calculatedNutrition = calculateNutritionFromUnit(
                         item.food.name,
                         item.unit,
                         item.quantity,
-                        basePer100g
+                        basePer100g,
+                        smartPortion
                       );
                       
                       return (
                         <>
                           <div className="text-xs text-muted-foreground">
                             {item.quantity} {item.unit} ({calculatedNutrition.gramEquivalent})
+                            {item.food.smartPortionGrams && (
+                              <span className="text-blue-600 font-medium ml-1">
+                                • AI detected: {item.food.smartPortionGrams}g
+                              </span>
+                            )}
                           </div>
                           <div className="text-xs text-primary mt-1">
                             {calculatedNutrition.calories} cal
+                            {item.food.aiConfidence && (
+                              <span className="text-green-600 ml-1 text-[10px]">
+                                ({item.food.aiConfidence}% confidence)
+                              </span>
+                            )}
                           </div>
                         </>
                       );
