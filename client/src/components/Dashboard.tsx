@@ -1056,9 +1056,7 @@ Powered by Calonik.ai 🚀
                     </div>
                     <div>
                       <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Complete Health Trends</CardTitle>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        All key metrics: weight progress, nutrition intake, protein consumption, and exercise activity
-                      </p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">See how your calorie intake and exercise changes your weight overtime</p>
                     </div>
                   </div>
                 </CardHeader>
@@ -1490,7 +1488,6 @@ Powered by Calonik.ai 🚀
           </Card>
         )}
       </div>
-
       {/* Side Calendar */}
       <div className="lg:col-span-1 space-y-6">
         {/* Calendar View */}
