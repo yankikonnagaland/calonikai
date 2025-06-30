@@ -156,16 +156,24 @@ export const getFoodCategoryMultiplier = (foodName: string, unit: string): numbe
   return 1.0; // Default multiplier
 };
 
-// Extract gram amount from unit description (e.g., "medium portion (150g)" -> 150)
+// Extract gram amount from unit description (e.g., "medium portion (150g)" -> 150, "(250g)" -> 250)
 export const extractGramFromUnit = (unit: string): number | null => {
-  const gramMatch = unit.match(/\((\d+)g\)/);
+  // Match patterns like "(250g)", "medium portion (150g)", "serving (100g)"
+  const gramMatch = unit.match(/\((\d+(?:\.\d+)?)g\)/);
   if (gramMatch) {
-    return parseInt(gramMatch[1]);
+    return parseFloat(gramMatch[1]);
   }
   
-  const mlMatch = unit.match(/\((\d+)ml\)/);
+  // Match patterns like "(250ml)", "glass (250ml)"
+  const mlMatch = unit.match(/\((\d+(?:\.\d+)?)ml\)/);
   if (mlMatch) {
-    return parseInt(mlMatch[1]); // 1ml ≈ 1g for most liquids
+    return parseFloat(mlMatch[1]); // 1ml ≈ 1g for most liquids
+  }
+  
+  // Match standalone gram amounts at the beginning (e.g., "250g serving")
+  const standaloneGramMatch = unit.match(/^(\d+(?:\.\d+)?)g\b/);
+  if (standaloneGramMatch) {
+    return parseFloat(standaloneGramMatch[1]);
   }
   
   return null;

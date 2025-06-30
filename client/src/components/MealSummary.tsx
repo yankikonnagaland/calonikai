@@ -208,6 +208,18 @@ export default function MealSummary({
         smartPortion
       );
       
+      // Debug: Log nutrition calculation for AI foods
+      if (item.food.id >= 2100000000) {
+        console.log(`MealSummary - AI Food calculation:`, {
+          name: item.food.name,
+          unit: item.unit,
+          quantity: item.quantity,
+          calculatedCalories: calculatedNutrition.calories,
+          totalGrams: calculatedNutrition.totalGrams,
+          usedSmartPortion: calculatedNutrition.usedSmartPortion
+        });
+      }
+      
       acc.calories += calculatedNutrition.calories;
       acc.protein += calculatedNutrition.protein;
       acc.carbs += calculatedNutrition.carbs;

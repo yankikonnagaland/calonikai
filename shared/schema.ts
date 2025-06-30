@@ -250,6 +250,13 @@ export const mealItemWithFoodSchema = z.object({
     portionSize: z.string(),
     category: z.string(),
     defaultUnit: z.string(),
+    // AI-detected smart portion data (optional)
+    smartPortionGrams: z.number().nullable().optional(),
+    smartCalories: z.number().nullable().optional(),
+    smartProtein: z.number().nullable().optional(),
+    smartCarbs: z.number().nullable().optional(),
+    smartFat: z.number().nullable().optional(),
+    aiConfidence: z.number().nullable().optional(),
   }),
 });
 

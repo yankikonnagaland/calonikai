@@ -507,8 +507,15 @@ export default function FoodCamera({
       // Ensure the ID is in the AI food range (>= 2100000000)
       const hashId = 2100000000 + (baseHash % 1000000);
 
-      // Get intelligent unit selection for this food
-      const intelligentUnit = getIntelligentUnitForFood(detectedFood.name);
+      // Debug: Log detected portion information
+      console.log(`AI Camera - Detected food:`, {
+        name: detectedFood.name,
+        estimatedQuantity: detectedFood.estimatedQuantity,
+        calories: detectedFood.calories
+      });
+
+      // Get intelligent unit selection for this food with detected portion
+      const intelligentUnit = getIntelligentUnitForFood(detectedFood.name, detectedFood.estimatedQuantity);
 
       // Store the AI food in the database with smart portion data
       await apiRequest("POST", "/api/ai-food", {
@@ -661,9 +668,73 @@ export default function FoodCamera({
     return Math.max(0.01, multiplier); // Ensure minimum multiplier
   };
 
-  // Get intelligent unit selection for AI detected foods (same logic as FoodSearch)
-  const getIntelligentUnitForFood = (foodName: string) => {
+  // Get intelligent unit selection for AI detected foods with detected portion size
+  const getIntelligentUnitForFood = (foodName: string, estimatedQuantity?: string) => {
     const name = foodName.toLowerCase();
+    
+    // First, try to parse detected portion size (e.g., "250g", "2 pieces", "1 cup")
+    if (estimatedQuantity) {
+      const quantityLower = estimatedQuantity.toLowerCase();
+      
+      // Parse grams (250g, 150g, etc.)
+      const gramMatch = quantityLower.match(/(\d+(?:\.\d+)?)\s*(?:g|gram|grams)/);
+      if (gramMatch) {
+        const grams = parseFloat(gramMatch[1]);
+        console.log(`AI Camera - Detected portion: ${grams}g for ${foodName}`);
+        // Use the exact detected gram amount as the unit
+        return { 
+          unit: `(${grams}g)`, 
+          quantity: 1 
+        };
+      }
+      
+      // Parse milliliters (250ml, 330ml, etc.)
+      const mlMatch = quantityLower.match(/(\d+(?:\.\d+)?)\s*(?:ml|milliliter|milliliters)/);
+      if (mlMatch) {
+        const ml = parseFloat(mlMatch[1]);
+        console.log(`AI Camera - Detected portion: ${ml}ml for ${foodName}`);
+        return { 
+          unit: `serving (${ml}ml)`, 
+          quantity: 1 
+        };
+      }
+      
+      // Parse pieces (2 pieces, 1 piece, etc.)
+      const pieceMatch = quantityLower.match(/(\d+(?:\.\d+)?)\s*(?:piece|pieces)/);
+      if (pieceMatch) {
+        const pieces = parseFloat(pieceMatch[1]);
+        console.log(`AI Camera - Detected portion: ${pieces} pieces for ${foodName}`);
+        return { 
+          unit: "piece", 
+          quantity: pieces 
+        };
+      }
+      
+      // Parse cups (1 cup, 2 cups, etc.)
+      const cupMatch = quantityLower.match(/(\d+(?:\.\d+)?)\s*(?:cup|cups)/);
+      if (cupMatch) {
+        const cups = parseFloat(cupMatch[1]);
+        console.log(`AI Camera - Detected portion: ${cups} cups for ${foodName}`);
+        return { 
+          unit: "cup", 
+          quantity: cups 
+        };
+      }
+      
+      // Parse bowls (1 bowl, medium bowl, etc.)
+      const bowlMatch = quantityLower.match(/(\d+(?:\.\d+)?)\s*(?:bowl|bowls)/);
+      if (bowlMatch) {
+        const bowls = parseFloat(bowlMatch[1]);
+        console.log(`AI Camera - Detected portion: ${bowls} bowls for ${foodName}`);
+        return { 
+          unit: "bowl", 
+          quantity: bowls 
+        };
+      }
+    }
+    
+    // Fallback to intelligent unit selection if no specific portion detected
+    console.log(`AI Camera - No specific portion detected for ${foodName}, using intelligent defaults`);
 
     // 1. BEVERAGES - Enhanced with realistic volumes
     if (name.match(/\b(tea|coffee|chai|latte|cappuccino|espresso)\b/)) {
@@ -791,8 +862,35 @@ export default function FoodCamera({
           intelligentUnit,
         );
 
+        // Extract detected portion weight if available from estimatedQuantity
+        let smartPortionGrams = null;
+        let smartCalories = null;
+        let smartProtein = null;
+        let smartCarbs = null;
+        let smartFat = null;
+
+        if (detectedFood.estimatedQuantity) {
+          const gramMatch = detectedFood.estimatedQuantity.toLowerCase().match(/(\d+(?:\.\d+)?)\s*(?:g|gram|grams)/);
+          if (gramMatch) {
+            smartPortionGrams = parseFloat(gramMatch[1]);
+            // Calculate smart portion nutrition based on detected weight
+            const ratio = smartPortionGrams / 100; // Base nutrition is per 100g
+            smartCalories = Math.round(detectedFood.calories * ratio);
+            smartProtein = Math.round(detectedFood.protein * ratio * 10) / 10;
+            smartCarbs = Math.round(detectedFood.carbs * ratio * 10) / 10;
+            smartFat = Math.round(detectedFood.fat * ratio * 10) / 10;
+            
+            console.log(`AI Camera - Smart portion calculated for ${detectedFood.name}:`, {
+              detectedGrams: smartPortionGrams,
+              smartCalories,
+              originalCalories: detectedFood.calories,
+              estimatedQuantity: detectedFood.estimatedQuantity
+            });
+          }
+        }
+
         try {
-          // Store the AI food in the database first with intelligent unit
+          // Store the AI food in the database first with intelligent unit and smart portion data
           await apiRequest("POST", "/api/ai-food", {
             id: hashId,
             name: detectedFood.name,
@@ -803,6 +901,13 @@ export default function FoodCamera({
             portionSize: intelligentUnit.unit,
             category: "AI Detected",
             defaultUnit: intelligentUnit.unit,
+            // Include smart portion data from AI detection
+            smartPortionGrams,
+            smartCalories,
+            smartProtein,
+            smartCarbs,
+            smartFat,
+            aiConfidence: detectedFood.confidence || 85,
           });
 
           // Wait for food to be stored, then add to meal

@@ -8,6 +8,13 @@ export interface Food {
   portionSize: string;
   category: string;
   defaultUnit: string;
+  // AI-detected smart portion data (optional)
+  smartPortionGrams?: number | null;
+  smartCalories?: number | null;
+  smartProtein?: number | null;
+  smartCarbs?: number | null;
+  smartFat?: number | null;
+  aiConfidence?: number | null;
 }
 
 export interface MealItem {
