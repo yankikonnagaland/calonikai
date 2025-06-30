@@ -1254,17 +1254,7 @@ Powered by Calonik.ai 🚀
                           connectNulls={false}
                         />
                         
-                        {/* Target Calories - Gray Dashed */}
-                        <Line 
-                          yAxisId="calories"
-                          type="monotone" 
-                          dataKey="targetCalories" 
-                          stroke="#64748b" 
-                          strokeWidth={2}
-                          strokeDasharray="5 5"
-                          dot={false}
-                          name="Calorie Target"
-                        />
+
                         
                         {/* Calories Burned - Orange */}
                         <Line 
