@@ -1282,38 +1282,13 @@ Powered by Calonik.ai 🚀
                           connectNulls={false}
                         />
                         
-                        {/* Protein Intake - Cyan */}
-                        <Line 
-                          yAxisId="secondary"
-                          type="monotone" 
-                          dataKey="protein" 
-                          stroke="#0891b2" 
-                          strokeWidth={3}
-                          dot={{ fill: '#0891b2', strokeWidth: 2, r: 4 }}
-                          activeDot={{ r: 6, stroke: '#0891b2', strokeWidth: 2 }}
-                          name="Protein Intake"
-                          connectNulls={false}
-                        />
-                        
-                        {/* Protein Target - Light Blue Dashed */}
-                        {userProfile?.dailyProteinTarget && (
-                          <Line 
-                            yAxisId="secondary"
-                            type="monotone" 
-                            dataKey="targetProtein" 
-                            stroke="#38bdf8" 
-                            strokeWidth={2}
-                            strokeDasharray="3 3"
-                            dot={false}
-                            name="Protein Target"
-                          />
-                        )}
+
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
                   
                   {/* Trend Summary Cards */}
-                  <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div className="bg-green-50 dark:bg-green-950/30 p-3 rounded-lg border border-green-200 dark:border-green-800">
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-green-600 rounded-full"></div>
@@ -1346,16 +1321,6 @@ Powered by Calonik.ai 🚀
                         {userAnalytics?.analytics?.weightProgress?.totalWeightChange !== 0 && 
                           ` ${userAnalytics?.analytics?.weightProgress?.totalWeightChange}kg`
                         }
-                      </p>
-                    </div>
-                    
-                    <div className="bg-cyan-50 dark:bg-cyan-950/30 p-3 rounded-lg border border-cyan-200 dark:border-cyan-800">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-cyan-600 rounded-full"></div>
-                        <span className="font-medium text-cyan-800 dark:text-cyan-200">Protein</span>
-                      </div>
-                      <p className="text-xs text-cyan-600 dark:text-cyan-400 mt-1">
-                        Avg: {userAnalytics?.analytics?.nutritionTrends?.avgDailyProtein || 0}g/day
                       </p>
                     </div>
                   </div>
