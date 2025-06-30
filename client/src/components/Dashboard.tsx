@@ -1171,252 +1171,206 @@ Powered by Calonik.ai 🚀
               </div>
             )}
 
-            {/* Comprehensive Trendline Charts */}
+            {/* Combined Comprehensive Trendlines Chart */}
             {trendlineData.length > 0 && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                
-                {/* Weight Progress Trendline */}
-                <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200 dark:border-purple-800">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded-full">
-                        <Scale className="w-5 h-5 text-purple-600" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg text-purple-800 dark:text-purple-200">Weight Progress</CardTitle>
-                        <p className="text-sm text-purple-600 dark:text-purple-400">
-                          {userAnalytics?.analytics?.weightProgress?.trend === 'decreasing' ? 'Losing weight' :
-                           userAnalytics?.analytics?.weightProgress?.trend === 'increasing' ? 'Gaining weight' : 
-                           'Stable weight'}
-                          {userAnalytics?.analytics?.weightProgress?.totalWeightChange !== 0 && 
-                            ` (${userAnalytics?.analytics?.weightProgress?.totalWeightChange > 0 ? '+' : ''}${userAnalytics?.analytics?.weightProgress?.totalWeightChange}kg)`
-                          }
-                        </p>
-                      </div>
+              <Card className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-950/20 dark:to-gray-950/20 border-slate-200 dark:border-slate-800">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-slate-100 dark:bg-slate-900/30 p-2 rounded-full">
+                      <TrendingUp className="w-5 h-5 text-slate-600" />
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={trendlineData.filter(d => d.weight)} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                          <XAxis 
-                            dataKey="date" 
-                            tick={{ fontSize: 11 }}
-                            className="text-xs"
-                          />
-                          <YAxis 
-                            tick={{ fontSize: 11 }}
-                            label={{ value: 'Weight (kg)', angle: -90, position: 'insideLeft' }}
-                            domain={['dataMin - 1', 'dataMax + 1']}
-                          />
-                          <Tooltip 
-                            contentStyle={{
-                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                              border: '1px solid #e2e8f0',
-                              borderRadius: '8px',
-                              fontSize: '12px'
-                            }}
-                            formatter={(value: any) => [`${value} kg`, 'Weight']}
-                          />
+                    <div>
+                      <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Complete Health Trends</CardTitle>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        All key metrics: weight progress, nutrition intake, protein consumption, and exercise activity
+                      </p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={trendlineData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                        <XAxis 
+                          dataKey="date" 
+                          tick={{ fontSize: 11 }}
+                          className="text-xs"
+                        />
+                        
+                        {/* Left Y-Axis for Calories */}
+                        <YAxis 
+                          yAxisId="calories"
+                          orientation="left"
+                          tick={{ fontSize: 11 }}
+                          label={{ value: 'Calories', angle: -90, position: 'insideLeft' }}
+                          domain={[0, 'dataMax + 200']}
+                        />
+                        
+                        {/* Right Y-Axis for Weight & Protein */}
+                        <YAxis 
+                          yAxisId="secondary"
+                          orientation="right"
+                          tick={{ fontSize: 11 }}
+                          label={{ value: 'Weight (kg) / Protein (g)', angle: 90, position: 'insideRight' }}
+                          domain={[0, 'dataMax + 10']}
+                        />
+                        
+                        <Tooltip 
+                          contentStyle={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '8px',
+                            fontSize: '12px'
+                          }}
+                          formatter={(value: any, name: string) => {
+                            switch(name) {
+                              case 'calories': return [`${value} cal`, 'Calories Consumed'];
+                              case 'caloriesBurned': return [`${value} cal`, 'Calories Burned'];
+                              case 'protein': return [`${value}g`, 'Protein Intake'];
+                              case 'weight': return [`${value} kg`, 'Weight'];
+                              case 'targetCalories': return [`${value} cal`, 'Calorie Target'];
+                              case 'targetProtein': return [`${value}g`, 'Protein Target'];
+                              default: return [value, name];
+                            }
+                          }}
+                        />
+                        
+                        <Legend 
+                          wrapperStyle={{ paddingTop: '20px' }}
+                          iconType="line"
+                        />
+                        
+                        {/* Calories Consumed - Green */}
+                        <Line 
+                          yAxisId="calories"
+                          type="monotone" 
+                          dataKey="calories" 
+                          stroke="#059669" 
+                          strokeWidth={3}
+                          dot={{ fill: '#059669', strokeWidth: 2, r: 4 }}
+                          activeDot={{ r: 6, stroke: '#059669', strokeWidth: 2 }}
+                          name="Calories Consumed"
+                          connectNulls={false}
+                        />
+                        
+                        {/* Target Calories - Gray Dashed */}
+                        <Line 
+                          yAxisId="calories"
+                          type="monotone" 
+                          dataKey="targetCalories" 
+                          stroke="#64748b" 
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          dot={false}
+                          name="Calorie Target"
+                        />
+                        
+                        {/* Calories Burned - Orange */}
+                        <Line 
+                          yAxisId="calories"
+                          type="monotone" 
+                          dataKey="caloriesBurned" 
+                          stroke="#ea580c" 
+                          strokeWidth={3}
+                          dot={{ fill: '#ea580c', strokeWidth: 2, r: 4 }}
+                          activeDot={{ r: 6, stroke: '#ea580c', strokeWidth: 2 }}
+                          name="Calories Burned"
+                          connectNulls={false}
+                        />
+                        
+                        {/* Weight Progress - Purple */}
+                        <Line 
+                          yAxisId="secondary"
+                          type="monotone" 
+                          dataKey="weight" 
+                          stroke="#9333ea" 
+                          strokeWidth={3}
+                          dot={{ fill: '#9333ea', strokeWidth: 2, r: 4 }}
+                          activeDot={{ r: 6, stroke: '#9333ea', strokeWidth: 2 }}
+                          name="Weight"
+                          connectNulls={false}
+                        />
+                        
+                        {/* Protein Intake - Cyan */}
+                        <Line 
+                          yAxisId="secondary"
+                          type="monotone" 
+                          dataKey="protein" 
+                          stroke="#0891b2" 
+                          strokeWidth={3}
+                          dot={{ fill: '#0891b2', strokeWidth: 2, r: 4 }}
+                          activeDot={{ r: 6, stroke: '#0891b2', strokeWidth: 2 }}
+                          name="Protein Intake"
+                          connectNulls={false}
+                        />
+                        
+                        {/* Protein Target - Light Blue Dashed */}
+                        {userProfile?.dailyProteinTarget && (
                           <Line 
+                            yAxisId="secondary"
                             type="monotone" 
-                            dataKey="weight" 
-                            stroke="#9333ea" 
-                            strokeWidth={3}
-                            dot={{ fill: '#9333ea', strokeWidth: 2, r: 4 }}
-                            activeDot={{ r: 6, stroke: '#9333ea', strokeWidth: 2 }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Protein Intake Trendline */}
-                <Card className="bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-950/20 dark:to-blue-950/20 border-cyan-200 dark:border-cyan-800">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-cyan-100 dark:bg-cyan-900/30 p-2 rounded-full">
-                        <Target className="w-5 h-5 text-cyan-600" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg text-cyan-800 dark:text-cyan-200">Protein Intake</CardTitle>
-                        <p className="text-sm text-cyan-600 dark:text-cyan-400">
-                          Daily protein consumption vs target
-                          {userProfile?.dailyProteinTarget && ` (${userProfile.dailyProteinTarget}g goal)`}
-                        </p>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={trendlineData.filter(d => d.protein > 0)} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                          <XAxis 
-                            dataKey="date" 
-                            tick={{ fontSize: 11 }}
-                            className="text-xs"
-                          />
-                          <YAxis 
-                            tick={{ fontSize: 11 }}
-                            label={{ value: 'Protein (g)', angle: -90, position: 'insideLeft' }}
-                            domain={[0, 'dataMax + 10']}
-                          />
-                          <Tooltip 
-                            contentStyle={{
-                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                              border: '1px solid #e2e8f0',
-                              borderRadius: '8px',
-                              fontSize: '12px'
-                            }}
-                            formatter={(value: any, name: string) => [
-                              name === 'protein' ? `${value}g` : `${value}g (target)`,
-                              name === 'protein' ? 'Protein Consumed' : 'Target'
-                            ]}
-                          />
-                          {userProfile?.dailyProteinTarget && (
-                            <Line 
-                              type="monotone" 
-                              dataKey="targetProtein" 
-                              stroke="#64748b" 
-                              strokeWidth={2}
-                              strokeDasharray="5 5"
-                              dot={false}
-                            />
-                          )}
-                          <Line 
-                            type="monotone" 
-                            dataKey="protein" 
-                            stroke="#0891b2" 
-                            strokeWidth={3}
-                            dot={{ fill: '#0891b2', strokeWidth: 2, r: 4 }}
-                            activeDot={{ r: 6, stroke: '#0891b2', strokeWidth: 2 }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Calories Burned Trendline */}
-                <Card className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-orange-200 dark:border-orange-800">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-orange-100 dark:bg-orange-900/30 p-2 rounded-full">
-                        <Activity className="w-5 h-5 text-orange-600" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg text-orange-800 dark:text-orange-200">Calories Burned</CardTitle>
-                        <p className="text-sm text-orange-600 dark:text-orange-400">
-                          Exercise activity and calorie burn trends
-                        </p>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={trendlineData.filter(d => d.caloriesBurned > 0)} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                          <XAxis 
-                            dataKey="date" 
-                            tick={{ fontSize: 11 }}
-                            className="text-xs"
-                          />
-                          <YAxis 
-                            tick={{ fontSize: 11 }}
-                            label={{ value: 'Calories', angle: -90, position: 'insideLeft' }}
-                            domain={[0, 'dataMax + 50']}
-                          />
-                          <Tooltip 
-                            contentStyle={{
-                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                              border: '1px solid #e2e8f0',
-                              borderRadius: '8px',
-                              fontSize: '12px'
-                            }}
-                            formatter={(value: any) => [`${value} cal`, 'Calories Burned']}
-                          />
-                          <Line 
-                            type="monotone" 
-                            dataKey="caloriesBurned" 
-                            stroke="#ea580c" 
-                            strokeWidth={3}
-                            dot={{ fill: '#ea580c', strokeWidth: 2, r: 4 }}
-                            activeDot={{ r: 6, stroke: '#ea580c', strokeWidth: 2 }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Combined Nutrition Overview */}
-                <Card className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-full">
-                        <TrendingUp className="w-5 h-5 text-green-600" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg text-green-800 dark:text-green-200">Nutrition Overview</CardTitle>
-                        <p className="text-sm text-green-600 dark:text-green-400">
-                          Calories consumed vs target over time
-                        </p>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={trendlineData.filter(d => d.calories > 0)} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                          <XAxis 
-                            dataKey="date" 
-                            tick={{ fontSize: 11 }}
-                            className="text-xs"
-                          />
-                          <YAxis 
-                            tick={{ fontSize: 11 }}
-                            label={{ value: 'Calories', angle: -90, position: 'insideLeft' }}
-                            domain={['dataMin - 200', 'dataMax + 200']}
-                          />
-                          <Tooltip 
-                            contentStyle={{
-                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                              border: '1px solid #e2e8f0',
-                              borderRadius: '8px',
-                              fontSize: '12px'
-                            }}
-                            formatter={(value: any, name: string) => [
-                              `${value} cal`,
-                              name === 'calories' ? 'Consumed' : 'Target'
-                            ]}
-                          />
-                          <Line 
-                            type="monotone" 
-                            dataKey="targetCalories" 
-                            stroke="#64748b" 
+                            dataKey="targetProtein" 
+                            stroke="#38bdf8" 
                             strokeWidth={2}
-                            strokeDasharray="5 5"
+                            strokeDasharray="3 3"
                             dot={false}
+                            name="Protein Target"
                           />
-                          <Line 
-                            type="monotone" 
-                            dataKey="calories" 
-                            stroke="#059669" 
-                            strokeWidth={3}
-                            dot={{ fill: '#059669', strokeWidth: 2, r: 4 }}
-                            activeDot={{ r: 6, stroke: '#059669', strokeWidth: 2 }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
+                        )}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  
+                  {/* Trend Summary Cards */}
+                  <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="bg-green-50 dark:bg-green-950/30 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+                        <span className="font-medium text-green-800 dark:text-green-200">Calories In</span>
+                      </div>
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                        Avg: {userAnalytics?.analytics?.nutritionTrends?.avgDailyCalories || 0} cal/day
+                      </p>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
+                    
+                    <div className="bg-orange-50 dark:bg-orange-950/30 p-3 rounded-lg border border-orange-200 dark:border-orange-800">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-orange-600 rounded-full"></div>
+                        <span className="font-medium text-orange-800 dark:text-orange-200">Calories Out</span>
+                      </div>
+                      <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                        Exercise activity tracking
+                      </p>
+                    </div>
+                    
+                    <div className="bg-purple-50 dark:bg-purple-950/30 p-3 rounded-lg border border-purple-200 dark:border-purple-800">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-purple-600 rounded-full"></div>
+                        <span className="font-medium text-purple-800 dark:text-purple-200">Weight</span>
+                      </div>
+                      <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                        {userAnalytics?.analytics?.weightProgress?.trend === 'decreasing' ? '↓ Losing' :
+                         userAnalytics?.analytics?.weightProgress?.trend === 'increasing' ? '↑ Gaining' : 
+                         '→ Stable'}
+                        {userAnalytics?.analytics?.weightProgress?.totalWeightChange !== 0 && 
+                          ` ${userAnalytics?.analytics?.weightProgress?.totalWeightChange}kg`
+                        }
+                      </p>
+                    </div>
+                    
+                    <div className="bg-cyan-50 dark:bg-cyan-950/30 p-3 rounded-lg border border-cyan-200 dark:border-cyan-800">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-cyan-600 rounded-full"></div>
+                        <span className="font-medium text-cyan-800 dark:text-cyan-200">Protein</span>
+                      </div>
+                      <p className="text-xs text-cyan-600 dark:text-cyan-400 mt-1">
+                        Avg: {userAnalytics?.analytics?.nutritionTrends?.avgDailyProtein || 0}g/day
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
             {/* Analytics Insights */}
