@@ -1832,6 +1832,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           console.log(`${subscriptionType} subscription activated for user: ${userId}`);
 
+          // Grant 2 bonus photo scans immediately upon subscription upgrade
+          try {
+            // Remove 2 usage entries from today to give immediate extra scans
+            const today = new Date().toISOString().split('T')[0];
+            const usageEntries = await db.select()
+              .from(usageTracking)
+              .where(
+                and(
+                  eq(usageTracking.userId, userId),
+                  eq(usageTracking.actionType, "photo_analyze"),
+                  eq(usageTracking.date, today)
+                )
+              )
+              .limit(2);
+            
+            // Delete up to 2 usage entries to give bonus scans
+            for (const entry of usageEntries) {
+              await db.delete(usageTracking).where(eq(usageTracking.id, entry.id));
+            }
+            
+            console.log(`Granted ${usageEntries.length} bonus photo scans for ${subscriptionType} upgrade - User: ${userId}`);
+          } catch (bonusError) {
+            console.error("Error granting bonus scans:", bonusError);
+            // Don't fail the payment, just log the error
+          }
+
           // Process referral commission if referral code was used
           if (referralCode && influencerId) {
             try {
