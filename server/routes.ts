@@ -4,6 +4,7 @@ import { createServer, type Server } from "http";
 import { fallbackStorage } from "./fallbackStorage";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { optionalAuth } from "./firebaseAuth";
 import { db } from "./db";
 import {
   insertMealItemSchema,
@@ -14,7 +15,12 @@ import {
   searchFoodsSchema,
   calculateProfileSchema,
   hourlyActivities,
+  dailySummaries,
+  dailyWeights,
+  usageTracking,
+  users,
 } from "@shared/schema";
+import { eq, and, desc, ilike, sql } from "drizzle-orm";
 import { z } from "zod";
 import { calculateNutritionFromUnit, validateCalorieCalculation } from "@shared/unitCalculations";
 import { GoogleGenAI } from "@google/genai";
@@ -2059,6 +2065,217 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching usage stats:", error);
       res.status(500).json({ message: "Failed to fetch usage stats" });
+    }
+  });
+
+  // User Progress Analytics API
+  app.get("/api/analytics/user-progress", optionalAuth, async (req: any, res) => {
+    try {
+      const { sessionId, days = 30 } = req.query;
+      const effectiveSessionId = req.user?.id || sessionId;
+
+      if (!effectiveSessionId) {
+        return res.status(400).json({ message: "Session ID required" });
+      }
+
+      const daysBack = parseInt(days as string) || 30;
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysBack);
+      const startDateStr = startDate.toISOString().split('T')[0];
+
+      // Get daily nutrition trends
+      const dailyNutrition = await db.select()
+        .from(dailySummaries)
+        .where(
+          and(
+            eq(dailySummaries.sessionId, effectiveSessionId),
+            sql`${dailySummaries.date} >= ${startDateStr}`
+          )
+        )
+        .orderBy(desc(dailySummaries.date));
+
+      // Get weight progress
+      const weightHistory = await db.select()
+        .from(dailyWeights)
+        .where(
+          and(
+            eq(dailyWeights.sessionId, effectiveSessionId),
+            sql`${dailyWeights.date} >= ${startDateStr}`
+          )
+        )
+        .orderBy(desc(dailyWeights.date));
+
+      // Get usage patterns
+      const usagePatterns = await db.select({
+        date: usageTracking.date,
+        actionType: usageTracking.actionType,
+        count: sql`COUNT(*)`
+      })
+      .from(usageTracking)
+      .where(
+        and(
+          eq(usageTracking.userId, effectiveSessionId),
+          sql`${usageTracking.date} >= ${startDateStr}`
+        )
+      )
+      .groupBy(usageTracking.date, usageTracking.actionType)
+      .orderBy(desc(usageTracking.date));
+
+      // Calculate progress metrics
+      const totalDays = dailyNutrition.length;
+      const avgCalories = totalDays > 0 ? 
+        Math.round(dailyNutrition.reduce((sum, day) => sum + (day.totalCalories || 0), 0) / totalDays) : 0;
+      const avgProtein = totalDays > 0 ? 
+        Math.round((dailyNutrition.reduce((sum, day) => sum + (day.totalProtein || 0), 0) / totalDays) * 10) / 10 : 0;
+      
+      // Weight trend analysis
+      let weightTrend = 'stable';
+      let totalWeightChange = 0;
+      if (weightHistory.length >= 2) {
+        const firstWeight = weightHistory[weightHistory.length - 1].weight;
+        const lastWeight = weightHistory[0].weight;
+        totalWeightChange = Math.round((lastWeight - firstWeight) * 10) / 10;
+        if (totalWeightChange > 1) weightTrend = 'increasing';
+        else if (totalWeightChange < -1) weightTrend = 'decreasing';
+      }
+
+      // Activity consistency
+      const activeDays = dailyNutrition.filter(day => day.totalCalories > 0).length;
+      const consistencyScore = totalDays > 0 ? Math.round((activeDays / totalDays) * 100) : 0;
+
+      // Generate insights
+      const insights = [
+        consistencyScore >= 80 ? "Excellent tracking consistency!" : 
+        consistencyScore >= 60 ? "Good tracking habits, keep it up!" : 
+        "Consider tracking daily for better insights",
+        
+        weightTrend === 'decreasing' ? "Great progress on weight loss!" :
+        weightTrend === 'increasing' ? "Weight trending upward" :
+        "Weight remaining stable",
+        
+        avgCalories > 0 ? `Averaging ${avgCalories} calories daily` : "Start tracking calories for insights"
+      ];
+
+      res.json({
+        analytics: {
+          dateRange: {
+            startDate: startDateStr,
+            endDate: new Date().toISOString().split('T')[0],
+            totalDays,
+            activeDays
+          },
+          nutritionTrends: {
+            avgDailyCalories: avgCalories,
+            avgDailyProtein: avgProtein,
+            dailyData: dailyNutrition.slice(0, 14)
+          },
+          weightProgress: {
+            trend: weightTrend,
+            weightHistory: weightHistory.slice(0, 14),
+            totalWeightChange
+          },
+          activityMetrics: {
+            consistencyScore,
+            activeDays,
+            totalDays
+          },
+          usagePatterns,
+          insights
+        }
+      });
+
+    } catch (error) {
+      console.error("Error generating user analytics:", error);
+      res.status(500).json({ message: "Failed to generate analytics" });
+    }
+  });
+
+  // Global Analytics Dashboard (Admin-only)
+  app.get("/api/analytics/global", async (req: any, res) => {
+    try {
+      // Check admin authentication
+      const isAdminSession = req.user?.uid === "admin_testing_user" || 
+                           req.headers['x-admin-key'] === process.env.ADMIN_SECRET;
+      
+      if (!isAdminSession) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const days = parseInt(req.query.days as string) || 30;
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      const startDateStr = startDate.toISOString().split('T')[0];
+
+      // Daily active users
+      const dailyActiveUsers = await db.select({
+        date: dailySummaries.date,
+        activeUsers: sql`COUNT(DISTINCT ${dailySummaries.sessionId})`
+      })
+      .from(dailySummaries)
+      .where(sql`${dailySummaries.date} >= ${startDateStr}`)
+      .groupBy(dailySummaries.date)
+      .orderBy(desc(dailySummaries.date));
+
+      // User engagement metrics
+      const engagementStats = await db.select({
+        date: usageTracking.date,
+        actionType: usageTracking.actionType,
+        totalActions: sql`COUNT(*)`
+      })
+      .from(usageTracking)
+      .where(sql`${usageTracking.date} >= ${startDateStr}`)
+      .groupBy(usageTracking.date, usageTracking.actionType)
+      .orderBy(desc(usageTracking.date));
+
+      // Subscription breakdown
+      const subscriptionStats = await db.select({
+        subscriptionStatus: users.subscriptionStatus,
+        count: sql`COUNT(*)`
+      })
+      .from(users)
+      .groupBy(users.subscriptionStatus);
+
+      // Total users and growth
+      const totalUsers = await db.select({ count: sql`COUNT(*)` }).from(users);
+      
+      // Recent user registrations
+      const recentSignups = await db.select({
+        date: sql`DATE(${users.createdAt})`,
+        signups: sql`COUNT(*)`
+      })
+      .from(users)
+      .where(sql`${users.createdAt} >= ${startDate}`)
+      .groupBy(sql`DATE(${users.createdAt})`)
+      .orderBy(sql`DATE(${users.createdAt}) DESC`);
+
+      res.json({
+        globalAnalytics: {
+          overview: {
+            totalUsers: totalUsers[0].count,
+            dateRange: `${startDateStr} to ${new Date().toISOString().split('T')[0]}`
+          },
+          userEngagement: {
+            dailyActiveUsers,
+            engagementStats,
+            recentSignups
+          },
+          subscriptions: subscriptionStats,
+          summary: {
+            avgDailyActiveUsers: dailyActiveUsers.length > 0 ? 
+              Math.round(dailyActiveUsers.reduce((sum, day) => sum + Number(day.activeUsers), 0) / dailyActiveUsers.length) : 0,
+            totalPhotoScans: engagementStats
+              .filter(stat => stat.actionType === 'photo_analyze')
+              .reduce((sum, stat) => sum + Number(stat.totalActions), 0),
+            totalMealEntries: engagementStats
+              .filter(stat => stat.actionType === 'meal_add')
+              .reduce((sum, stat) => sum + Number(stat.totalActions), 0)
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error("Error generating global analytics:", error);
+      res.status(500).json({ message: "Failed to generate global analytics" });
     }
   });
 
