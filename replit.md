@@ -442,6 +442,14 @@ The application follows a client-server architecture with clear separation of co
 - UPDATED: Navigation component now shows Japanese Beginner Symbol 🔰 for Basic users alongside crown 👑 for Premium users
 - CONFIRMED: Database subscription status correctly updated to 'basic' tier with proper feature enforcement
 
+**June 30, 2025 - Disclaimer UI Update & Weight Display Bug Fix:**
+- UPDATED: Disclaimer styling across all pages - changed border from red to blue, text color to light grey
+- REPLACED: All disclaimer text with comprehensive medical disclaimer: "Calonik.ai provides general informational purposes only—not medical advice, diagnosis, or treatment. Calorie estimates, nutritional data, and health suggestions are approximations and may not suit everyone. Always consult a qualified healthcare professional before altering your diet or exercise. Individual results vary, and Calonik.ai is not liable for health outcomes related to app use."
+- FIXED: Critical weight display bug by adding missing daily weight GET endpoint (/api/daily-weight/:sessionId/:date)
+- RESOLVED: Weight data now properly retrieves and displays updated values (77kg) instead of showing null
+- ENHANCED: Footer and Terms & Conditions disclaimers now use consistent blue theme with light grey text
+- VERIFIED: Weight tracking functionality working correctly across morning check-in modal and dashboard display
+
 **June 29, 2025 - Complete OpenAI to Google Gemini API Migration:**
 - MIGRATED: Complete replacement of OpenAI GPT-4 with Google Gemini 2.5 Flash for all AI functionality
 - UPDATED: Food image analysis endpoint now uses Gemini's vision capabilities with structured JSON schema

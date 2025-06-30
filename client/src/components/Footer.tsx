@@ -74,12 +74,9 @@ export default function Footer() {
 
         {/* Disclaimer */}
         <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-          <div className="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
-            <p className="dark:text-amber-200 text-center text-[14px] text-[#9fa5ab]">
-              <strong>Disclaimer:</strong> Calonik.ai is for informational purposes only and is not intended as medical advice, diagnosis, or treatment. 
-              The calorie calculations, nutritional information, and health recommendations provided by our AI are estimates and may not be accurate for all individuals. 
-              Please consult with a qualified healthcare provider or registered dietitian before making significant changes to your diet or exercise routine. 
-              Individual results may vary, and we are not responsible for any health outcomes resulting from the use of this application.
+          <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+            <p className="text-gray-400 dark:text-gray-400 text-center text-[14px]">
+              <strong>Disclaimer:</strong> Calonik.ai provides general informational purposes only—not medical advice, diagnosis, or treatment. Calorie estimates, nutritional data, and health suggestions are approximations and may not suit everyone. Always consult a qualified healthcare professional before altering your diet or exercise. Individual results vary, and Calonik.ai is not liable for health outcomes related to app use.
             </p>
           </div>
         </div>

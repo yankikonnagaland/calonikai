@@ -82,11 +82,9 @@ export default function TermsConditions() {
             </p>
 
             <h2 className="text-xl font-semibold mb-4">6. Health Disclaimer</h2>
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-4 rounded-lg mb-6">
-              <p className="font-medium text-yellow-800 dark:text-yellow-200">
-                <strong>Important:</strong> Calonik.ai is not a medical service and should not replace 
-                professional medical advice. Always consult with healthcare professionals before making 
-                significant changes to your diet or exercise routine.
+            <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg mb-6">
+              <p className="font-medium text-gray-400 dark:text-gray-400">
+                <strong>Important:</strong> Calonik.ai provides general informational purposes only—not medical advice, diagnosis, or treatment. Calorie estimates, nutritional data, and health suggestions are approximations and may not suit everyone. Always consult a qualified healthcare professional before altering your diet or exercise. Individual results vary, and Calonik.ai is not liable for health outcomes related to app use.
               </p>
             </div>
 
