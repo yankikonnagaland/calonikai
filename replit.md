@@ -442,7 +442,7 @@ The application follows a client-server architecture with clear separation of co
 - UPDATED: Navigation component now shows Japanese Beginner Symbol 🔰 for Basic users alongside crown 👑 for Premium users
 - CONFIRMED: Database subscription status correctly updated to 'basic' tier with proper feature enforcement
 
-**June 30, 2025 - Comprehensive User Analytics System & Combined Health Trends Chart:**
+**June 30, 2025 - Streamlined Dashboard Design & Analytics System:**
 - CREATED: Complete user progress analytics API (/api/analytics/user-progress) tracking date-wise nutrition, weight, and usage patterns
 - IMPLEMENTED: 30-day trend analysis with calorie averages, weight progression, and activity consistency scoring
 - ADDED: Global analytics dashboard (/api/analytics/global) for admin insights into user engagement and subscription metrics
@@ -454,10 +454,11 @@ The application follows a client-server architecture with clear separation of co
 - UPDATED: Disclaimer styling across all pages - changed border from red to blue, text color to light grey
 - REPLACED: All disclaimer text with comprehensive medical disclaimer covering app limitations and health advice boundaries
 - FIXED: Critical weight display bug by adding missing daily weight GET endpoint (/api/daily-weight/:sessionId/:date)
-- CREATED: Combined comprehensive trendlines chart showing all 4 key health metrics in single view
-- ENHANCED: Dual Y-axis design with calories (left) and weight/protein (right) for proper scaling
-- INTEGRATED: Interactive tooltips, legend, and color-coded summary cards for complete trend analysis
-- VERIFIED: Complete analytics system operational with real-time progress tracking and admin oversight capabilities
+- STREAMLINED: Dashboard interface by removing duplicate charts and complex analytics cards for cleaner user experience
+- REMOVED: Protein trend lines from combined chart and Progress Insights card to focus on core metrics (calories in/out, weight)
+- SIMPLIFIED: Chart visualization to show only essential health tracking data without information overload
+- ENHANCED: Single comprehensive trendlines chart with dual Y-axis design showing calories consumed, calories burned, and weight progress
+- VERIFIED: Complete analytics system operational with clean, focused dashboard displaying essential tracking metrics
 
 **June 29, 2025 - Complete OpenAI to Google Gemini API Migration:**
 - MIGRATED: Complete replacement of OpenAI GPT-4 with Google Gemini 2.5 Flash for all AI functionality

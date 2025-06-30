@@ -1203,55 +1203,7 @@ Powered by Calonik.ai 🚀
               </Card>
             )}
 
-            {/* Analytics Insights */}
-            {userAnalytics?.analytics?.insights && (
-              <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border-indigo-200 dark:border-indigo-800">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="bg-indigo-100 dark:bg-indigo-900/30 p-2 rounded-full">
-                      <TrendingUp className="w-5 h-5 text-indigo-600" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg text-indigo-800 dark:text-indigo-200">Progress Insights</CardTitle>
-                      <p className="text-sm text-indigo-600 dark:text-indigo-400">
-                        AI-powered analysis of your tracking patterns
-                      </p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {userAnalytics.analytics.insights.map((insight: string, index: number) => (
-                      <div key={index} className="bg-white/50 dark:bg-gray-900/50 p-4 rounded-lg border border-indigo-200/50 dark:border-indigo-800/50">
-                        <p className="text-sm text-indigo-700 dark:text-indigo-300">{insight}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-4 pt-4 border-t border-indigo-200 dark:border-indigo-800">
-                    <div className="grid grid-cols-3 gap-4 text-center">
-                      <div>
-                        <p className="text-2xl font-bold text-indigo-800 dark:text-indigo-200">
-                          {userAnalytics.analytics.activityMetrics.consistencyScore}%
-                        </p>
-                        <p className="text-xs text-indigo-600 dark:text-indigo-400">Consistency Score</p>
-                      </div>
-                      <div>
-                        <p className="text-2xl font-bold text-indigo-800 dark:text-indigo-200">
-                          {userAnalytics.analytics.nutritionTrends.avgDailyCalories}
-                        </p>
-                        <p className="text-xs text-indigo-600 dark:text-indigo-400">Avg Daily Calories</p>
-                      </div>
-                      <div>
-                        <p className="text-2xl font-bold text-indigo-800 dark:text-indigo-200">
-                          {userAnalytics.analytics.nutritionTrends.avgDailyProtein}g
-                        </p>
-                        <p className="text-xs text-indigo-600 dark:text-indigo-400">Avg Daily Protein</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+
           </CardContent>
         </Card>
 
