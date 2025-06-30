@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useMemo } from "react";
 import type { DailySummary, UserProfile, Exercise } from "@shared/schema";
+import { useAuth } from "@/hooks/useAuth";
 
 interface DashboardProps {
   sessionId: string;
@@ -26,6 +27,12 @@ export default function Dashboard({ sessionId }: DashboardProps) {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  
+  // Check if user has premium access to health trends
+  const isPremium = user?.subscriptionStatus === 'premium';
+  const isBasic = user?.subscriptionStatus === 'basic';
+  const hasHealthTrendsAccess = isPremium;
   
   // Reset selected date to today when switching months
   useEffect(() => {
@@ -1058,10 +1065,17 @@ Powered by Calonik.ai 🚀
                       <CardTitle className="text-xl text-slate-800 dark:text-slate-200">Complete Health Trends</CardTitle>
                       <p className="text-sm text-slate-600 dark:text-slate-400">See how your calorie intake and exercise changes your weight overtime</p>
                     </div>
+                    {!hasHealthTrendsAccess && (
+                      <div className="ml-auto">
+                        <Badge variant="outline" className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 text-amber-700">
+                          Premium Feature
+                        </Badge>
+                      </div>
+                    )}
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="h-80">
+                <CardContent className={!hasHealthTrendsAccess ? "relative" : ""}>
+                  <div className={`h-80 ${!hasHealthTrendsAccess ? "blur-md" : ""}`}>
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={trendlineData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
@@ -1197,6 +1211,40 @@ Powered by Calonik.ai 🚀
                       </p>
                     </div>
                   </div>
+                  
+                  {/* Premium Access Overlay for Non-Premium Users */}
+                  {!hasHealthTrendsAccess && (
+                    <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-white/90 to-white/80 dark:from-gray-900/95 dark:via-gray-900/90 dark:to-gray-900/80 flex items-center justify-center rounded-lg">
+                      <div className="text-center p-6 bg-white/90 dark:bg-gray-800/90 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg">
+                        <div className="mb-4">
+                          <div className="w-16 h-16 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <TrendingUp className="w-8 h-8 text-white" />
+                          </div>
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                            Complete Health Trends
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            Unlock comprehensive health analytics with detailed calorie, weight, and exercise trend visualization
+                          </p>
+                          {isBasic ? (
+                            <p className="text-xs text-blue-600 dark:text-blue-400 mb-4">
+                              Upgrade from Basic (🔰) to Premium (👑) plan
+                            </p>
+                          ) : (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                              Premium feature - Subscribe to unlock
+                            </p>
+                          )}
+                        </div>
+                        <Button 
+                          onClick={() => window.location.href = "/?tab=tracker&subscribe=true"}
+                          className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-medium px-6 py-2"
+                        >
+                          Upgrade to Premium
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
