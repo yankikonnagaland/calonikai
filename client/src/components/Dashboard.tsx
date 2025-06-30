@@ -1094,12 +1094,12 @@ Powered by Calonik.ai 🚀
                           domain={[0, 'dataMax + 200']}
                         />
                         
-                        {/* Right Y-Axis for Weight & Protein */}
+                        {/* Right Y-Axis for Weight */}
                         <YAxis 
                           yAxisId="secondary"
                           orientation="right"
                           tick={{ fontSize: 11 }}
-                          label={{ value: 'Weight (kg) / Protein (g)', angle: 90, position: 'insideRight' }}
+                          label={{ value: 'Weight (kg)', angle: 90, position: 'insideRight' }}
                           domain={[0, 'dataMax + 10']}
                         />
                         
