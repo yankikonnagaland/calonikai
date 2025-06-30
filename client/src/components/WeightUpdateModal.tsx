@@ -43,11 +43,11 @@ export default function WeightUpdateModal({ isOpen, onClose, sessionId, currentP
       }
 
       // Save daily weight
-      const today = new Date().toISOString().split('T')[0];
+      const currentDate = new Date().toISOString().split('T')[0];
       await apiRequest("POST", "/api/daily-weight", {
         sessionId,
         weight: weightValue,
-        date: today
+        date: currentDate
       });
 
       // Only update profile weight if all required fields are present
@@ -102,9 +102,12 @@ export default function WeightUpdateModal({ isOpen, onClose, sessionId, currentP
 
       // Goal achievement checking is handled by the weight progress logic above
 
-      // Invalidate cache to refresh profile data
+      // Invalidate cache to refresh all weight-related data
       queryClient.invalidateQueries({ queryKey: [`/api/profile/${sessionId}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/daily-summary`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/daily-weight/${sessionId}/${currentDate}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/daily-weights/${sessionId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/daily-summary/${sessionId}/${currentDate}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/daily-summaries/${sessionId}`] });
       
       onClose();
     } catch (error) {

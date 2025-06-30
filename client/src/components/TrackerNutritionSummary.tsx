@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import type { DailySummary, Exercise } from "@shared/schema";
+import type { DailySummary, Exercise, DailyWeight } from "@shared/schema";
 
 interface TrackerNutritionSummaryProps {
   sessionId: string;
@@ -37,7 +37,7 @@ export default function TrackerNutritionSummary({ sessionId, selectedDate }: Tra
   });
 
   // Fetch weight for current date
-  const { data: currentDateWeight } = useQuery({
+  const { data: currentDateWeight } = useQuery<DailyWeight | null>({
     queryKey: [`/api/daily-weight/${sessionId}/${currentDate}`],
   });
 
@@ -61,7 +61,10 @@ export default function TrackerNutritionSummary({ sessionId, selectedDate }: Tra
         title: "Weight Saved",
         description: `Weight logged for ${new Date(currentDate).toLocaleDateString()}`,
       });
+      // Invalidate all weight-related queries
       queryClient.invalidateQueries({ queryKey: [`/api/daily-weight/${sessionId}/${currentDate}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/daily-weights/${sessionId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/daily-summary/${sessionId}/${currentDate}`] });
       setIsWeightModalOpen(false);
       setWeightInput("");
     },
