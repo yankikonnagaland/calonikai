@@ -129,7 +129,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Meal operations
-  async getMealItems(sessionId: string): Promise<MealItemWithFood[]> {
+  async getMealItems(sessionId: string, date?: string): Promise<MealItemWithFood[]> {
+    const conditions = [eq(mealItems.sessionId, sessionId)];
+    
+    if (date) {
+      conditions.push(eq(mealItems.date, date));
+    }
+    
     const items = await db
       .select({
         id: mealItems.id,
@@ -137,6 +143,7 @@ export class DatabaseStorage implements IStorage {
         foodId: mealItems.foodId,
         quantity: mealItems.quantity,
         unit: mealItems.unit,
+        date: mealItems.date,
         createdAt: mealItems.createdAt,
         food: {
           id: foods.id,
@@ -148,11 +155,17 @@ export class DatabaseStorage implements IStorage {
           portionSize: foods.portionSize,
           category: foods.category,
           defaultUnit: foods.defaultUnit,
+          smartPortionGrams: foods.smartPortionGrams,
+          smartCalories: foods.smartCalories,
+          smartProtein: foods.smartProtein,
+          smartCarbs: foods.smartCarbs,
+          smartFat: foods.smartFat,
+          aiConfidence: foods.aiConfidence,
         }
       })
       .from(mealItems)
       .innerJoin(foods, eq(mealItems.foodId, foods.id))
-      .where(eq(mealItems.sessionId, sessionId));
+      .where(and(...conditions));
     
     return items;
   }

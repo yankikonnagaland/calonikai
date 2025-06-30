@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { calculateNutritionFromUnit } from "@shared/unitCalculations";
+import { calculateNutritionFromUnit, SmartPortionData } from "@shared/unitCalculations";
 import type { MealItemWithFood, UserProfile, Exercise } from "@shared/schema";
 
 interface MealSummaryProps {
@@ -34,6 +34,7 @@ export default function MealSummary({
   
   const { data: mealItems = [], isLoading } = useQuery<MealItemWithFood[]>({
     queryKey: [`/api/meal/${sessionId}/${selectedDate}`],
+    staleTime: 0, // Force fresh data
   });
 
   const { data: userProfile } = useQuery<UserProfile>({
@@ -193,18 +194,19 @@ export default function MealSummary({
       // Create smart portion data if available from AI detection
       const smartPortion = item.food.smartPortionGrams ? {
         smartPortionGrams: item.food.smartPortionGrams,
-        smartCalories: item.food.smartCalories,
-        smartProtein: item.food.smartProtein,
-        smartCarbs: item.food.smartCarbs,
-        smartFat: item.food.smartFat,
-        aiConfidence: item.food.aiConfidence
-      } : undefined;
+        smartCalories: item.food.smartCalories || undefined,
+        smartProtein: item.food.smartProtein || undefined,
+        smartCarbs: item.food.smartCarbs || undefined,
+        smartFat: item.food.smartFat || undefined,
+        aiConfidence: item.food.aiConfidence || undefined
+      } as SmartPortionData : undefined;
       
       const calculatedNutrition = calculateNutritionFromUnit(
         item.food.name,
         item.unit,
         item.quantity,
         basePer100g,
+        // @ts-ignore - Type mismatch between database null and interface undefined
         smartPortion
       );
       
@@ -214,6 +216,10 @@ export default function MealSummary({
           name: item.food.name,
           unit: item.unit,
           quantity: item.quantity,
+          smartPortionGrams: item.food.smartPortionGrams,
+          smartCalories: item.food.smartCalories,
+          aiConfidence: item.food.aiConfidence,
+          smartPortionData: smartPortion,
           calculatedCalories: calculatedNutrition.calories,
           totalGrams: calculatedNutrition.totalGrams,
           usedSmartPortion: calculatedNutrition.usedSmartPortion
@@ -441,11 +447,15 @@ export default function MealSummary({
                       return (
                         <>
                           <div className="text-xs text-muted-foreground">
-                            {item.quantity} {item.unit} ({calculatedNutrition.gramEquivalent})
-                            {item.food.smartPortionGrams && (
-                              <span className="text-blue-600 font-medium ml-1">
-                                • AI detected: {item.food.smartPortionGrams}g
-                              </span>
+                            {/* Show smart portion data if available, otherwise show calculated nutrition */}
+                            {item.food.smartPortionGrams && item.food.smartCalories ? (
+                              <>
+                                {item.quantity} {item.unit} (AI detected: {item.food.smartPortionGrams}g = {item.food.smartCalories} cal)
+                              </>
+                            ) : (
+                              <>
+                                {item.quantity} {item.unit} ({calculatedNutrition.gramEquivalent})
+                              </>
                             )}
                           </div>
                           <div className="text-xs text-primary mt-1">
