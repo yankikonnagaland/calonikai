@@ -34,15 +34,22 @@ export default function Home() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Handle tab change with scroll to top
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    // Scroll to top smoothly
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Listen for profile setup navigation event
   useEffect(() => {
     const handleSwitchToProfile = () => {
-      setActiveTab('profile');
+      handleTabChange('profile');
     };
     
     window.addEventListener('switchToProfile', handleSwitchToProfile);
     return () => window.removeEventListener('switchToProfile', handleSwitchToProfile);
-  }, []);
+  }, [handleTabChange]);
 
   // Format selected date for API calls
   const selectedDateString = format(selectedDate, 'yyyy-MM-dd');
@@ -231,7 +238,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+      <Navigation activeTab={activeTab} onTabChange={handleTabChange} />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 sm:pb-6">
         {/* Tracker Tab */}
@@ -280,7 +287,7 @@ export default function Home() {
                   selectedDate={selectedDateString}
                   onFoodSelect={setSelectedFood}
                   onMealAdded={handleMealItemAdded}
-                  onRedirectToDashboard={() => setActiveTab("dashboard")}
+                  onRedirectToDashboard={() => handleTabChange("dashboard")}
                   editingFood={selectedFood}
                 />
                 <FoodCamera 
