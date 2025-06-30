@@ -25,6 +25,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [quantityInput, setQuantityInput] = useState("1"); // Temporary input state for editing
   const [unit, setUnit] = useState("serving");
   const [unitOptions, setUnitOptions] = useState<string[]>(["serving", "piece", "cup"]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -80,6 +81,11 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       }, 200);
     }
   }, [editingFood]);
+
+  // Sync quantityInput with quantity state
+  useEffect(() => {
+    setQuantityInput(quantity.toString());
+  }, [quantity]);
 
   const { data: searchResults = [] } = useQuery<Food[]>({
     queryKey: [`/api/foods/search`, debouncedQuery],
@@ -841,35 +847,54 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                   Quantity
                 </label>
                 <Input
-                  type="number"
-                  min={unit.toLowerCase().includes("piece") ? "1" : "0.1"}
-                  step={unit.toLowerCase().includes("piece") ? "1" : "0.1"}
-                  value={quantity}
+                  type="text"
+                  value={quantityInput}
                   onChange={(e) => {
-                    const value = parseFloat(e.target.value);
-                    if (!isNaN(value) && value > 0) {
-                      // For piece units, only allow integers
-                      if (unit.toLowerCase().includes("piece")) {
-                        setQuantity(Math.round(value));
-                      } else {
-                        setQuantity(value);
+                    const value = e.target.value;
+                    // Allow empty string or valid numbers
+                    if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                      setQuantityInput(value);
+                      
+                      // Update quantity state only for valid non-empty values
+                      if (value !== "") {
+                        const numValue = parseFloat(value);
+                        if (!isNaN(numValue) && numValue > 0) {
+                          if (unit.toLowerCase().includes("piece")) {
+                            setQuantity(Math.round(numValue));
+                          } else {
+                            setQuantity(numValue);
+                          }
+                        }
                       }
-                    } else if (e.target.value === "") {
-                      setQuantity(1);
                     }
                   }}
                   onFocus={(e) => {
-                    // Clear field when user focuses if it contains placeholder value
-                    if (e.target.value === "1") {
-                      e.target.select(); // Select all text so it gets replaced when user types
-                    }
+                    e.target.select(); // Select all text for easy replacement
                   }}
                   onBlur={(e) => {
-                    if (e.target.value === "" || isNaN(parseFloat(e.target.value))) {
+                    const value = e.target.value;
+                    if (value === "" || isNaN(parseFloat(value)) || parseFloat(value) <= 0) {
+                      // Reset to 1 if empty or invalid
+                      setQuantityInput("1");
                       setQuantity(1);
-                    } else if (unit.toLowerCase().includes("piece")) {
-                      // Ensure pieces are always integers
-                      setQuantity(Math.round(parseFloat(e.target.value)));
+                    } else {
+                      const numValue = parseFloat(value);
+                      if (unit.toLowerCase().includes("piece")) {
+                        const roundedValue = Math.round(numValue);
+                        setQuantityInput(roundedValue.toString());
+                        setQuantity(roundedValue);
+                      } else {
+                        setQuantityInput(numValue.toString());
+                        setQuantity(numValue);
+                      }
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    // Prevent non-numeric characters except backspace, delete, arrow keys, etc.
+                    if (!/[\d\.\-]/.test(e.key) && 
+                        !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key) &&
+                        !(e.ctrlKey || e.metaKey)) {
+                      e.preventDefault();
                     }
                   }}
                   className="mt-1 bg-white dark:bg-gray-800 text-lg font-semibold h-12 text-center"
