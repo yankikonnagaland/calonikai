@@ -70,35 +70,57 @@ export default function Dashboard({ sessionId }: DashboardProps) {
     queryKey: [`/api/daily-weight/${sessionId}/${selectedDate}`],
   });
 
-  // Fetch daily weights for chart
-  const { data: dailyWeights } = useQuery({
-    queryKey: [`/api/daily-weights/${sessionId}`],
+  // Fetch comprehensive user analytics for trendlines
+  const { data: userAnalytics } = useQuery({
+    queryKey: [`/api/analytics/user-progress`],
+    queryFn: async () => {
+      const response = await fetch(`/api/analytics/user-progress?sessionId=${sessionId}&days=14`);
+      if (!response.ok) throw new Error('Failed to fetch analytics');
+      return response.json();
+    },
   });
 
-  // Prepare chart data combining daily summaries and weights
-  const chartData = useMemo(() => {
-    if (!dailySummaries || !dailyWeights) return [];
+  // Prepare comprehensive chart data with weight, protein, and calories burned trends
+  const trendlineData = useMemo(() => {
+    if (!userAnalytics?.analytics) return [];
     
-    const weightMap = new Map((dailyWeights as any[]).map((w: any) => [w.date, w.weight]));
-    const summaryMap = new Map((dailySummaries as any[]).map((s: any) => [s.date, s]));
+    const { nutritionTrends, weightProgress } = userAnalytics.analytics;
+    const dailyData = nutritionTrends.dailyData || [];
+    const weightHistory = weightProgress.weightHistory || [];
     
-    // Get all unique dates from both datasets
+    // Create maps for easy lookup
+    const summaryMap = new Map(dailyData.map((item: any) => [item.date, item]));
+    const weightMap = new Map(weightHistory.map((item: any) => [item.date, item.weight]));
+    
+    // Get all unique dates and sort them
     const allDates = new Set([
-      ...(dailySummaries as any[]).map((s: any) => s.date),
-      ...(dailyWeights as any[]).map((w: any) => w.date)
+      ...dailyData.map((item: any) => item.date),
+      ...weightHistory.map((item: any) => item.date)
     ]);
     
     return Array.from(allDates)
       .sort()
       .slice(-14) // Last 14 days
-      .map(date => ({
-        date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        calories: summaryMap.get(date)?.totalCalories || 0,
-        weight: weightMap.get(date) || null,
-        targetCalories: userProfile?.targetCalories || 2000,
-      }))
-      .filter(item => item.calories > 0 || item.weight); // Only include days with data
-  }, [dailySummaries, dailyWeights, userProfile?.targetCalories]);
+      .map(date => {
+        const summary = summaryMap.get(date);
+        const weight = weightMap.get(date);
+        
+        return {
+          date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          fullDate: date,
+          calories: summary?.totalCalories || 0,
+          protein: summary?.totalProtein || 0,
+          caloriesBurned: summary?.caloriesBurned || 0,
+          weight: weight || null,
+          targetCalories: userProfile?.targetCalories || 2000,
+          targetProtein: userProfile?.dailyProteinTarget || 60,
+        };
+      })
+      .filter(item => item.calories > 0 || item.weight || item.protein > 0 || item.caloriesBurned > 0);
+  }, [userAnalytics, userProfile?.targetCalories, userProfile?.dailyProteinTarget]);
+
+  // Legacy chart data for compatibility
+  const chartData = trendlineData;
 
   // Enhanced social sharing component with visual templates
   const ShareComponent = () => {
@@ -1147,6 +1169,304 @@ Powered by Calonik.ai 🚀
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* Comprehensive Trendline Charts */}
+            {trendlineData.length > 0 && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                {/* Weight Progress Trendline */}
+                <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200 dark:border-purple-800">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded-full">
+                        <Scale className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg text-purple-800 dark:text-purple-200">Weight Progress</CardTitle>
+                        <p className="text-sm text-purple-600 dark:text-purple-400">
+                          {userAnalytics?.analytics?.weightProgress?.trend === 'decreasing' ? 'Losing weight' :
+                           userAnalytics?.analytics?.weightProgress?.trend === 'increasing' ? 'Gaining weight' : 
+                           'Stable weight'}
+                          {userAnalytics?.analytics?.weightProgress?.totalWeightChange !== 0 && 
+                            ` (${userAnalytics?.analytics?.weightProgress?.totalWeightChange > 0 ? '+' : ''}${userAnalytics?.analytics?.weightProgress?.totalWeightChange}kg)`
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={trendlineData.filter(d => d.weight)} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                          <XAxis 
+                            dataKey="date" 
+                            tick={{ fontSize: 11 }}
+                            className="text-xs"
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 11 }}
+                            label={{ value: 'Weight (kg)', angle: -90, position: 'insideLeft' }}
+                            domain={['dataMin - 1', 'dataMax + 1']}
+                          />
+                          <Tooltip 
+                            contentStyle={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '8px',
+                              fontSize: '12px'
+                            }}
+                            formatter={(value: any) => [`${value} kg`, 'Weight']}
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="weight" 
+                            stroke="#9333ea" 
+                            strokeWidth={3}
+                            dot={{ fill: '#9333ea', strokeWidth: 2, r: 4 }}
+                            activeDot={{ r: 6, stroke: '#9333ea', strokeWidth: 2 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Protein Intake Trendline */}
+                <Card className="bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-950/20 dark:to-blue-950/20 border-cyan-200 dark:border-cyan-800">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-cyan-100 dark:bg-cyan-900/30 p-2 rounded-full">
+                        <Target className="w-5 h-5 text-cyan-600" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg text-cyan-800 dark:text-cyan-200">Protein Intake</CardTitle>
+                        <p className="text-sm text-cyan-600 dark:text-cyan-400">
+                          Daily protein consumption vs target
+                          {userProfile?.dailyProteinTarget && ` (${userProfile.dailyProteinTarget}g goal)`}
+                        </p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={trendlineData.filter(d => d.protein > 0)} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                          <XAxis 
+                            dataKey="date" 
+                            tick={{ fontSize: 11 }}
+                            className="text-xs"
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 11 }}
+                            label={{ value: 'Protein (g)', angle: -90, position: 'insideLeft' }}
+                            domain={[0, 'dataMax + 10']}
+                          />
+                          <Tooltip 
+                            contentStyle={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '8px',
+                              fontSize: '12px'
+                            }}
+                            formatter={(value: any, name: string) => [
+                              name === 'protein' ? `${value}g` : `${value}g (target)`,
+                              name === 'protein' ? 'Protein Consumed' : 'Target'
+                            ]}
+                          />
+                          {userProfile?.dailyProteinTarget && (
+                            <Line 
+                              type="monotone" 
+                              dataKey="targetProtein" 
+                              stroke="#64748b" 
+                              strokeWidth={2}
+                              strokeDasharray="5 5"
+                              dot={false}
+                            />
+                          )}
+                          <Line 
+                            type="monotone" 
+                            dataKey="protein" 
+                            stroke="#0891b2" 
+                            strokeWidth={3}
+                            dot={{ fill: '#0891b2', strokeWidth: 2, r: 4 }}
+                            activeDot={{ r: 6, stroke: '#0891b2', strokeWidth: 2 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Calories Burned Trendline */}
+                <Card className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-orange-200 dark:border-orange-800">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-orange-100 dark:bg-orange-900/30 p-2 rounded-full">
+                        <Activity className="w-5 h-5 text-orange-600" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg text-orange-800 dark:text-orange-200">Calories Burned</CardTitle>
+                        <p className="text-sm text-orange-600 dark:text-orange-400">
+                          Exercise activity and calorie burn trends
+                        </p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={trendlineData.filter(d => d.caloriesBurned > 0)} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                          <XAxis 
+                            dataKey="date" 
+                            tick={{ fontSize: 11 }}
+                            className="text-xs"
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 11 }}
+                            label={{ value: 'Calories', angle: -90, position: 'insideLeft' }}
+                            domain={[0, 'dataMax + 50']}
+                          />
+                          <Tooltip 
+                            contentStyle={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '8px',
+                              fontSize: '12px'
+                            }}
+                            formatter={(value: any) => [`${value} cal`, 'Calories Burned']}
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="caloriesBurned" 
+                            stroke="#ea580c" 
+                            strokeWidth={3}
+                            dot={{ fill: '#ea580c', strokeWidth: 2, r: 4 }}
+                            activeDot={{ r: 6, stroke: '#ea580c', strokeWidth: 2 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Combined Nutrition Overview */}
+                <Card className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-full">
+                        <TrendingUp className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg text-green-800 dark:text-green-200">Nutrition Overview</CardTitle>
+                        <p className="text-sm text-green-600 dark:text-green-400">
+                          Calories consumed vs target over time
+                        </p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={trendlineData.filter(d => d.calories > 0)} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                          <XAxis 
+                            dataKey="date" 
+                            tick={{ fontSize: 11 }}
+                            className="text-xs"
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 11 }}
+                            label={{ value: 'Calories', angle: -90, position: 'insideLeft' }}
+                            domain={['dataMin - 200', 'dataMax + 200']}
+                          />
+                          <Tooltip 
+                            contentStyle={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '8px',
+                              fontSize: '12px'
+                            }}
+                            formatter={(value: any, name: string) => [
+                              `${value} cal`,
+                              name === 'calories' ? 'Consumed' : 'Target'
+                            ]}
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="targetCalories" 
+                            stroke="#64748b" 
+                            strokeWidth={2}
+                            strokeDasharray="5 5"
+                            dot={false}
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="calories" 
+                            stroke="#059669" 
+                            strokeWidth={3}
+                            dot={{ fill: '#059669', strokeWidth: 2, r: 4 }}
+                            activeDot={{ r: 6, stroke: '#059669', strokeWidth: 2 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Analytics Insights */}
+            {userAnalytics?.analytics?.insights && (
+              <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border-indigo-200 dark:border-indigo-800">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="bg-indigo-100 dark:bg-indigo-900/30 p-2 rounded-full">
+                      <TrendingUp className="w-5 h-5 text-indigo-600" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg text-indigo-800 dark:text-indigo-200">Progress Insights</CardTitle>
+                      <p className="text-sm text-indigo-600 dark:text-indigo-400">
+                        AI-powered analysis of your tracking patterns
+                      </p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {userAnalytics.analytics.insights.map((insight: string, index: number) => (
+                      <div key={index} className="bg-white/50 dark:bg-gray-900/50 p-4 rounded-lg border border-indigo-200/50 dark:border-indigo-800/50">
+                        <p className="text-sm text-indigo-700 dark:text-indigo-300">{insight}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-indigo-200 dark:border-indigo-800">
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div>
+                        <p className="text-2xl font-bold text-indigo-800 dark:text-indigo-200">
+                          {userAnalytics.analytics.activityMetrics.consistencyScore}%
+                        </p>
+                        <p className="text-xs text-indigo-600 dark:text-indigo-400">Consistency Score</p>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-indigo-800 dark:text-indigo-200">
+                          {userAnalytics.analytics.nutritionTrends.avgDailyCalories}
+                        </p>
+                        <p className="text-xs text-indigo-600 dark:text-indigo-400">Avg Daily Calories</p>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-indigo-800 dark:text-indigo-200">
+                          {userAnalytics.analytics.nutritionTrends.avgDailyProtein}g
+                        </p>
+                        <p className="text-xs text-indigo-600 dark:text-indigo-400">Avg Daily Protein</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
           </CardContent>
         </Card>
