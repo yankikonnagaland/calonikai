@@ -393,6 +393,13 @@ The application follows a client-server architecture with clear separation of co
 - Enhanced FoodSearch component to accept editingFood prop for seamless meal replacement workflow
 - Edit functionality allows users to modify meal items by searching for replacements
 
+**July 1, 2025 - Fixed AI Smart Portion Calorie Calculation:**
+- RESOLVED: Critical bug where AI-detected calories were being scaled incorrectly instead of used directly
+- Fixed calculateNutritionFromUnit function to use exact AI-detected calorie values (23 cal lettuce, 163 cal croutons, 252 cal dressing)
+- Eliminated calorie inflation where 1368-calorie salads were showing instead of realistic 571-calorie portions
+- AI-detected smart portion data now used exactly as detected instead of being scaled by unit mappings
+- Total nutrition calculations now accurate for AI-analyzed foods with proper portion detection
+
 **June 29, 2025 - Major Calorie Calculation Refactor & Unit-Based Accuracy System:**
 - IMPLEMENTED: Complete calorie calculation refactor using realistic unit-to-gram mapping system
 - CREATED: shared/unitCalculations.ts with comprehensive unit-to-gram conversions for 50+ measurement units

@@ -192,25 +192,21 @@ export const calculateNutritionFromUnit = (
 ): CalculatedNutrition => {
   // Priority 1: Use AI-detected smart portion data if available
   if (smartPortion?.smartPortionGrams && smartPortion?.smartCalories) {
-    const unitWeight = unitToGramMap[unit.toLowerCase()] || unitToGramMap["serving"];
-    const totalGrams = unitWeight * quantity;
-    
-    // Calculate calories per gram from AI data
-    const calPerGram = smartPortion.smartCalories / smartPortion.smartPortionGrams;
-    
-    // Scale nutrition based on user's actual selection
-    const calories = Math.round(calPerGram * totalGrams * 10) / 10;
-    const protein = smartPortion.smartProtein ? Math.round((smartPortion.smartProtein / smartPortion.smartPortionGrams) * totalGrams * 10) / 10 : Math.round(basePer100g.protein * (totalGrams / 100) * 10) / 10;
-    const carbs = smartPortion.smartCarbs ? Math.round((smartPortion.smartCarbs / smartPortion.smartPortionGrams) * totalGrams * 10) / 10 : Math.round(basePer100g.carbs * (totalGrams / 100) * 10) / 10;
-    const fat = smartPortion.smartFat ? Math.round((smartPortion.smartFat / smartPortion.smartPortionGrams) * totalGrams * 10) / 10 : Math.round(basePer100g.fat * (totalGrams / 100) * 10) / 10;
+    // For quantity = 1, use AI-detected values directly
+    // For quantity > 1, scale proportionally
+    const calories = smartPortion.smartCalories * quantity;
+    const protein = smartPortion.smartProtein ? smartPortion.smartProtein * quantity : Math.round(basePer100g.protein * (smartPortion.smartPortionGrams / 100) * quantity * 10) / 10;
+    const carbs = smartPortion.smartCarbs ? smartPortion.smartCarbs * quantity : Math.round(basePer100g.carbs * (smartPortion.smartPortionGrams / 100) * quantity * 10) / 10;
+    const fat = smartPortion.smartFat ? smartPortion.smartFat * quantity : Math.round(basePer100g.fat * (smartPortion.smartPortionGrams / 100) * quantity * 10) / 10;
+    const totalGrams = smartPortion.smartPortionGrams * quantity;
     
     return {
-      calories,
-      protein,
-      carbs,
-      fat,
+      calories: Math.round(calories * 10) / 10,
+      protein: Math.round(protein * 10) / 10,
+      carbs: Math.round(carbs * 10) / 10,
+      fat: Math.round(fat * 10) / 10,
       totalGrams,
-      gramEquivalent: `~${totalGrams}g`,
+      gramEquivalent: `${smartPortion.smartPortionGrams}g`,
       usedSmartPortion: true,
       smartPortionInfo: `AI detected: ${smartPortion.smartPortionGrams}g = ${smartPortion.smartCalories} cal`
     };
