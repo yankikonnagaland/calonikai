@@ -466,54 +466,54 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     };
   };
 
-  const handleFoodSelect = useCallback(async (food: Food) => {
+  const handleFoodSelect = useCallback((food: Food) => {
+    // Immediately update UI state for instant responsiveness
     setSelectedFood(food);
     onFoodSelect(food);
-    
-    // Always fetch unit options from backend, but use enhanced portion data if available
-    try {
-      const response = await fetch(`/api/unit-selection/${encodeURIComponent(food.name)}?category=${encodeURIComponent(food.category)}`);
-      if (response.ok) {
-        const unitData = await response.json();
-        setUnitOptions(unitData.unitOptions);
-        
-        // Use enhanced portion data if available, otherwise use backend defaults
-        if (food.smartUnit && food.smartQuantity) {
-          console.log(`Using enhanced portion data for ${food.name}: ${food.smartQuantity} ${food.smartUnit}`);
-          setUnit(food.smartUnit);
-          setQuantity(food.smartQuantity);
-        } else {
-          setUnit(unitData.unit);
-          setQuantity(1);
-        }
-      } else {
-        throw new Error('Backend unit selection failed');
-      }
-    } catch (error) {
-      console.log("Using local suggestion for", food.name);
-      const localSuggestion = getIntelligentUnits(food);
-      
-      // Use enhanced portion data if available, otherwise use local suggestions
-      if (food.smartUnit && food.smartQuantity) {
-        console.log(`Using enhanced portion data for ${food.name}: ${food.smartQuantity} ${food.smartUnit}`);
-        setUnit(food.smartUnit);
-        setQuantity(food.smartQuantity);
-      } else {
-        setUnit(localSuggestion.unit);
-        setQuantity(localSuggestion.quantity);
-      }
-      // Set default unit options with grams included
-      setUnitOptions(["serving", "piece", "cup", "small portion", "medium portion", "large portion", "grams"]);
-    }
-    
-    // Clear search and hide suggestions
-    setSearchQuery("");
     setShowSuggestions(false);
+    setSearchQuery("");
+    setDebouncedQuery("");
     
     // Clear any pending hide timeout
     if (suggestionTimeoutRef.current) {
       clearTimeout(suggestionTimeoutRef.current);
     }
+    
+    // Set immediate default values using local intelligence for instant display
+    const localSuggestion = getIntelligentUnits(food);
+    
+    // Use enhanced portion data if available from AI detection
+    if ((food as any).smartUnit && (food as any).smartQuantity) {
+      console.log(`Using enhanced portion data for ${food.name}: ${(food as any).smartQuantity} ${(food as any).smartUnit}`);
+      setUnit((food as any).smartUnit);
+      setQuantity((food as any).smartQuantity);
+      setUnitOptions([(food as any).smartUnit, ...localSuggestion.unitOptions.filter(opt => opt !== (food as any).smartUnit)]);
+    } else {
+      setUnit(localSuggestion.unit);
+      setQuantity(localSuggestion.quantity);
+      setUnitOptions(localSuggestion.unitOptions);
+    }
+    
+    // Fetch backend unit options asynchronously (non-blocking for better UX)
+    fetch(`/api/unit-selection/${encodeURIComponent(food.name)}?category=${encodeURIComponent(food.category)}`)
+      .then(response => {
+        if (response.ok) {
+          return response.json();
+        }
+        throw new Error('Backend unit selection failed');
+      })
+      .then(unitData => {
+        // Only update if we don't have enhanced portion data already
+        if (!(food as any).smartUnit || !(food as any).smartQuantity) {
+          setUnitOptions(unitData.unitOptions);
+          setUnit(unitData.unit);
+        }
+      })
+      .catch(error => {
+        console.log("Backend unit selection failed, using local data:", error);
+        // Local data already set above - no action needed
+      });
+    
   }, [onFoodSelect]);
 
   const handleInputFocus = () => {
@@ -763,7 +763,10 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                   <div
                     key={`${food.id}-${index}`}
                     className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border-b last:border-b-0 transition-colors"
-                    onClick={() => handleFoodSelect(food)}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleFoodSelect(food);
+                    }}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
@@ -777,16 +780,16 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                           )}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1 flex items-center justify-between">
-                          {food.realisticCalories ? (
+                          {(food as any).realisticCalories ? (
                             <span>
-                              <span className="font-medium text-green-600 dark:text-green-400">{food.realisticCalories} cal</span> 
-                              <span className="text-gray-400 dark:text-gray-500"> ({food.smartQuantity} {food.smartUnit})</span> • {food.protein}g protein
+                              <span className="font-medium text-green-600 dark:text-green-400">{(food as any).realisticCalories} cal</span> 
+                              <span className="text-gray-400 dark:text-gray-500"> ({(food as any).smartQuantity} {(food as any).smartUnit})</span> • {food.protein}g protein
                             </span>
                           ) : (
                             <span>{food.calories} cal • {food.protein}g protein</span>
                           )}
                           <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full">
-                            {food.smartUnit || getIntelligentUnits(food).unit}
+                            {(food as any).smartUnit || getIntelligentUnits(food).unit}
                           </span>
                         </div>
                       </div>
@@ -804,10 +807,10 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
               <div>
                 <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100">{selectedFood.name}</h3>
                 <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                  {selectedFood.realisticCalories ? (
+                  {(selectedFood as any).realisticCalories ? (
                     <>
-                      <span className="text-green-600 dark:text-green-400 font-bold">{selectedFood.realisticCalories} cal</span> 
-                      <span className="text-gray-500"> for {selectedFood.smartQuantity} {selectedFood.smartUnit}</span>
+                      <span className="text-green-600 dark:text-green-400 font-bold">{(selectedFood as any).realisticCalories} cal</span> 
+                      <span className="text-gray-500"> for {(selectedFood as any).smartQuantity} {(selectedFood as any).smartUnit}</span>
                       <br />
                       <span className="text-xs">Base: {selectedFood.calories} cal per {selectedFood.portionSize}</span>
                     </>
@@ -826,9 +829,9 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Smart Suggestion</span>
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                {selectedFood.portionExplanation ? (
+                {(selectedFood as any).portionExplanation ? (
                   <>
-                    <span className="font-medium">{selectedFood.portionExplanation}</span>
+                    <span className="font-medium">{(selectedFood as any).portionExplanation}</span>
                     <br />
                     <span className="text-xs italic">Smart portion size for realistic tracking</span>
                   </>
