@@ -1111,7 +1111,16 @@ Powered by Calonik.ai 🚀
                           yAxisId="calories"
                           orientation="left"
                           tick={{ fontSize: 8 }}
-                          label={{ value: 'Cal', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fontSize: '10px', dy: 30, dx: -20 } }}
+                          label={{ 
+                            value: 'Cal', 
+                            angle: -90, 
+                            position: 'insideLeft', 
+                            style: { 
+                              textAnchor: 'middle', 
+                              fontSize: '10px' 
+                            },
+                            offset: 30
+                          }}
                           domain={[0, 'dataMax + 200']}
                           width={25}
                         />
