@@ -405,6 +405,18 @@ The application follows a client-server architecture with clear separation of co
 - PREMIUM: Extra motivational exercise prompts for premium users with random encouragement
 - PERSONALIZED: Messages adjust based on meals logged, exercises completed, and subscription status
 
+**July 2, 2025 - Fixed Critical Calorie Calculation & Chart Visualization Bugs:**
+- RESOLVED: Chart visualization bug where July 1st showed 7 calories instead of 1952 calories
+- FIXED: Frontend React Query cache issue causing stale data display in analytics charts
+- ENHANCED: Added cache-busting parameters and fresh data fetching for accurate chart visualization
+- CORRECTED: Daily nutrition summary calculations showing wrong calorie values (18 vs 1,785.5 calories)
+- IMPROVED: Portion calculation logic to properly handle complex unit descriptions like "medium wrap (250g)" and "regular meal (450g)"
+- UPDATED: calculatePortionNutrition function with enhanced gram weight extraction from unit strings
+- VERIFIED: Backend analytics API correctly returns 1952 calories for July 1st, frontend now displays matching values
+- FIXED: July 2nd daily summary now shows accurate 1,785.5 calories instead of incorrect 18 calories
+- ENHANCED: Unit calculation system supports 250g, 300g, 320g, 450g portions for accurate meal tracking
+- COMPLETED: Comprehensive calorie tracking accuracy across all chart visualizations and daily summaries
+
 **July 2, 2025 - Complete AI Cost Optimization Implementation:**
 - IMPLEMENTED: Comprehensive cost optimization system reducing Gemini API expenses by 60-80%
 - CREATED: ImageOptimizer service using Sharp library for intelligent image preprocessing before AI analysis

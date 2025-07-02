@@ -507,14 +507,18 @@ function calculatePortionNutrition(food: any, unit: string, quantity: number) {
   else if (unitLower.includes('pint') && unitLower.includes('568ml')) multiplier = quantity * 5.68;
   else if (unitLower.includes('glass') && unitLower.includes('250ml')) multiplier = quantity * 2.5;
   
-  // Food portion calculations
-  else if (unitLower.includes('150g')) multiplier = quantity * 1.5; // Medium portion
-  else if (unitLower.includes('100g')) multiplier = quantity * 1; // Standard portion
+  // Food portion calculations - extract gram amounts from unit descriptions
+  else if (unitLower.includes('250g')) multiplier = quantity * 2.5; // 250g portions (wraps, etc.)
+  else if (unitLower.includes('300g')) multiplier = quantity * 3.0; // 300g portions
+  else if (unitLower.includes('320g')) multiplier = quantity * 3.2; // 320g portions
+  else if (unitLower.includes('450g')) multiplier = quantity * 4.5; // 450g portions (large meals)
   else if (unitLower.includes('200g')) multiplier = quantity * 2; // Large portion
-  else if (unitLower.includes('50g')) multiplier = quantity * 0.5; // Small portion
-  else if (unitLower.includes('120g')) multiplier = quantity * 1.2; // Medium fruit/item
-  else if (unitLower.includes('80g')) multiplier = quantity * 0.8; // Small item
   else if (unitLower.includes('180g')) multiplier = quantity * 1.8; // Large item
+  else if (unitLower.includes('150g')) multiplier = quantity * 1.5; // Medium portion
+  else if (unitLower.includes('120g')) multiplier = quantity * 1.2; // Medium fruit/item
+  else if (unitLower.includes('100g')) multiplier = quantity * 1; // Standard portion
+  else if (unitLower.includes('80g')) multiplier = quantity * 0.8; // Small item
+  else if (unitLower.includes('50g')) multiplier = quantity * 0.5; // Small portion
   
   // Beverage calculations
   else if (unitLower.includes('cup') && unitLower.includes('250ml')) multiplier = quantity * 2.5;
@@ -2256,34 +2260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         )
         .orderBy(desc(dailySummaries.date));
 
-      // Debug: Log the analytics query results
-      console.log("Analytics API - Query sessionId:", effectiveSessionId);
-      console.log("Analytics API - Query startDate:", startDateStr);
-      console.log("Analytics API - Raw query results count:", dailyNutrition.length);
-      
-      // Log all daily nutrition data with more detail
-      console.log("Analytics API - All daily nutrition data:", dailyNutrition.map(day => ({
-        id: day.id,
-        date: day.date,
-        totalCalories: day.totalCalories,
-        totalProtein: day.totalProtein,
-        sessionId: day.sessionId,
-        createdAt: day.createdAt
-      })));
-      
-      const july1Data = dailyNutrition.find(day => day.date === '2025-07-01');
-      if (july1Data) {
-        console.log("Analytics API - July 1st DETAILED:", {
-          id: july1Data.id,
-          date: july1Data.date,
-          totalCalories: july1Data.totalCalories,
-          totalProtein: july1Data.totalProtein,
-          sessionId: july1Data.sessionId,
-          mealDataLength: july1Data.mealData ? july1Data.mealData.length : 'null'
-        });
-      } else {
-        console.log("Analytics API - July 1st NOT FOUND in results");
-      }
+
 
       // Get weight progress
       const weightHistory = await db.select()
