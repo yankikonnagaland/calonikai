@@ -18,9 +18,11 @@ import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsConditions from "@/pages/TermsConditions";
 import RefundPolicy from "@/pages/RefundPolicy";
 import Footer from "@/components/Footer";
+import DailyMotivationNotifications from "@/components/DailyMotivationNotifications";
+import TestNotification from "@/components/TestNotification";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   // Handle OAuth popup messages
   React.useEffect(() => {
@@ -64,6 +66,13 @@ function Router() {
       ) : (
         <>
           <Route path="/" component={Home} />
+          <DailyMotivationNotifications 
+            sessionId={(user as any)?.id || ""}
+            isEnabled={isAuthenticated}
+          />
+          <TestNotification 
+            sessionId={(user as any)?.id || ""}
+          />
         </>
       )}
       <Route component={NotFound} />
