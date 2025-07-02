@@ -125,10 +125,10 @@ export default function Dashboard({ sessionId }: DashboardProps) {
           const multiplier = getMultiplierForNutrition(meal.unit, meal.food);
           const quantity = meal.quantity || 1;
           
-          totalCalories += (baseCalories * multiplier * quantity) / 100;
-          totalProtein += (baseProtein * multiplier * quantity) / 100;
-          totalCarbs += (baseCarbs * multiplier * quantity) / 100;
-          totalFat += (baseFat * multiplier * quantity) / 100;
+          totalCalories += (baseCalories * multiplier * quantity);
+          totalProtein += (baseProtein * multiplier * quantity);
+          totalCarbs += (baseCarbs * multiplier * quantity);
+          totalFat += (baseFat * multiplier * quantity);
         }
       });
       
