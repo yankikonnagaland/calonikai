@@ -2592,6 +2592,140 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin route for usage analytics dashboard
+  app.get("/api/admin/usage-analytics", async (req: any, res) => {
+    try {
+      // Check admin authentication
+      const isAdminSession = req.user?.uid === "admin_testing_user" || 
+                           req.headers['x-admin-key'] === process.env.ADMIN_SECRET ||
+                           (req.session && req.session.userId === "admin_testing_user" && req.session.isAdmin);
+      
+      if (!isAdminSession) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      // Get comprehensive user usage data
+      const userUsageQuery = `
+        SELECT 
+            u.id as user_id,
+            u.email,
+            u.first_name,
+            u.subscription_status,
+            u.subscription_ends_at,
+            COALESCE(photo_stats.total_photos, 0) as total_photo_scans,
+            COALESCE(meal_stats.total_meals, 0) as total_food_searches,
+            COALESCE(photo_stats.recent_photos, 0) as photos_last_7_days,
+            COALESCE(meal_stats.recent_meals, 0) as food_searches_last_7_days,
+            COALESCE(photo_stats.today_photos, 0) as photos_today,
+            COALESCE(meal_stats.today_meals, 0) as food_searches_today,
+            u.created_at as user_joined_date
+        FROM users u
+        LEFT JOIN (
+            SELECT 
+                user_id,
+                SUM(count) as total_photos,
+                SUM(CASE WHEN date >= CURRENT_DATE - INTERVAL '7 days' THEN count ELSE 0 END) as recent_photos,
+                SUM(CASE WHEN date = CURRENT_DATE THEN count ELSE 0 END) as today_photos
+            FROM usage_tracking 
+            WHERE action_type = 'photo_analyze'
+            GROUP BY user_id
+        ) photo_stats ON u.id = photo_stats.user_id
+        LEFT JOIN (
+            SELECT 
+                user_id,
+                SUM(count) as total_meals,
+                SUM(CASE WHEN date >= CURRENT_DATE - INTERVAL '7 days' THEN count ELSE 0 END) as recent_meals,
+                SUM(CASE WHEN date = CURRENT_DATE THEN count ELSE 0 END) as today_meals
+            FROM usage_tracking 
+            WHERE action_type = 'meal_add'
+            GROUP BY user_id
+        ) meal_stats ON u.id = meal_stats.user_id
+        ORDER BY u.created_at DESC
+      `;
+
+      const userUsage = await db.execute(sql.raw(userUsageQuery));
+
+      // Get subscription summary
+      const subscriptionSummaryQuery = `
+        SELECT 
+            subscription_status,
+            COUNT(*) as total_users,
+            SUM(COALESCE(photo_stats.total_photos, 0)) as total_photo_scans_all,
+            SUM(COALESCE(meal_stats.total_meals, 0)) as total_food_searches_all,
+            ROUND(AVG(COALESCE(photo_stats.total_photos, 0)), 2) as avg_photos_per_user,
+            ROUND(AVG(COALESCE(meal_stats.total_meals, 0)), 2) as avg_searches_per_user
+        FROM users u
+        LEFT JOIN (
+            SELECT user_id, SUM(count) as total_photos
+            FROM usage_tracking 
+            WHERE action_type = 'photo_analyze'
+            GROUP BY user_id
+        ) photo_stats ON u.id = photo_stats.user_id
+        LEFT JOIN (
+            SELECT user_id, SUM(count) as total_meals
+            FROM usage_tracking 
+            WHERE action_type = 'meal_add'
+            GROUP BY user_id
+        ) meal_stats ON u.id = meal_stats.user_id
+        GROUP BY subscription_status
+        ORDER BY subscription_status
+      `;
+
+      const subscriptionSummary = await db.execute(sql.raw(subscriptionSummaryQuery));
+
+      // Get top 10 most active users
+      const topUsersQuery = `
+        SELECT 
+            u.id as user_id,
+            u.email,
+            u.first_name,
+            u.subscription_status,
+            u.subscription_ends_at,
+            COALESCE(photo_stats.total_photos, 0) as total_photo_scans,
+            COALESCE(meal_stats.total_meals, 0) as total_food_searches,
+            COALESCE(photo_stats.recent_photos, 0) as photos_last_7_days,
+            COALESCE(meal_stats.recent_meals, 0) as food_searches_last_7_days,
+            COALESCE(photo_stats.today_photos, 0) as photos_today,
+            COALESCE(meal_stats.today_meals, 0) as food_searches_today,
+            u.created_at as user_joined_date,
+            COALESCE(photo_stats.total_photos, 0) + COALESCE(meal_stats.total_meals, 0) as total_activity
+        FROM users u
+        LEFT JOIN (
+            SELECT user_id, SUM(count) as total_photos, 
+                   SUM(CASE WHEN date >= CURRENT_DATE - INTERVAL '7 days' THEN count ELSE 0 END) as recent_photos,
+                   SUM(CASE WHEN date = CURRENT_DATE THEN count ELSE 0 END) as today_photos
+            FROM usage_tracking 
+            WHERE action_type = 'photo_analyze'
+            GROUP BY user_id
+        ) photo_stats ON u.id = photo_stats.user_id
+        LEFT JOIN (
+            SELECT user_id, SUM(count) as total_meals,
+                   SUM(CASE WHEN date >= CURRENT_DATE - INTERVAL '7 days' THEN count ELSE 0 END) as recent_meals,
+                   SUM(CASE WHEN date = CURRENT_DATE THEN count ELSE 0 END) as today_meals
+            FROM usage_tracking 
+            WHERE action_type = 'meal_add'
+            GROUP BY user_id
+        ) meal_stats ON u.id = meal_stats.user_id
+        WHERE COALESCE(photo_stats.total_photos, 0) + COALESCE(meal_stats.total_meals, 0) > 0
+        ORDER BY total_activity DESC
+        LIMIT 10
+      `;
+
+      const topUsers = await db.execute(sql.raw(topUsersQuery));
+
+      res.json({
+        userUsage: userUsage.rows,
+        subscriptionSummary: subscriptionSummary.rows,
+        topUsers: topUsers.rows,
+        generatedAt: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error("Error fetching usage analytics:", error);
+      res.status(500).json({ error: "Failed to fetch usage analytics" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

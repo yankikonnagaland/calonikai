@@ -6,14 +6,15 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
-import { Shield, Key, Users, TrendingUp, Home } from "lucide-react";
+import { Shield, Key, Users, TrendingUp, Home, BarChart3 } from "lucide-react";
 import InfluencerDashboard from "./InfluencerDashboard";
+import UsageAnalyticsDashboard from "@/components/UsageAnalyticsDashboard";
 
 export default function AdminLogin() {
   const [adminKey, setAdminKey] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentView, setCurrentView] = useState<'login' | 'dashboard' | 'influencers'>('login');
+  const [currentView, setCurrentView] = useState<'login' | 'dashboard' | 'influencers' | 'analytics'>('login');
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -170,6 +171,15 @@ export default function AdminLogin() {
                 <Users className="w-4 h-4" />
                 <span>Influencers</span>
               </Button>
+
+              <Button
+                variant={currentView === 'analytics' ? 'default' : 'ghost'}
+                onClick={() => setCurrentView('analytics')}
+                className="flex items-center space-x-2"
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span>Usage Analytics</span>
+              </Button>
               
               <Button
                 variant="outline"
@@ -235,6 +245,15 @@ export default function AdminLogin() {
                     <Users className="w-4 h-4" />
                     <span>Manage Influencers</span>
                   </Button>
+
+                  <Button 
+                    variant="outline"
+                    onClick={() => setCurrentView('analytics')}
+                    className="flex items-center space-x-2"
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    <span>Usage Analytics</span>
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -243,6 +262,10 @@ export default function AdminLogin() {
 
         {currentView === 'influencers' && (
           <InfluencerDashboard />
+        )}
+
+        {currentView === 'analytics' && (
+          <UsageAnalyticsDashboard />
         )}
       </div>
     </div>
