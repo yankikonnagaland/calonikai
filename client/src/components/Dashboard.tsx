@@ -1,5 +1,5 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Calendar, TrendingUp, TrendingDown, Target, Flame, ChevronLeft, ChevronRight, Activity, Utensils, Scale, UserCircle, Copy, Download } from "lucide-react";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { Calendar, TrendingUp, TrendingDown, Target, Flame, ChevronLeft, ChevronRight, Activity, Utensils, Scale, UserCircle, Copy, Download, X } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useMemo } from "react";
 import type { DailySummary, UserProfile, Exercise } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
+import { apiRequest } from "@/lib/queryClient";
 
 interface DashboardProps {
   sessionId: string;
@@ -28,6 +29,37 @@ export default function Dashboard({ sessionId }: DashboardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+
+  // Remove meal item mutation
+  const removeMealMutation = useMutation({
+    mutationFn: async (mealId: number) => {
+      return apiRequest("DELETE", `/api/meal/${mealId}`);
+    },
+    onSuccess: () => {
+      // Invalidate relevant queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ["/api/meal", sessionId, selectedDate] });
+      queryClient.invalidateQueries({ queryKey: ["/api/daily-summary", sessionId, selectedDate] });
+      queryClient.invalidateQueries({ queryKey: ["/api/daily-summaries", sessionId] });
+      
+      toast({
+        title: "Meal item removed",
+        description: "The food item has been removed from your meal.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to remove meal item. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleRemoveMealItem = (mealId: number, foodName: string) => {
+    if (confirm(`Remove ${foodName} from your meal?`)) {
+      removeMealMutation.mutate(mealId);
+    }
+  };
   
   // Check if user has premium access to health trends
   const isPremium = user?.subscriptionStatus === 'premium';
@@ -1348,18 +1380,19 @@ Powered by Calonik.ai 🚀
                           {item.quantity} {item.unit}
                         </p>
                       </div>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div className="text-center">
-                          <span className="text-blue-600 font-medium">
-                            {(() => {
-                              // Use the same multiplier logic as MealSummary to ensure consistency
-                              const getMultiplier = (unit: string, food: any) => {
-                                const unitLower = unit.toLowerCase();
-                                const name = food.name.toLowerCase();
-                                
-                                // Water always has 0 calories regardless of unit or quantity
-                                if (name.includes("water")) {
-                                  return 0;
+                      <div className="flex items-center gap-4">
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div className="text-center">
+                            <span className="text-blue-600 font-medium">
+                              {(() => {
+                                // Use the same multiplier logic as MealSummary to ensure consistency
+                                const getMultiplier = (unit: string, food: any) => {
+                                  const unitLower = unit.toLowerCase();
+                                  const name = food.name.toLowerCase();
+                                  
+                                  // Water always has 0 calories regardless of unit or quantity
+                                  if (name.includes("water")) {
+                                    return 0;
                                 }
                                 
                                 // PRIORITY 1: Extract volume/weight from unit descriptions for accurate calculations
@@ -1514,7 +1547,17 @@ Powered by Calonik.ai 🚀
                             })()}g
                           </span>
                           <p className="text-xs text-gray-500">protein</p>
+                          </div>
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveMealItem(item.id, item.food?.name || 'Unknown Food')}
+                          disabled={removeMealMutation.isPending}
+                          className="h-8 w-8 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   ))}
