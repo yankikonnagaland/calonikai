@@ -1111,16 +1111,23 @@ Powered by Calonik.ai 🚀
                           yAxisId="calories"
                           orientation="left"
                           tick={{ fontSize: 8 }}
-                          label={{ 
-                            value: 'Cal', 
-                            angle: -90, 
-                            position: 'outsideLeft', 
-                            style: { 
-                              textAnchor: 'middle', 
-                              fontSize: '10px',
-                              dy: 40
-                            },
-                            offset: 10
+                          label={({ viewBox }) => {
+                            const { x, y, width, height } = viewBox || {};
+                            const cx = x - 15;
+                            const cy = (y || 0) + (height || 0) * 0.8;
+                            return (
+                              <text 
+                                x={cx} 
+                                y={cy} 
+                                fill="#666" 
+                                textAnchor="middle" 
+                                dominantBaseline="central"
+                                transform={`rotate(-90, ${cx}, ${cy})`}
+                                style={{ fontSize: '10px' }}
+                              >
+                                Cal
+                              </text>
+                            );
                           }}
                           domain={[0, 'dataMax + 200']}
                           width={25}
