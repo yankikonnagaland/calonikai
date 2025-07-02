@@ -36,10 +36,15 @@ export default function Dashboard({ sessionId }: DashboardProps) {
       return apiRequest("DELETE", `/api/meal/${mealId}`);
     },
     onSuccess: () => {
-      // Invalidate relevant queries to refresh the data
-      queryClient.invalidateQueries({ queryKey: ["/api/meal", sessionId, selectedDate] });
-      queryClient.invalidateQueries({ queryKey: ["/api/daily-summary", sessionId, selectedDate] });
-      queryClient.invalidateQueries({ queryKey: ["/api/daily-summaries", sessionId] });
+      // Invalidate all meal-related queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ["/api/meal"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/daily-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/daily-summaries"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/user-progress"] });
+      
+      // Force refetch to ensure immediate UI update
+      queryClient.refetchQueries({ queryKey: ["/api/daily-summary", sessionId, selectedDate] });
+      queryClient.refetchQueries({ queryKey: ["/api/daily-summaries", sessionId] });
       
       toast({
         title: "Meal item removed",
@@ -50,9 +55,13 @@ export default function Dashboard({ sessionId }: DashboardProps) {
       // Handle 404 errors gracefully (item already removed)
       if (error?.status === 404 || error?.message?.includes("not found")) {
         // Item already removed, just refresh the data
-        queryClient.invalidateQueries({ queryKey: ["/api/meal", sessionId, selectedDate] });
-        queryClient.invalidateQueries({ queryKey: ["/api/daily-summary", sessionId, selectedDate] });
-        queryClient.invalidateQueries({ queryKey: ["/api/daily-summaries", sessionId] });
+        queryClient.invalidateQueries({ queryKey: ["/api/meal"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/daily-summary"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/daily-summaries"] });
+        
+        // Force refetch to ensure immediate UI update
+        queryClient.refetchQueries({ queryKey: ["/api/daily-summary", sessionId, selectedDate] });
+        queryClient.refetchQueries({ queryKey: ["/api/daily-summaries", sessionId] });
         
         toast({
           title: "Item already removed",

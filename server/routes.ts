@@ -20,6 +20,7 @@ import {
   usageTracking,
   users,
   exercises,
+  mealItems,
 } from "@shared/schema";
 import { eq, and, desc, ilike, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -1066,7 +1067,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Alternative meal deletion endpoint for compatibility
-  app.delete("/api/meal/:id", async (req, res) => {
+  app.delete("/api/meal/:id", async (req: any, res) => {
     try {
       const id = parseFloat(req.params.id);
       console.log(`DELETE /api/meal/${req.params.id} - Parsed ID:`, id);
@@ -1075,10 +1076,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid meal ID" });
       }
 
+      // Helper function to calculate multipliers (same as frontend components)
+      function getMultiplier(unit: string, food: any) {
+        const unitLower = unit.toLowerCase();
+        const name = food.name.toLowerCase();
+        
+        // Water always has 0 calories regardless of unit or quantity
+        if (name.includes("water")) {
+          return 0;
+        }
+        
+        // VOLUME-BASED UNITS (for beverages) - Extract ml and calculate based on 100ml base
+        const mlMatch = unitLower.match(/(\d+)ml/);
+        if (mlMatch) {
+          const mlAmount = parseInt(mlMatch[1]);
+          return mlAmount / 100; // Base nutrition is per 100ml
+        }
+        
+        // WEIGHT-BASED UNITS (for solid foods) - Extract grams and calculate based on 100g base
+        const gMatch = unitLower.match(/(\d+)g\)/);
+        if (gMatch) {
+          const gAmount = parseInt(gMatch[1]);
+          return gAmount / 100; // Base nutrition is per 100g
+        }
+        
+        // NUTS & TRAIL MIXES - Enhanced piece-based calculations
+        if (name.match(/\b(nuts|nut|trail|mix|almond|cashew|peanut|walnut|pistachio|mixed nuts)\b/)) {
+          if (unitLower.includes("piece")) {
+            if (name.includes("cashew")) return 0.015;
+            else if (name.includes("almond")) return 0.012;
+            else if (name.includes("peanut")) return 0.008;
+            else if (name.includes("walnut")) return 0.025;
+            else return 0.015;
+          }
+        }
+
+        // MEAT & PROTEIN - Enhanced piece-based calculations for consistent portioning
+        if (name.match(/\b(chicken|mutton|fish|beef|pork|lamb|turkey|duck)\b/) && unitLower.includes("piece")) {
+          if (name.includes("chicken")) return 0.8;
+          else if (name.includes("fish")) return 1.0;
+          else if (name.includes("pork")) return 0.75;
+          else if (name.includes("beef")) return 0.9;
+          else return 0.75;
+        }
+        
+        const unitMultipliers: Record<string, number> = {
+          "serving": 1.0, "piece": 0.8, "slice": 0.6, "cup": 2.4, "glass": 2.5,
+          "bowl": 2.0, "bottle": 5.0, "can": 3.3, "small portion": 0.7,
+          "medium portion": 1.0, "large portion": 1.5, "handful": 0.3,
+          "tablespoon": 0.15, "teaspoon": 0.05, "ml": 0.01, "gram": 0.01, "g": 0.01,
+        };
+        
+        return unitMultipliers[unit] || 1.0;
+      }
+
+      // First, get the meal item to know which session and date it belongs to
+      const mealItemToRemove = await db.select().from(mealItems).where(eq(mealItems.id, id)).limit(1);
+      
       const success = await storage.removeMealItem(id);
       console.log(`Removal result:`, success);
       if (!success) {
         return res.status(404).json({ message: "Meal not found" });
+      }
+
+      // If removal was successful and we found the meal item, update the daily summary
+      if (mealItemToRemove.length > 0) {
+        const removedItem = mealItemToRemove[0];
+        const sessionId = removedItem.sessionId;
+        const date = removedItem.date || new Date().toISOString().split('T')[0];
+        
+        console.log(`Updating daily summary for session ${sessionId} on date ${date} after meal removal`);
+        
+        // Get all remaining meal items for this session and date
+        const remainingMealItems = await storage.getMealItems(sessionId, date);
+        
+        // Get existing daily summary
+        const existingSummary = await storage.getDailySummary(sessionId, date);
+        
+        if (existingSummary) {
+          // Calculate new totals from remaining meal items
+          const newTotals = remainingMealItems.reduce((acc, item) => {
+            const multiplier = getMultiplier(item.unit, item.food);
+            const calories = (item.food?.calories || 0) * (item.quantity || 1) * multiplier;
+            const protein = (item.food?.protein || 0) * (item.quantity || 1) * multiplier;
+            const carbs = (item.food?.carbs || 0) * (item.quantity || 1) * multiplier;
+            const fat = (item.food?.fat || 0) * (item.quantity || 1) * multiplier;
+            
+            return {
+              calories: acc.calories + calories,
+              protein: acc.protein + protein,
+              carbs: acc.carbs + carbs,
+              fat: acc.fat + fat
+            };
+          }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+          
+          // Update the daily summary with new totals and meal data
+          const updatedSummary = {
+            sessionId,
+            date,
+            totalCalories: Math.round(newTotals.calories * 100) / 100,
+            totalProtein: Math.round(newTotals.protein * 100) / 100,
+            totalCarbs: Math.round(newTotals.carbs * 100) / 100,
+            totalFat: Math.round(newTotals.fat * 100) / 100,
+            caloriesBurned: existingSummary.caloriesBurned || 0,
+            netCalories: Math.round((newTotals.calories - (existingSummary.caloriesBurned || 0)) * 100) / 100,
+            mealData: JSON.stringify(remainingMealItems)
+          };
+          
+          await storage.saveDailySummary(updatedSummary);
+          console.log(`Daily summary updated successfully after meal removal`);
+        }
       }
 
       res.json({ message: "Meal removed successfully" });
