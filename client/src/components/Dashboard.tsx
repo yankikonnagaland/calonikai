@@ -1386,7 +1386,7 @@ Powered by Calonik.ai 🚀
             // Use live meal data instead of cached daily summary data
             const selectedDateMealItems = liveMealItems || [];
             
-            return selectedDateMealItems && selectedDateMealItems.length > 0 && (
+            return (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -1396,7 +1396,8 @@ Powered by Calonik.ai 🚀
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {selectedDateMealItems.map((item: any, index: number) => (
+                  {selectedDateMealItems.length > 0 ? (
+                    selectedDateMealItems.map((item: any, index: number) => (
                     <div key={index} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border">
                       <div className="flex-1">
                         <h4 className="font-medium text-gray-900 dark:text-gray-100">
@@ -1590,7 +1591,14 @@ Powered by Calonik.ai 🚀
                         </Button>
                       </div>
                     </div>
-                  ))}
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      <Utensils className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p>No meals logged for {selectedDate === today ? 'today' : 'this date'}</p>
+                      <p className="text-sm mt-1">Start tracking by adding foods in the Tracker tab</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
