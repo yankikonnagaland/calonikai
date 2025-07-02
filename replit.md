@@ -417,6 +417,13 @@ The application follows a client-server architecture with clear separation of co
 - ENHANCED: Unit calculation system supports 250g, 300g, 320g, 450g portions for accurate meal tracking
 - COMPLETED: Comprehensive calorie tracking accuracy across all chart visualizations and daily summaries
 
+**July 2, 2025 - Fixed Critical Backend Calculation Bug for Small Portions:**
+- RESOLVED: Backend calculation mismatch where "small" units used 1.0 multiplier instead of 0.7 multiplier
+- FIXED: July 1st data corrected from 1040 calories to accurate 890 calories (540 + 350)
+- SYNCHRONIZED: Backend `calculatePortionNutrition()` now matches frontend `getMultiplierForNutrition()` logic
+- ADDED: Plain size descriptors ("small": 0.7, "medium": 1.0, "large": 1.5) to backend calculation function
+- VERIFIED: Crispy pork "small" portion now correctly calculates as 350 calories (500 × 0.7) instead of 500 calories
+
 **July 2, 2025 - Fixed Dashboard Food Item Removal Bug:**
 - RESOLVED: Critical bug where removing items from Dashboard's Food Items caused nutrition summary to show drastically wrong values (11 calories instead of proper amounts)
 - IDENTIFIED: Root cause was inconsistent calculation logic between backend calculatePortionNutrition and frontend getMultiplierForNutrition functions

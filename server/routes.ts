@@ -545,6 +545,10 @@ function calculatePortionNutrition(food: any, unit: string, quantity: number) {
   else if (unitLower.includes('small portion')) multiplier = quantity * 0.7;
   else if (unitLower.includes('medium portion')) multiplier = quantity * 1.5;
   else if (unitLower.includes('large portion')) multiplier = quantity * 2;
+  // Handle plain size descriptors (must come after more specific patterns)
+  else if (unitLower === 'small') multiplier = quantity * 0.7;
+  else if (unitLower === 'medium') multiplier = quantity * 1.0;
+  else if (unitLower === 'large') multiplier = quantity * 1.5;
   else if (unitLower.includes('small') && !unitLower.includes('pack')) multiplier = quantity * 0.7;
   else if (unitLower.includes('medium') && !unitLower.includes('pack')) multiplier = quantity * 1;
   else if (unitLower.includes('large') && !unitLower.includes('pack')) multiplier = quantity * 1.5;
