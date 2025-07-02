@@ -78,14 +78,8 @@ export default function Dashboard({ sessionId }: DashboardProps) {
   });
 
   const handleRemoveMealItem = async (mealId: number, foodName: string) => {
-    if (confirm(`Remove ${foodName} from your daily summary? This will update your daily totals.`)) {
-      // For daily summary meals, we need a different approach since the meal ID 
-      // no longer exists in the meal tracker (it was cleared after submission)
-      
-      // We'll need to update the daily summary by removing this meal item
-      // and recalculating the totals
-      await removeMealFromDailySummary(mealId, foodName);
-    }
+    // Instant removal without confirmation for frictionless UX
+    await removeMealFromDailySummary(mealId, foodName);
   };
 
   const removeMealFromDailySummary = async (mealId: number, foodName: string) => {
@@ -169,10 +163,7 @@ export default function Dashboard({ sessionId }: DashboardProps) {
           queryKey: [`/api/daily-summaries/${sessionId}`] 
         });
         
-        toast({
-          title: "Item removed",
-          description: `${foodName} has been removed from your daily summary.`,
-        });
+        // No toast notification for frictionless removal
       } else {
         const errorText = await response.text();
         console.error('Failed to update daily summary:', errorText);
