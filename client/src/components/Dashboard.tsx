@@ -1114,12 +1114,12 @@ Powered by Calonik.ai 🚀
                           label={{ 
                             value: 'Cal', 
                             angle: -90, 
-                            position: 'insideLeft', 
+                            position: 'outsideLeft', 
                             style: { 
                               textAnchor: 'middle', 
                               fontSize: '10px' 
                             },
-                            offset: 30
+                            offset: 10
                           }}
                           domain={[0, 'dataMax + 200']}
                           width={25}
