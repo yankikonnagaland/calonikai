@@ -19,6 +19,7 @@ import {
   dailyWeights,
   usageTracking,
   users,
+  exercises,
 } from "@shared/schema";
 import { eq, and, desc, ilike, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -2105,6 +2106,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         )
         .orderBy(desc(dailyWeights.date));
 
+      // Get exercise history
+      const exerciseHistory = await db.select()
+        .from(exercises)
+        .where(
+          and(
+            eq(exercises.sessionId, effectiveSessionId),
+            sql`${exercises.date} >= ${startDateStr}`
+          )
+        )
+        .orderBy(desc(exercises.date));
+
       // Get usage patterns
       const usagePatterns = await db.select({
         date: usageTracking.date,
@@ -2174,6 +2186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             weightHistory: weightHistory.slice(0, 14),
             totalWeightChange
           },
+          exerciseHistory: exerciseHistory.slice(0, 14),
           activityMetrics: {
             consistencyScore,
             activeDays,

@@ -91,7 +91,7 @@ export default function Dashboard({ sessionId }: DashboardProps) {
   const trendlineData = useMemo(() => {
     if (!userAnalytics?.analytics) return [];
     
-    const { nutritionTrends, weightProgress } = userAnalytics.analytics;
+    const { nutritionTrends, weightProgress, exerciseHistory } = userAnalytics.analytics;
     const dailyData = nutritionTrends.dailyData || [];
     const weightHistory = weightProgress.weightHistory || [];
     
@@ -99,32 +99,53 @@ export default function Dashboard({ sessionId }: DashboardProps) {
     const summaryMap = new Map(dailyData.map((item: any) => [item.date, item]));
     const weightMap = new Map(weightHistory.map((item: any) => [item.date, item.weight]));
     
+    // Create exercise calories map from exerciseHistory
+    const exerciseCaloriesMap = new Map();
+    if (exerciseHistory && Array.isArray(exerciseHistory)) {
+      exerciseHistory.forEach((exercise: any) => {
+        const exerciseDate = exercise.date || exercise.createdAt?.split('T')[0];
+        if (exerciseDate) {
+          const currentTotal = exerciseCaloriesMap.get(exerciseDate) || 0;
+          exerciseCaloriesMap.set(exerciseDate, currentTotal + (exercise.caloriesBurned || 0));
+        }
+      });
+    }
+    
     // Get all unique dates and sort them
     const allDates = new Set([
       ...dailyData.map((item: any) => item.date),
-      ...weightHistory.map((item: any) => item.date)
+      ...weightHistory.map((item: any) => item.date),
+      ...Array.from(exerciseCaloriesMap.keys())
     ]);
     
-    return Array.from(allDates)
-      .sort()
-      .slice(-14) // Last 14 days
-      .map(date => {
-        const summary = summaryMap.get(date);
-        const weight = weightMap.get(date);
-        
-        return {
-          date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          fullDate: date,
-          calories: summary?.totalCalories || 0,
-          protein: summary?.totalProtein || 0,
-          caloriesBurned: summary?.caloriesBurned || 0,
-          weight: weight || null,
-          targetCalories: userProfile?.targetCalories || 2000,
-          targetProtein: userProfile?.dailyProteinTarget || 60,
-        };
-      })
+    const sortedDates = Array.from(allDates).sort().slice(-14); // Last 14 days
+    
+    // Process weight data with fallback to previous day
+    let lastKnownWeight = null;
+    
+    return sortedDates.map(date => {
+      const summary = summaryMap.get(date);
+      const currentWeight = weightMap.get(date);
+      const exerciseCalories = exerciseCaloriesMap.get(date) || 0;
+      
+      // Use current weight if available, otherwise fall back to last known weight
+      if (currentWeight !== undefined && currentWeight !== null) {
+        lastKnownWeight = currentWeight;
+      }
+      
+      return {
+        date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        fullDate: date,
+        calories: summary?.totalCalories || 0,
+        protein: summary?.totalProtein || 0,
+        caloriesBurned: exerciseCalories, // Use exercise data instead of summary data
+        weight: currentWeight !== undefined && currentWeight !== null ? currentWeight : lastKnownWeight,
+        targetCalories: userProfile?.targetCalories || 2000,
+        targetProtein: userProfile?.dailyProteinTarget || 60,
+      };
+    })
       .filter(item => item.calories > 0 || item.weight || item.protein > 0 || item.caloriesBurned > 0);
-  }, [userAnalytics, userProfile?.targetCalories, userProfile?.dailyProteinTarget]);
+  }, [userAnalytics, userProfile]);
 
   // Legacy chart data for compatibility
   const chartData = trendlineData;
