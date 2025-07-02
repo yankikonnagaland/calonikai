@@ -67,12 +67,12 @@ export default function UsageAnalyticsDashboard() {
     }
   };
 
-  const totalUsers = subscriptionSummary.reduce((sum, item) => sum + item.total_users, 0);
-  const totalPhotoScans = subscriptionSummary.reduce((sum, item) => sum + item.total_photo_scans_all, 0);
-  const totalFoodSearches = subscriptionSummary.reduce((sum, item) => sum + item.total_food_searches_all, 0);
+  const totalUsers = subscriptionSummary.reduce((sum, item) => sum + Number(item.total_users), 0);
+  const totalPhotoScans = subscriptionSummary.reduce((sum, item) => sum + Number(item.total_photo_scans_all), 0);
+  const totalFoodSearches = subscriptionSummary.reduce((sum, item) => sum + Number(item.total_food_searches_all), 0);
 
-  const todayPhotoScans = userUsageData.reduce((sum, user) => sum + user.photos_today, 0);
-  const todayFoodSearches = userUsageData.reduce((sum, user) => sum + user.food_searches_today, 0);
+  const todayPhotoScans = userUsageData.reduce((sum, user) => sum + Number(user.photos_today), 0);
+  const todayFoodSearches = userUsageData.reduce((sum, user) => sum + Number(user.food_searches_today), 0);
 
   return (
     <div className="p-6 space-y-6">
@@ -176,9 +176,9 @@ export default function UsageAnalyticsDashboard() {
                     <td className="py-3">{getSubscriptionBadge(tier.subscription_status)}</td>
                     <td className="py-3">{tier.total_users}</td>
                     <td className="py-3">{tier.total_photo_scans_all}</td>
-                    <td className="py-3">{tier.avg_photos_per_user.toFixed(2)}</td>
+                    <td className="py-3">{Number(tier.avg_photos_per_user).toFixed(2)}</td>
                     <td className="py-3">{tier.total_food_searches_all}</td>
-                    <td className="py-3">{tier.avg_searches_per_user.toFixed(2)}</td>
+                    <td className="py-3">{Number(tier.avg_searches_per_user).toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>
