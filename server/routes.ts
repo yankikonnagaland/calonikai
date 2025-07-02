@@ -28,6 +28,8 @@ import { GoogleGenAI } from "@google/genai";
 import crypto from "crypto";
 import { checkWeightGoalAchievement, markGoalAsAchieved } from "./weightGoalChecker";
 import { testHourlyNudge } from "./hourlyNudgeScheduler";
+import { ImageOptimizer } from "./imageOptimizer";
+import { ImageCache } from "./imageCache";
 
 const genai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
@@ -1347,6 +1349,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Starting food image analysis with Gemini...");
 
       const imageData = Buffer.from(image, 'base64');
+      
+      // Step 1: Create image hash for caching
+      const imageHash = ImageOptimizer.createImageHash(imageData);
+      console.log(`Image hash: ${imageHash}`);
+      
+      // Step 2: Check cache first to avoid duplicate API calls
+      const cachedResult = ImageCache.get(imageHash);
+      if (cachedResult) {
+        console.log(`Cache hit! Returning cached result for hash: ${imageHash}`);
+        return res.json({
+          foods: cachedResult.foods,
+          suggestions: cachedResult.suggestions,
+          cached: true,
+          compressionSavings: cachedResult.compressionSavings
+        });
+      }
+      
+      // Step 3: Optimize image to reduce API costs
+      const optimization = await ImageOptimizer.optimizeForAnalysis(imageData);
+      console.log(`Image optimized: ${optimization.originalSize}B → ${optimization.optimizedSize}B (${optimization.savings} saved)`);
+      
+      const optimizedImageData = optimization.optimizedImage;
 
       const response = await genai.models.generateContent({
         model: "gemini-2.5-flash",
@@ -1384,7 +1408,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             parts: [
               {
                 inlineData: {
-                  data: imageData.toString("base64"),
+                  data: optimizedImageData.toString("base64"),
                   mimeType: "image/jpeg",
                 },
               },
@@ -1457,9 +1481,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`Successfully analyzed ${validatedFoods.length} food items`);
 
+      // Step 4: Cache the result for future identical images
+      const cacheResult = {
+        foods: validatedFoods,
+        suggestions: result.suggestions || ["Foods detected successfully!"],
+        timestamp: Date.now(),
+        imageHash,
+        compressionSavings: optimization.savings
+      };
+      ImageCache.set(imageHash, cacheResult);
+      console.log(`Result cached for hash: ${imageHash}`);
+
       res.json({
         foods: validatedFoods,
         suggestions: result.suggestions || ["Foods detected successfully!"],
+        compressionSavings: optimization.savings,
+        cached: false
       });
     } catch (error) {
       console.error("Food image analysis error:", error);
@@ -1467,6 +1504,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Failed to analyze food image",
         error: error instanceof Error ? error.message : "Unknown error",
       });
+    }
+  });
+
+  // Image cache statistics for admin monitoring
+  app.get("/api/image-cache-stats", async (req, res) => {
+    try {
+      const stats = ImageCache.getStats();
+      res.json({
+        cacheSize: stats.size,
+        cacheHits: stats.hits,
+        cacheMisses: stats.misses,
+        hitRate: stats.hits + stats.misses > 0 ? 
+          ((stats.hits / (stats.hits + stats.misses)) * 100).toFixed(2) + '%' : '0%'
+      });
+    } catch (error) {
+      console.error("Error fetching cache stats:", error);
+      res.status(500).json({ message: "Failed to fetch cache statistics" });
     }
   });
 
