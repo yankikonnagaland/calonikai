@@ -46,12 +46,25 @@ export default function Dashboard({ sessionId }: DashboardProps) {
         description: "The food item has been removed from your meal.",
       });
     },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to remove meal item. Please try again.",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      // Handle 404 errors gracefully (item already removed)
+      if (error?.status === 404 || error?.message?.includes("not found")) {
+        // Item already removed, just refresh the data
+        queryClient.invalidateQueries({ queryKey: ["/api/meal", sessionId, selectedDate] });
+        queryClient.invalidateQueries({ queryKey: ["/api/daily-summary", sessionId, selectedDate] });
+        queryClient.invalidateQueries({ queryKey: ["/api/daily-summaries", sessionId] });
+        
+        toast({
+          title: "Item already removed",
+          description: "The food item has already been removed.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to remove meal item. Please try again.",
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -1554,9 +1567,13 @@ Powered by Calonik.ai 🚀
                           size="sm"
                           onClick={() => handleRemoveMealItem(item.id, item.food?.name || 'Unknown Food')}
                           disabled={removeMealMutation.isPending}
-                          className="h-8 w-8 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+                          className="h-8 w-8 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 disabled:opacity-50"
                         >
-                          <X className="h-4 w-4" />
+                          {removeMealMutation.isPending ? (
+                            <div className="animate-spin h-4 w-4 border-2 border-red-500 border-t-transparent rounded-full" />
+                          ) : (
+                            <X className="h-4 w-4" />
+                          )}
                         </Button>
                       </div>
                     </div>
