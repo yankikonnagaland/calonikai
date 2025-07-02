@@ -77,22 +77,40 @@ export default function Dashboard({ sessionId }: DashboardProps) {
     },
   });
 
-  const handleRemoveMealItem = (mealId: number, foodName: string) => {
+  const handleRemoveMealItem = async (mealId: number, foodName: string) => {
     if (confirm(`Remove ${foodName} from your daily summary? This will update your daily totals.`)) {
       // For daily summary meals, we need a different approach since the meal ID 
       // no longer exists in the meal tracker (it was cleared after submission)
       
       // We'll need to update the daily summary by removing this meal item
       // and recalculating the totals
-      removeMealFromDailySummary(mealId, foodName);
+      await removeMealFromDailySummary(mealId, foodName);
     }
   };
 
   const removeMealFromDailySummary = async (mealId: number, foodName: string) => {
     try {
-      if (!selectedDaySummary?.mealData) return;
+      if (!selectedDaySummary?.mealData) {
+        toast({
+          title: "Error",
+          description: "No meal data found to remove.",
+          variant: "destructive",
+        });
+        return;
+      }
       
       const currentMeals = JSON.parse(selectedDaySummary.mealData);
+      
+      // Check if the meal actually exists
+      const mealExists = currentMeals.some((meal: any) => meal.id === mealId);
+      if (!mealExists) {
+        toast({
+          title: "Item not found",
+          description: `${foodName} has already been removed.`,
+        });
+        return;
+      }
+      
       const updatedMeals = currentMeals.filter((meal: any) => meal.id !== mealId);
       
       // Recalculate totals based on remaining meals
@@ -122,14 +140,18 @@ export default function Dashboard({ sessionId }: DashboardProps) {
       
       // Update the daily summary with new data
       const updatedSummary = {
-        ...selectedDaySummary,
+        sessionId: selectedDaySummary.sessionId,
+        date: selectedDaySummary.date,
         totalCalories: Math.round(totalCalories),
         totalProtein: Math.round(totalProtein * 10) / 10,
         totalCarbs: Math.round(totalCarbs * 10) / 10,
         totalFat: Math.round(totalFat * 10) / 10,
+        caloriesBurned: selectedDaySummary.caloriesBurned || 0,
         netCalories: Math.round(totalCalories) - (selectedDaySummary.caloriesBurned || 0),
         mealData: JSON.stringify(updatedMeals)
       };
+      
+      console.log('Updating daily summary with:', updatedSummary);
       
       // Save updated summary to backend
       const response = await fetch('/api/daily-summary', {
@@ -139,20 +161,27 @@ export default function Dashboard({ sessionId }: DashboardProps) {
       });
       
       if (response.ok) {
-        // Invalidate queries to refresh UI
-        queryClient.invalidateQueries({ queryKey: ["/api/daily-summary"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/daily-summaries"] });
+        // Force refetch of the specific queries to ensure immediate UI update
+        await queryClient.refetchQueries({ 
+          queryKey: [`/api/daily-summary/${sessionId}/${selectedDate}`] 
+        });
+        await queryClient.refetchQueries({ 
+          queryKey: [`/api/daily-summaries/${sessionId}`] 
+        });
         
         toast({
           title: "Item removed",
           description: `${foodName} has been removed from your daily summary.`,
         });
       } else {
-        throw new Error('Failed to update daily summary');
+        const errorText = await response.text();
+        console.error('Failed to update daily summary:', errorText);
+        throw new Error(`Failed to update daily summary: ${response.status}`);
       }
     } catch (error) {
+      console.error('Error removing meal:', error);
       toast({
-        title: "Error",
+        title: "Error", 
         description: "Failed to remove item from daily summary. Please try again.",
         variant: "destructive",
       });
