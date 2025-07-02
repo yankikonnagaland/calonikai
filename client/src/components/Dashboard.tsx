@@ -1240,10 +1240,26 @@ Powered by Calonik.ai 🚀
                         <span className="font-medium text-orange-800 dark:text-orange-200">Calories Out</span>
                       </div>
                       <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-                        Avg: {dailySummaries.length > 0 
-                          ? Math.round(dailySummaries.reduce((sum, s) => sum + (s.caloriesBurned || 0), 0) / dailySummaries.length)
-                          : 0
-                        } cal/day
+                        Avg: {(() => {
+                          const exerciseHistory = userAnalytics?.analytics?.exerciseHistory || [];
+                          if (exerciseHistory.length === 0) return 0;
+                          
+                          // Group exercises by date and sum calories
+                          const dailyExerciseCalories = new Map();
+                          exerciseHistory.forEach((exercise: any) => {
+                            const exerciseDate = exercise.date || exercise.createdAt?.split('T')[0];
+                            if (exerciseDate) {
+                              const currentTotal = dailyExerciseCalories.get(exerciseDate) || 0;
+                              dailyExerciseCalories.set(exerciseDate, currentTotal + (exercise.caloriesBurned || 0));
+                            }
+                          });
+                          
+                          // Calculate average across all days with exercise data
+                          const totalCaloriesBurned = Array.from(dailyExerciseCalories.values()).reduce((sum, cal) => sum + cal, 0);
+                          const daysWithExercise = dailyExerciseCalories.size;
+                          
+                          return daysWithExercise > 0 ? Math.round(totalCaloriesBurned / daysWithExercise) : 0;
+                        })()} cal/day
                       </p>
                     </div>
                     
