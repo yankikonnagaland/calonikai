@@ -1240,7 +1240,10 @@ Powered by Calonik.ai 🚀
                         <span className="font-medium text-orange-800 dark:text-orange-200">Calories Out</span>
                       </div>
                       <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-                        Exercise activity tracking
+                        Avg: {dailySummaries.length > 0 
+                          ? Math.round(dailySummaries.reduce((sum, s) => sum + (s.caloriesBurned || 0), 0) / dailySummaries.length)
+                          : 0
+                        } cal/day
                       </p>
                     </div>
                     
