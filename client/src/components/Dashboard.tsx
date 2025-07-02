@@ -78,9 +78,126 @@ export default function Dashboard({ sessionId }: DashboardProps) {
   });
 
   const handleRemoveMealItem = (mealId: number, foodName: string) => {
-    if (confirm(`Remove ${foodName} from your meal?`)) {
-      removeMealMutation.mutate(mealId);
+    if (confirm(`Remove ${foodName} from your daily summary? This will update your daily totals.`)) {
+      // For daily summary meals, we need a different approach since the meal ID 
+      // no longer exists in the meal tracker (it was cleared after submission)
+      
+      // We'll need to update the daily summary by removing this meal item
+      // and recalculating the totals
+      removeMealFromDailySummary(mealId, foodName);
     }
+  };
+
+  const removeMealFromDailySummary = async (mealId: number, foodName: string) => {
+    try {
+      if (!selectedDaySummary?.mealData) return;
+      
+      const currentMeals = JSON.parse(selectedDaySummary.mealData);
+      const updatedMeals = currentMeals.filter((meal: any) => meal.id !== mealId);
+      
+      // Recalculate totals based on remaining meals
+      let totalCalories = 0;
+      let totalProtein = 0;
+      let totalCarbs = 0;
+      let totalFat = 0;
+      
+      updatedMeals.forEach((meal: any) => {
+        if (meal.food) {
+          // Use the same calculation logic as the meal tracker
+          const baseCalories = meal.food.calories || 0;
+          const baseProtein = meal.food.protein || 0;
+          const baseCarbs = meal.food.carbs || 0;
+          const baseFat = meal.food.fat || 0;
+          
+          // Calculate nutrition based on unit and quantity
+          const multiplier = getMultiplierForNutrition(meal.unit, meal.food);
+          const quantity = meal.quantity || 1;
+          
+          totalCalories += (baseCalories * multiplier * quantity) / 100;
+          totalProtein += (baseProtein * multiplier * quantity) / 100;
+          totalCarbs += (baseCarbs * multiplier * quantity) / 100;
+          totalFat += (baseFat * multiplier * quantity) / 100;
+        }
+      });
+      
+      // Update the daily summary with new data
+      const updatedSummary = {
+        ...selectedDaySummary,
+        totalCalories: Math.round(totalCalories),
+        totalProtein: Math.round(totalProtein * 10) / 10,
+        totalCarbs: Math.round(totalCarbs * 10) / 10,
+        totalFat: Math.round(totalFat * 10) / 10,
+        netCalories: Math.round(totalCalories) - (selectedDaySummary.caloriesBurned || 0),
+        mealData: JSON.stringify(updatedMeals)
+      };
+      
+      // Save updated summary to backend
+      const response = await fetch('/api/daily-summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedSummary)
+      });
+      
+      if (response.ok) {
+        // Invalidate queries to refresh UI
+        queryClient.invalidateQueries({ queryKey: ["/api/daily-summary"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/daily-summaries"] });
+        
+        toast({
+          title: "Item removed",
+          description: `${foodName} has been removed from your daily summary.`,
+        });
+      } else {
+        throw new Error('Failed to update daily summary');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to remove item from daily summary. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Helper function to calculate nutrition multipliers (same logic as meal tracker)
+  const getMultiplierForNutrition = (unit: string, food: any) => {
+    // Use the same calculation logic as the backend's calculateNutritionFromUnit
+    const unitLower = unit.toLowerCase();
+    const name = food.name.toLowerCase();
+    
+    // Check for AI smart portion data first
+    if (food.smartPortionGrams && food.smartCalories) {
+      // If this is AI-detected smart portion data, use it directly
+      return (food.smartPortionGrams / 100); // Convert grams to per-100g multiplier
+    }
+    
+    // Water has 0 calories
+    if (name.includes("water")) return 0;
+    
+    // Extract weight from unit descriptions (like "large egg (55g)")
+    const gMatch = unitLower.match(/\((\d+)g\)/);
+    if (gMatch) {
+      return parseInt(gMatch[1]) / 100;
+    }
+    
+    // Extract volume from unit descriptions (like "bottle (650ml)")
+    const mlMatch = unitLower.match(/\((\d+)ml\)/);
+    if (mlMatch) {
+      return parseInt(mlMatch[1]) / 100;
+    }
+    
+    // Standard unit mappings (same as backend unitToGramMap)
+    if (unitLower.includes("piece") || unitLower.includes("pieces")) return 0.15; // 15g per piece
+    if (unitLower.includes("cup")) return 2.4; // 240ml/g
+    if (unitLower.includes("bowl")) return 2.0; // 200g
+    if (unitLower.includes("glass")) return 2.5; // 250ml
+    if (unitLower.includes("bottle")) return 6.5; // 650ml for beer bottles
+    if (unitLower.includes("slice")) return 0.3; // 30g per slice
+    if (unitLower.includes("tablespoon")) return 0.15; // 15g
+    if (unitLower.includes("teaspoon")) return 0.05; // 5g
+    if (unitLower.includes("handful")) return 0.3; // 30g
+    
+    return 1.0; // Default fallback (100g)
   };
   
   // Check if user has premium access to health trends
