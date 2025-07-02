@@ -1075,13 +1075,13 @@ Powered by Calonik.ai 🚀
                   </div>
                 </CardHeader>
                 <CardContent className={!hasHealthTrendsAccess ? "relative" : ""}>
-                  <div className={`h-80 ${!hasHealthTrendsAccess ? "blur-md" : ""}`}>
+                  <div className={`h-80 sm:h-96 ${!hasHealthTrendsAccess ? "blur-md" : ""}`}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={trendlineData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                      <LineChart data={trendlineData} margin={{ top: 5, right: 15, left: 10, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                         <XAxis 
                           dataKey="date" 
-                          tick={{ fontSize: 11 }}
+                          tick={{ fontSize: 9 }}
                           className="text-xs"
                         />
                         
@@ -1089,34 +1089,37 @@ Powered by Calonik.ai 🚀
                         <YAxis 
                           yAxisId="calories"
                           orientation="left"
-                          tick={{ fontSize: 11 }}
-                          label={{ value: 'Calories', angle: -90, position: 'insideLeft' }}
+                          tick={{ fontSize: 8 }}
+                          label={{ value: 'Cal', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fontSize: '10px' } }}
                           domain={[0, 'dataMax + 200']}
+                          width={25}
                         />
                         
                         {/* Right Y-Axis for Weight */}
                         <YAxis 
                           yAxisId="secondary"
                           orientation="right"
-                          tick={{ fontSize: 11 }}
-                          label={{ value: 'Weight (kg)', angle: 90, position: 'insideRight' }}
+                          tick={{ fontSize: 8 }}
+                          label={{ value: 'kg', angle: 90, position: 'insideRight', style: { textAnchor: 'middle', fontSize: '10px' } }}
                           domain={[0, 'dataMax + 10']}
+                          width={25}
                         />
                         
                         <Tooltip 
                           contentStyle={{
                             backgroundColor: 'rgba(255, 255, 255, 0.95)',
                             border: '1px solid #e2e8f0',
-                            borderRadius: '8px',
-                            fontSize: '12px'
+                            borderRadius: '6px',
+                            fontSize: '11px',
+                            padding: '8px'
                           }}
                           formatter={(value: any, name: string) => {
                             switch(name) {
-                              case 'calories': return [`${value} cal`, 'Calories Consumed'];
-                              case 'caloriesBurned': return [`${value} cal`, 'Calories Burned'];
-                              case 'protein': return [`${value}g`, 'Protein Intake'];
+                              case 'calories': return [`${value} cal`, 'Cal In'];
+                              case 'caloriesBurned': return [`${value} cal`, 'Cal Out'];
+                              case 'protein': return [`${value}g`, 'Protein'];
                               case 'weight': return [`${value} kg`, 'Weight'];
-                              case 'targetCalories': return [`${value} cal`, 'Calorie Target'];
+                              case 'targetCalories': return [`${value} cal`, 'Target'];
                               case 'targetProtein': return [`${value}g`, 'Protein Target'];
                               default: return [value, name];
                             }
@@ -1124,8 +1127,15 @@ Powered by Calonik.ai 🚀
                         />
                         
                         <Legend 
-                          wrapperStyle={{ paddingTop: '20px' }}
+                          wrapperStyle={{ paddingTop: '15px', fontSize: '10px' }}
                           iconType="line"
+                          formatter={(value: string) => {
+                            switch(value) {
+                              case 'Calories Consumed': return 'Cal In';
+                              case 'Calories Burned': return 'Cal Out';
+                              default: return value;
+                            }
+                          }}
                         />
                         
                         {/* Calories Consumed - Green */}
@@ -1134,10 +1144,10 @@ Powered by Calonik.ai 🚀
                           type="monotone" 
                           dataKey="calories" 
                           stroke="#059669" 
-                          strokeWidth={3}
-                          dot={{ fill: '#059669', strokeWidth: 2, r: 4 }}
-                          activeDot={{ r: 6, stroke: '#059669', strokeWidth: 2 }}
-                          name="Calories Consumed"
+                          strokeWidth={2.5}
+                          dot={{ fill: '#059669', strokeWidth: 1, r: 3 }}
+                          activeDot={{ r: 5, stroke: '#059669', strokeWidth: 2 }}
+                          name="Cal In"
                           connectNulls={false}
                         />
                         
@@ -1149,10 +1159,10 @@ Powered by Calonik.ai 🚀
                           type="monotone" 
                           dataKey="caloriesBurned" 
                           stroke="#ea580c" 
-                          strokeWidth={3}
-                          dot={{ fill: '#ea580c', strokeWidth: 2, r: 4 }}
-                          activeDot={{ r: 6, stroke: '#ea580c', strokeWidth: 2 }}
-                          name="Calories Burned"
+                          strokeWidth={2.5}
+                          dot={{ fill: '#ea580c', strokeWidth: 1, r: 3 }}
+                          activeDot={{ r: 5, stroke: '#ea580c', strokeWidth: 2 }}
+                          name="Cal Out"
                           connectNulls={false}
                         />
                         
@@ -1162,9 +1172,9 @@ Powered by Calonik.ai 🚀
                           type="monotone" 
                           dataKey="weight" 
                           stroke="#9333ea" 
-                          strokeWidth={3}
-                          dot={{ fill: '#9333ea', strokeWidth: 2, r: 4 }}
-                          activeDot={{ r: 6, stroke: '#9333ea', strokeWidth: 2 }}
+                          strokeWidth={2.5}
+                          dot={{ fill: '#9333ea', strokeWidth: 1, r: 3 }}
+                          activeDot={{ r: 5, stroke: '#9333ea', strokeWidth: 2 }}
                           name="Weight"
                           connectNulls={false}
                         />
