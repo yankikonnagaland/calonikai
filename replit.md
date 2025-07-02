@@ -417,6 +417,16 @@ The application follows a client-server architecture with clear separation of co
 - ENHANCED: Unit calculation system supports 250g, 300g, 320g, 450g portions for accurate meal tracking
 - COMPLETED: Comprehensive calorie tracking accuracy across all chart visualizations and daily summaries
 
+**July 2, 2025 - Fixed Dashboard Food Item Removal Bug:**
+- RESOLVED: Critical bug where removing items from Dashboard's Food Items caused nutrition summary to show drastically wrong values (11 calories instead of proper amounts)
+- IDENTIFIED: Root cause was inconsistent calculation logic between backend calculatePortionNutrition and frontend getMultiplierForNutrition functions
+- FIXED: Enhanced frontend getMultiplierForNutrition function to match backend portion calculation logic exactly
+- ADDED: Support for complex units like "medium wrap (250g)", "regular meal (450g)", "strip (45g)" in frontend calculations
+- SYNCHRONIZED: Frontend removal calculations now use same gram extraction patterns as backend (450g, 320g, 300g, 250g, etc.)
+- UPDATED: Database daily summary with correct calculations for existing incorrect entries
+- VERIFIED: Food item removal now properly recalculates nutrition totals using accurate portion multipliers
+- COMPLETED: Consistent calorie calculations across all meal operations (add, remove, edit) with unified logic
+
 **July 2, 2025 - Complete AI Cost Optimization Implementation:**
 - IMPLEMENTED: Comprehensive cost optimization system reducing Gemini API expenses by 60-80%
 - CREATED: ImageOptimizer service using Sharp library for intelligent image preprocessing before AI analysis

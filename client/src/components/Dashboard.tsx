@@ -179,9 +179,8 @@ export default function Dashboard({ sessionId }: DashboardProps) {
     }
   };
 
-  // Helper function to calculate nutrition multipliers (same logic as meal tracker)
+  // Helper function to calculate nutrition multipliers (same logic as backend calculatePortionNutrition)
   const getMultiplierForNutrition = (unit: string, food: any) => {
-    // Use the same calculation logic as the backend's calculateNutritionFromUnit
     const unitLower = unit.toLowerCase();
     const name = food.name.toLowerCase();
     
@@ -194,24 +193,46 @@ export default function Dashboard({ sessionId }: DashboardProps) {
     // Water has 0 calories
     if (name.includes("water")) return 0;
     
-    // Extract weight from unit descriptions (like "large egg (55g)")
-    const gMatch = unitLower.match(/\((\d+)g\)/);
-    if (gMatch) {
-      return parseInt(gMatch[1]) / 100;
+    // Enhanced gram weight extraction from unit descriptions (matching backend logic)
+    // Extract weight from unit descriptions with comprehensive patterns
+    let gramMatch = unitLower.match(/(\d+)g/);
+    if (gramMatch) {
+      return parseInt(gramMatch[1]) / 100;
     }
     
     // Extract volume from unit descriptions (like "bottle (650ml)")
-    const mlMatch = unitLower.match(/\((\d+)ml\)/);
+    const mlMatch = unitLower.match(/(\d+)ml/);
     if (mlMatch) {
       return parseInt(mlMatch[1]) / 100;
     }
+
+    // Enhanced portion calculations - extract gram amounts from unit descriptions (matching backend)
+    if (unitLower.includes('450g')) return 4.5; // 450g portions (large meals)
+    if (unitLower.includes('320g')) return 3.2; // 320g portions  
+    if (unitLower.includes('300g')) return 3.0; // 300g portions
+    if (unitLower.includes('250g')) return 2.5; // 250g portions (wraps, etc.)
+    if (unitLower.includes('200g')) return 2.0; // Large portion
+    if (unitLower.includes('180g')) return 1.8; // Large item
+    if (unitLower.includes('150g')) return 1.5; // Medium portion
+    if (unitLower.includes('120g')) return 1.2; // Medium fruit/item
+    if (unitLower.includes('100g')) return 1.0; // Standard portion
+    if (unitLower.includes('80g')) return 0.8; // Small item
+    if (unitLower.includes('50g')) return 0.5; // Small portion
+    if (unitLower.includes('45g')) return 0.45; // Strip portions
     
-    // Standard unit mappings (same as backend unitToGramMap)
+    // Beverage volumes with proper multipliers
+    if (unitLower.includes('bottle') && unitLower.includes('650ml')) return 6.5;
+    if (unitLower.includes('bottle') && unitLower.includes('500ml')) return 5.0;
+    if (unitLower.includes('bottle') && unitLower.includes('330ml')) return 3.3;
+    if (unitLower.includes('pint') && unitLower.includes('568ml')) return 5.68;
+    if (unitLower.includes('glass') && unitLower.includes('250ml')) return 2.5;
+    
+    // Standard unit mappings
     if (unitLower.includes("piece") || unitLower.includes("pieces")) return 0.15; // 15g per piece
     if (unitLower.includes("cup")) return 2.4; // 240ml/g
     if (unitLower.includes("bowl")) return 2.0; // 200g
     if (unitLower.includes("glass")) return 2.5; // 250ml
-    if (unitLower.includes("bottle")) return 6.5; // 650ml for beer bottles
+    if (unitLower.includes("bottle")) return 6.5; // 650ml for beer bottles (default)
     if (unitLower.includes("slice")) return 0.3; // 30g per slice
     if (unitLower.includes("tablespoon")) return 0.15; // 15g
     if (unitLower.includes("teaspoon")) return 0.05; // 5g
