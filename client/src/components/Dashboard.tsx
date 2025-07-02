@@ -119,11 +119,6 @@ export default function Dashboard({ sessionId }: DashboardProps) {
     queryKey: [`/api/profile/${sessionId}`],
   });
 
-  // Get live meal data for selected date (this is the current, accurate data)
-  const { data: liveMealItems = [] } = useQuery({
-    queryKey: [`/api/meal/${sessionId}/${selectedDate}`],
-  });
-
   // Query exercises specifically for the selected date
   const { data: selectedDateExercises = [], refetch: refetchSelectedDateExercises } = useQuery<Exercise[]>({
     queryKey: [`/api/exercise/${sessionId}/${selectedDate}`],
@@ -1383,8 +1378,11 @@ Powered by Calonik.ai 🚀
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Selected Date Food Items */}
           {(() => {
-            // Use live meal data instead of cached daily summary data
-            const selectedDateMealItems = liveMealItems || [];
+            // Use daily summary meal data for submitted/saved meals (what should appear in Dashboard)
+            // Live meal data is for current meal tracker, daily summary is for completed meals
+            const selectedDateMealItems = selectedDaySummary?.mealData 
+              ? JSON.parse(selectedDaySummary.mealData) 
+              : [];
             
             return (
             <Card>
