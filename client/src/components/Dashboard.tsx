@@ -1117,7 +1117,8 @@ Powered by Calonik.ai 🚀
                             position: 'outsideLeft', 
                             style: { 
                               textAnchor: 'middle', 
-                              fontSize: '10px' 
+                              fontSize: '10px',
+                              dy: 40
                             },
                             offset: 10
                           }}
