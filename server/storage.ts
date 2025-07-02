@@ -183,9 +183,28 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount || 0) > 0;
   }
 
-  async clearMeal(sessionId: string): Promise<boolean> {
-    await db.delete(mealItems).where(eq(mealItems.sessionId, sessionId));
-    return true;
+  async clearMeal(sessionId: string, date?: string): Promise<boolean> {
+    try {
+      console.log(`DatabaseStorage: Clearing meal items for session ${sessionId} on date ${date || 'all dates'}`);
+      
+      if (date) {
+        // Clear only items for specific date
+        await db.delete(mealItems).where(
+          and(
+            eq(mealItems.sessionId, sessionId),
+            eq(mealItems.date, date)
+          )
+        );
+      } else {
+        // Clear all meals for session
+        await db.delete(mealItems).where(eq(mealItems.sessionId, sessionId));
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error clearing meal in DatabaseStorage:", error);
+      return false;
+    }
   }
 
   // Profile operations
