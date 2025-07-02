@@ -162,6 +162,9 @@ export default function Dashboard({ sessionId }: DashboardProps) {
         await queryClient.refetchQueries({ 
           queryKey: [`/api/daily-summaries/${sessionId}`] 
         });
+        await queryClient.refetchQueries({ 
+          queryKey: [`/api/analytics/user-progress`] 
+        });
         
         // No toast notification for frictionless removal
       } else {

@@ -165,6 +165,7 @@ export default function MealSummary({
       queryClient.invalidateQueries({ queryKey: [`/api/meal/${sessionId}/${targetDate}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/daily-summaries/${sessionId}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/daily-summary/${sessionId}/${targetDate}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/analytics/user-progress`] });
       
       toast({
         title: "Success",
