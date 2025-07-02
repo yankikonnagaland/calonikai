@@ -2256,6 +2256,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         )
         .orderBy(desc(dailySummaries.date));
 
+      // Debug: Log the analytics query results
+      console.log("Analytics API - Query sessionId:", effectiveSessionId);
+      console.log("Analytics API - Query startDate:", startDateStr);
+      console.log("Analytics API - Raw query results count:", dailyNutrition.length);
+      
+      // Log all daily nutrition data with more detail
+      console.log("Analytics API - All daily nutrition data:", dailyNutrition.map(day => ({
+        id: day.id,
+        date: day.date,
+        totalCalories: day.totalCalories,
+        totalProtein: day.totalProtein,
+        sessionId: day.sessionId,
+        createdAt: day.createdAt
+      })));
+      
+      const july1Data = dailyNutrition.find(day => day.date === '2025-07-01');
+      if (july1Data) {
+        console.log("Analytics API - July 1st DETAILED:", {
+          id: july1Data.id,
+          date: july1Data.date,
+          totalCalories: july1Data.totalCalories,
+          totalProtein: july1Data.totalProtein,
+          sessionId: july1Data.sessionId,
+          mealDataLength: july1Data.mealData ? july1Data.mealData.length : 'null'
+        });
+      } else {
+        console.log("Analytics API - July 1st NOT FOUND in results");
+      }
+
       // Get weight progress
       const weightHistory = await db.select()
         .from(dailyWeights)

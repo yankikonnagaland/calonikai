@@ -270,12 +270,16 @@ export default function Dashboard({ sessionId }: DashboardProps) {
 
   // Fetch comprehensive user analytics for trendlines
   const { data: userAnalytics } = useQuery({
-    queryKey: [`/api/analytics/user-progress`],
+    queryKey: [`/api/analytics/user-progress`, sessionId],
     queryFn: async () => {
-      const response = await fetch(`/api/analytics/user-progress?sessionId=${sessionId}&days=14`);
+      const response = await fetch(`/api/analytics/user-progress?sessionId=${sessionId}&days=14&_t=${Date.now()}`);
       if (!response.ok) throw new Error('Failed to fetch analytics');
       return response.json();
     },
+    staleTime: 0, // Always fetch fresh data
+    gcTime: 0, // Don't cache the data (TanStack Query v5)
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
   // Prepare comprehensive chart data with weight, protein, and calories burned trends
@@ -319,12 +323,22 @@ export default function Dashboard({ sessionId }: DashboardProps) {
       const currentWeight = weightMap.get(date);
       const exerciseCalories = exerciseCaloriesMap.get(date) || 0;
       
+      // Debug: Log July 1st data specifically
+      if (date === '2025-07-01') {
+        console.log('Trendline Data Debug - July 1st:', {
+          date,
+          summary,
+          summaryTotalCalories: summary?.totalCalories,
+          summaryExists: !!summary
+        });
+      }
+      
       // Use current weight if available, otherwise fall back to last known weight
       if (currentWeight !== undefined && currentWeight !== null) {
         lastKnownWeight = currentWeight;
       }
       
-      return {
+      const chartDataPoint = {
         date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         fullDate: date,
         calories: summary?.totalCalories || 0,
@@ -334,6 +348,13 @@ export default function Dashboard({ sessionId }: DashboardProps) {
         targetCalories: userProfile?.targetCalories || 2000,
         targetProtein: userProfile?.dailyProteinTarget || 60,
       };
+      
+      // Debug: Log the final chart data point for July 1st
+      if (date === '2025-07-01') {
+        console.log('Chart Data Point for July 1st:', chartDataPoint);
+      }
+      
+      return chartDataPoint;
     })
       .filter(item => item.calories > 0 || item.weight || item.protein > 0 || item.caloriesBurned > 0);
   }, [userAnalytics, userProfile]);
