@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PaperProvider, DefaultTheme } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { View, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 // Screens
@@ -76,6 +77,15 @@ export default function App() {
                 headerTitleStyle: {
                   fontWeight: 'bold',
                 },
+                headerTitle: () => (
+                  <View style={{ alignItems: 'center' }}>
+                    <Image 
+                      source={require('./assets/calonik-logo.png')}
+                      style={{ width: 100, height: 40 }}
+                      resizeMode="contain"
+                    />
+                  </View>
+                ),
               })}
             >
               <Tab.Screen name="Tracker" component={TrackerScreen} />

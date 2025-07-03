@@ -14,6 +14,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { apiService, Food, MealItem } from '../services/api';
 import { SessionManager } from '../utils/session';
 import FoodCameraComponent from '../components/FoodCamera';
+import LogoHeader from '../components/LogoHeader';
 
 const TrackerScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -129,6 +130,7 @@ const TrackerScreen = () => {
 
   return (
     <ScrollView style={styles.container}>
+      <LogoHeader />
       <View style={styles.header}>
         <Text style={styles.title}>Food Tracker</Text>
         <Text style={styles.subtitle}>Track your daily nutrition</Text>

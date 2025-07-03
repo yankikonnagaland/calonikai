@@ -1,4 +1,5 @@
 import { Apple, Camera, BarChart3, Crown, Check, Zap, LogIn, AlertTriangle, Copy, X } from "lucide-react";
+import calonikLogo from "@assets/CALONIK LOGO TRANSPARENT_1751559015747.png";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -81,11 +82,13 @@ export default function Landing() {
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 to-blue-600/20" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-500">
-                Calonik.ai
-              </span>
-            </h1>
+            <div className="mb-8 flex justify-center">
+              <img 
+                src={calonikLogo} 
+                alt="Calonik.ai - AI Calorie Tracker" 
+                className="h-32 md:h-48 w-auto"
+              />
+            </div>
             <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
               Track calories, manage weight, and achieve fitness goals with AI-powered food recognition. 
               Personalized nutrition insights for healthier living with comprehensive exercise tracking.
