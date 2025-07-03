@@ -279,16 +279,34 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                     const authSuccess = localStorage.getItem('oauth_success');
                     if (authSuccess) {
                       try {
-                        const { email, token, timestamp } = JSON.parse(authSuccess);
+                        const { email, token, sessionId, timestamp } = JSON.parse(authSuccess);
                         
                         // Check if the auth success is recent (within 30 seconds)
                         if (Date.now() - timestamp < 30000) {
-                          console.log('Found OAuth success in localStorage:', email);
+                          console.log('Found OAuth success in localStorage:', email, 'sessionId:', sessionId);
                           
                           // Clear the localStorage flag
                           localStorage.removeItem('oauth_success');
                           
-                          // Try to establish session
+                          // Try session transfer first if we have sessionId
+                          if (sessionId) {
+                            const transferResponse = await fetch('/api/auth/transfer-session', {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              credentials: 'include',
+                              body: JSON.stringify({ email, sessionId })
+                            });
+                            
+                            if (transferResponse.ok) {
+                              console.log('Session transferred successfully from popup');
+                              window.location.reload();
+                              return true;
+                            }
+                          }
+                          
+                          // Fallback to establish session
                           const response = await fetch('/api/auth/establish-session', {
                             method: 'POST',
                             headers: {

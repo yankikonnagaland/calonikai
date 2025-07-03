@@ -10,9 +10,11 @@ export default function OAuthCallback() {
       
       // Store auth success in localStorage for main window to pick up
       if (email) {
+        const sessionId = urlParams.get('sessionId');
         localStorage.setItem('oauth_success', JSON.stringify({
           email,
           token,
+          sessionId,
           timestamp: Date.now()
         }));
       }

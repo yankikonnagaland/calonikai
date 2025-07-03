@@ -281,10 +281,17 @@ export async function setupAuth(app: Express) {
           // For popup flow, redirect to a success page that closes the popup
           // Pass user data to help with state refresh
           const userEmail = (req.user as any)?.email || '';
+          const userId = (req.user as any)?.id || '';
+          
           // Set a temporary auth token that the main window can pick up
           const authToken = `auth_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
           (req.session as any).tempAuthToken = authToken;
-          res.redirect(`/oauth-callback?success=true&email=${encodeURIComponent(userEmail)}&token=${authToken}`);
+          (req.session as any).transferUserId = userId;
+          
+          // Store the session ID for transfer
+          console.log('OAuth session ID for transfer:', req.sessionID);
+          
+          res.redirect(`/oauth-callback?success=true&email=${encodeURIComponent(userEmail)}&token=${authToken}&sessionId=${req.sessionID}`);
         });
       }
     );

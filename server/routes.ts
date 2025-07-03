@@ -781,6 +781,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Session transfer endpoint for OAuth popup sessions
+  app.post("/api/auth/transfer-session", async (req: any, res) => {
+    try {
+      const { sessionId, email } = req.body;
+      
+      if (!sessionId || !email) {
+        return res.status(400).json({ message: "Session ID and email required" });
+      }
+      
+      console.log('Attempting session transfer for:', email, 'sessionId:', sessionId);
+      
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Create new session for the main window
+      req.login(user, (err: any) => {
+        if (err) {
+          console.error("Session transfer login error:", err);
+          return res.status(500).json({ message: "Session transfer failed" });
+        } 
+        
+        // Force session save
+        req.session.save((saveErr: any) => {
+          if (saveErr) {
+            console.error("Session transfer save error:", saveErr);
+          }
+          console.log("Session transferred successfully for user:", user.email);
+          res.json({
+            success: true,
+            user: {
+              id: user.id,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              profileImageUrl: user.profileImageUrl,
+              subscriptionStatus: user.subscriptionStatus,
+              premiumActivated: user.premiumActivatedAt,
+            }
+          });
+        });
+      });
+    } catch (error) {
+      console.error('Session transfer error:', error);
+      res.status(500).json({ message: "Failed to transfer session" });
+    }
+  });
+
   // Admin testing route - bypasses all usage limits
   app.post("/api/admin-login", async (req: any, res) => {
     try {
