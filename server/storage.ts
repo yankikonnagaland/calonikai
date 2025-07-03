@@ -114,35 +114,10 @@ export class DatabaseStorage implements IStorage {
       return await db.select().from(foods).limit(20);
     }
     
-    const normalizedQuery = query.toLowerCase().trim();
-    
-    // First, try exact matches
-    const exactMatches = await db
-      .select()
-      .from(foods)
-      .where(ilike(foods.name, normalizedQuery))
-      .limit(5);
-    
-    if (exactMatches.length > 0) {
-      return exactMatches;
-    }
-    
-    // Then try starts with matches
-    const startsWithMatches = await db
-      .select()
-      .from(foods)
-      .where(ilike(foods.name, `${normalizedQuery}%`))
-      .limit(10);
-    
-    if (startsWithMatches.length > 0) {
-      return startsWithMatches;
-    }
-    
-    // Finally, partial matches
     const searchResults = await db
       .select()
       .from(foods)
-      .where(ilike(foods.name, `%${normalizedQuery}%`))
+      .where(ilike(foods.name, `%${query}%`))
       .limit(20);
     
     return searchResults;
