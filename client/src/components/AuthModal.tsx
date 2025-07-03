@@ -77,10 +77,38 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
 
     window.addEventListener('message', handleMessage);
 
+    // Fallback: Check authentication status periodically in case popup message doesn't arrive
+    const checkAuthInterval = setInterval(async () => {
+      try {
+        const response = await fetch('/api/auth/user', {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          console.log('Authentication detected via polling, cleaning up...');
+          clearInterval(checkAuthInterval);
+          clearInterval(checkClosed);
+          window.removeEventListener('message', handleMessage);
+          setIsGoogleLoading(false);
+          setError("");
+          onSuccess();
+          
+          // Close any open popup
+          if (popup && !popup.closed) {
+            popup.close();
+          }
+        }
+      } catch (error) {
+        // Continue polling on error
+        console.log('Auth polling check failed:', error);
+      }
+    }, 2000); // Check every 2 seconds
+
     // Check if popup is closed
     const checkClosed = setInterval(() => {
       if (popup.closed) {
         clearInterval(checkClosed);
+        clearInterval(checkAuthInterval);
         window.removeEventListener('message', handleMessage);
         setIsGoogleLoading(false);
       }
