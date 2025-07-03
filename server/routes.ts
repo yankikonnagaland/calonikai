@@ -514,12 +514,13 @@ For "${foodName}" in category "${category}", determine:
 2. Unit options with realistic sizes 
 3. Default quantity for typical consumption
 
-Examples:
+Important guidelines:
+- Coffee/Tea beverages: Always include ["small cup (150ml)", "cup (250ml)", "large cup (350ml)", "glass (200ml)", "ml"] as options
 - Beer: unit="can (500ml)", quantity=1 (because 1 can = 500ml = 5x the 100ml database value)
 - Rice: unit="medium portion (150g)", quantity=1 (because 1 portion = 150g = 1.5x the 100g database value)
 - Apple: unit="medium (120g)", quantity=1 (because 1 apple = 120g = 1.2x the 100g database value)
 
-Return JSON: {"unit": "exact_unit_with_size", "unitOptions": ["option1", "option2", "option3"], "quantity": realistic_number}`;
+Return JSON: {"unit": "exact_unit_with_size", "unitOptions": ["option1", "option2", "option3", "option4", "option5"], "quantity": realistic_number}`;
 
     const response = await genai.models.generateContent({
       model: "gemini-2.5-flash",
