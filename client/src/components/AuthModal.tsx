@@ -32,23 +32,46 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     setIsGoogleLoading(true);
     setError("");
     
-    // Direct redirect approach - bypasses popup session isolation issues
-    console.log('Redirecting to Google OAuth...');
+    // Create a direct link and click it to force navigation outside iframe context
+    console.log('Opening Google OAuth in new tab...');
     
-    // Force a direct navigation to break out of any iframe restrictions
-    try {
-      if (window.top && window.top !== window) {
-        window.top.location.assign('/api/auth/google');
-      } else {
-        window.location.assign('/api/auth/google');
+    const link = document.createElement('a');
+    link.href = '/api/auth/google';
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    
+    // Append to body, click, and remove
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Show message to user
+    setError("Please complete authentication in the new tab, then return here");
+    setIsGoogleLoading(false);
+    
+    // Poll for authentication success every 2 seconds
+    const authCheckInterval = setInterval(async () => {
+      try {
+        const response = await fetch('/api/auth/user', {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          clearInterval(authCheckInterval);
+          setError("");
+          onSuccess();
+        }
+      } catch (error) {
+        console.log('Auth check failed:', error);
       }
-    } catch (error) {
-      // Fallback if cross-origin restrictions prevent access to window.top
-      console.log('Using fallback redirect method');
-      window.location.replace('/api/auth/google');
-    }
+    }, 2000);
     
-    // The following popup code is kept as backup but not used
+    // Auto-stop polling after 5 minutes
+    setTimeout(() => {
+      clearInterval(authCheckInterval);
+      setError("Authentication timeout - please try again");
+    }, 300000);
+    
     return;
     
     // Open popup window for Google OAuth
