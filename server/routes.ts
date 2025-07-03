@@ -120,6 +120,7 @@ async function searchFoodWithAI(query: string) {
 - Rice (white): 365 kcal, 7.1g protein, 80g carbs, 0.7g fat per 100g
 - Wheat flour: 364 kcal, 10.3g protein, 76g carbs, 1.9g fat per 100g
 - Whole Wheat Roti: 300-330 kcal, 9-10g protein, 50-60g carbs, 6-7g fat per 100g
+- Coca-Cola: 42 kcal, 0g protein, 10.6g carbs, 0g fat per 100ml
 
 **STRICT VALIDATION:**
 - Grains/cereals: 350-400 kcal/100g (NO EXCEPTIONS)
@@ -293,6 +294,16 @@ Return ONLY valid JSON:
           foodData.carbs = 55; // Mid-range of 50-60
           foodData.fat = 6.5; // Mid-range of 6-7
           foodData.name = "Whole Wheat Roti";
+        }
+
+        // Enforce specific USDA values for Coca-Cola
+        if (query.toLowerCase().includes("coca") || query.toLowerCase().includes("coke")) {
+          console.log(`Coca-Cola detected, enforcing standard values`);
+          foodData.calories = 42; // Standard Coca-Cola
+          foodData.protein = 0; // No protein
+          foodData.carbs = 10.6; // Mostly sugar
+          foodData.fat = 0; // No fat
+          foodData.name = "Coca-Cola";
         }
         
         foodData.calories = Math.min(expectedRange.max, Math.max(expectedRange.min, getDefaultCalories(query)));
@@ -609,6 +620,7 @@ function getDefaultCalories(foodName: string): number {
   )
     return 50;
   if (name.includes("bread") || name.includes("roti")) return 315;
+  if (name.includes("coca") || name.includes("coke")) return 42; // Coca-Cola standard
   if (name.includes("sweet") || name.includes("dessert")) return 300;
   return 100;
 }
@@ -617,6 +629,7 @@ function getDefaultProtein(foodName: string): number {
   const name = foodName.toLowerCase();
   if (name.includes("oats")) return 16.9; // USDA standard
   if (name.includes("roti") || name.includes("bread")) return 9.5; // USDA standard
+  if (name.includes("coca") || name.includes("coke")) return 0; // Coca-Cola standard
   if (name.includes("chicken") || name.includes("fish") || name.includes("egg"))
     return 20;
   if (name.includes("dal") || name.includes("lentil")) return 8;
@@ -630,6 +643,7 @@ function getDefaultCarbs(foodName: string): number {
   if (name.includes("oats")) return 66.3; // USDA standard
   if (name.includes("rice")) return 25;
   if (name.includes("bread") || name.includes("roti")) return 55;
+  if (name.includes("coca") || name.includes("coke")) return 10.6; // Coca-Cola standard
   if (name.includes("fruit") || name.includes("sweet")) return 15;
   if (name.includes("vegetable")) return 5;
   return 15;
@@ -639,6 +653,7 @@ function getDefaultFat(foodName: string): number {
   const name = foodName.toLowerCase();
   if (name.includes("oats")) return 6.9; // USDA standard
   if (name.includes("roti") || name.includes("bread")) return 6.5; // USDA standard
+  if (name.includes("coca") || name.includes("coke")) return 0; // Coca-Cola standard
   if (
     name.includes("fried") ||
     name.includes("pakora") ||
