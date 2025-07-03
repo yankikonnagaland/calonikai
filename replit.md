@@ -436,6 +436,14 @@ The application follows a client-server architecture with clear separation of co
 - FINAL FIX: Removed duplicate division by 100 in Dashboard removal calculation logic that was causing 6-calorie results instead of proper values
 - ENHANCED: Added analytics chart cache invalidation to meal submission and food removal for immediate graph updates
 
+**July 3, 2025 - FIXED Critical Juice Portion Calculation Bug:**
+- RESOLVED: Critical juice calculation error showing 366.8 calories for 250ml lemon juice instead of correct 55 calories
+- FIXED: Removed incorrect smart portion scaling logic that was recalculating per-100g values from AI-detected portions
+- CORRECTED: Mathematical error where (22 cal ÷ 15ml) × 100ml = 146.7 cal/100ml instead of using correct 22 cal/100ml
+- ENHANCED: Smart portion data now used for display purposes only, maintaining accurate database per-100g nutrition values
+- VERIFIED: Lemon juice 250ml now correctly calculates 55 calories (22 cal/100ml × 2.5 = 55 cal)
+- SYSTEMATIC: Fix applies to all juice categories ensuring accurate liquid portion calculations across all beverages
+
 **July 3, 2025 - FIXED Critical Search Relevance Bug for Basic Foods:**
 - RESOLVED: Critical search relevance issue where "milk" search returned compound foods (Milk Tea, Milkshake) instead of basic "Whole Milk"
 - FIXED: Enhanced scoring algorithm to prioritize basic/core foods over flavored variations and compound preparations

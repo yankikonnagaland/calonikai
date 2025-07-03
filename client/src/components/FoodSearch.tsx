@@ -1000,22 +1000,12 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                   fat: selectedFood.fat || 0
                 };
                 
-                // If we have smart portion data, calculate the actual per-100g values
+                // Always use the original per-100g values from database
+                // Smart portion data is for display purposes only, not for recalculating base values
                 const hasRealisticData = (selectedFood as any).realisticCalories !== undefined;
                 if (hasRealisticData) {
                   const smartGrams = extractGramFromUnit((selectedFood as any).smartUnit) || 70;
                   const smartCalories = (selectedFood as any).realisticCalories || 0;
-                  const smartProtein = (selectedFood as any).realisticProtein || 0;
-                  const smartCarbs = (selectedFood as any).realisticCarbs || 0;
-                  const smartFat = (selectedFood as any).realisticFat || 0;
-                  
-                  // Calculate accurate per-100g values from smart portion
-                  basePer100g = {
-                    calories: Math.round((smartCalories / smartGrams) * 100 * 10) / 10,
-                    protein: Math.round((smartProtein / smartGrams) * 100 * 10) / 10,
-                    carbs: Math.round((smartCarbs / smartGrams) * 100 * 10) / 10,
-                    fat: Math.round((smartFat / smartGrams) * 100 * 10) / 10
-                  };
                   
                   console.log(`Smart portion calculation for ${selectedFood.name}:`, {
                     smartGrams,
