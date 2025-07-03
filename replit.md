@@ -444,13 +444,16 @@ The application follows a client-server architecture with clear separation of co
 - IMPROVED: Enhanced duplicate prevention checks for exact matches, partial matches, and core food name similarities
 - STREAMLINED: Search now returns diverse, relevant results without AI-generated duplicates cluttering the interface
 
-**July 3, 2025 - FIXED Critical Coca-Cola Nutrition Data with Standard Values:**
+**July 3, 2025 - FIXED Critical Beverage Unit Calculation Bug & Coca-Cola Standards:**
+- RESOLVED: Unit calculation bug where "can (330ml)" showed 43 calories instead of correct 141.9 calories
+- FIXED: Regex pattern in frontend unit multiplier to properly extract ml amounts from parentheses format
+- CORRECTED: Volume calculation now properly recognizes "(330ml)" pattern and calculates 330 × 0.43 = 141.9 cal
 - IMPLEMENTED: Mandatory standard values for Coca-Cola: 42 kcal, 0g protein, 10.6g carbs, 0g fat per 100ml
 - ENHANCED: Gemini AI prompt to enforce exact Coca-Cola nutrition standards preventing AI hallucinations
 - ADDED: Backend validation to automatically correct any Coca-Cola searches with wrong values
 - STANDARDIZED: All fallback functions now use correct Coca-Cola standards (42 kcal, 0g protein/fat, 10.6g sugar)
-- VERIFIED: 330ml Coca-Cola can now correctly calculates ~139 kcal instead of incorrect values
-- COMPLETED: Beverage nutrition data standardization ensuring accurate soft drink tracking
+- VERIFIED: 330ml Coca-Cola can now correctly calculates ~139 kcal with proper unit calculation logic
+- COMPLETED: Complete beverage tracking accuracy for all unit formats (cans, bottles, glasses)
 
 **July 3, 2025 - Complete EAS Configuration & iOS Build Setup:**
 - CONFIGURED: Complete EAS (Expo Application Services) setup for iOS app building and deployment

@@ -620,7 +620,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     // PRIORITY 1: Extract volume/weight from unit descriptions for accurate calculations
     
     // VOLUME-BASED UNITS (for beverages) - Extract ml and calculate based on 100ml base
-    const mlMatch = unitLower.match(/(\d+)ml/);
+    const mlMatch = unitLower.match(/\((\d+)ml\)/);
     if (mlMatch) {
       const mlAmount = parseInt(mlMatch[1]);
       console.log(`Volume calculation: ${mlAmount}ml = ${mlAmount/100}x multiplier`);
@@ -628,7 +628,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     }
     
     // WEIGHT-BASED UNITS (for solid foods) - Extract grams and calculate based on 100g base
-    const gMatch = unitLower.match(/(\d+)g\)/);
+    const gMatch = unitLower.match(/\((\d+)g\)/);
     if (gMatch) {
       const gAmount = parseInt(gMatch[1]);
       console.log(`Weight calculation: ${gAmount}g = ${gAmount/100}x multiplier`);
