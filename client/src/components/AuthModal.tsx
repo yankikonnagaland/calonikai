@@ -274,6 +274,47 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                     'width=500,height=600,scrollbars=yes,resizable=yes'
                   );
                   
+                  // Check for auth success in localStorage periodically
+                  const checkAuthSuccess = async () => {
+                    const authSuccess = localStorage.getItem('oauth_success');
+                    if (authSuccess) {
+                      try {
+                        const { email, token, timestamp } = JSON.parse(authSuccess);
+                        
+                        // Check if the auth success is recent (within 30 seconds)
+                        if (Date.now() - timestamp < 30000) {
+                          console.log('Found OAuth success in localStorage:', email);
+                          
+                          // Clear the localStorage flag
+                          localStorage.removeItem('oauth_success');
+                          
+                          // Try to establish session
+                          const response = await fetch('/api/auth/establish-session', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            credentials: 'include',
+                            body: JSON.stringify({ email })
+                          });
+                          
+                          if (response.ok) {
+                            console.log('Session established successfully from localStorage');
+                            window.location.reload();
+                            return true;
+                          }
+                        } else {
+                          // Clean up old auth success
+                          localStorage.removeItem('oauth_success');
+                        }
+                      } catch (error) {
+                        console.log('Error processing localStorage auth:', error);
+                        localStorage.removeItem('oauth_success');
+                      }
+                    }
+                    return false;
+                  };
+
                   // Listen for messages from popup
                   const handleMessage = async (event: MessageEvent) => {
                     if (event.origin !== window.location.origin) return;
@@ -281,27 +322,11 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                     if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
                       const { token, email } = event.data;
                       
-                      // Multiple strategies to establish session in main window
-                      if (token) {
-                        // Strategy 1: Validate the auth token from popup
-                        try {
-                          const response = await fetch('/api/auth/validate-token', {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json',
-                            },
-                            credentials: 'include',
-                            body: JSON.stringify({ token })
-                          });
-                          
-                          if (response.ok) {
-                            console.log('Token validation successful');
-                            window.location.reload();
-                            return;
-                          }
-                        } catch (error) {
-                          console.log('Token validation failed, trying alternative methods');
-                        }
+                      console.log('Received OAuth success message:', email);
+                      
+                      // Strategy 1: Check localStorage first
+                      if (await checkAuthSuccess()) {
+                        return;
                       }
                       
                       // Strategy 2: Try session establishment by email
@@ -326,40 +351,28 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                         }
                       }
                       
-                      // Strategy 3: Try multiple session refresh attempts
-                      let attempts = 0;
-                      const maxAttempts = 5;
+                      // Strategy 3: Periodic localStorage check with timeout
+                      let checks = 0;
+                      const maxChecks = 10;
                       
-                      const tryRefresh = async () => {
-                        attempts++;
-                        try {
-                          const response = await fetch('/api/auth/refresh', {
-                            credentials: 'include'
-                          });
-                          
-                          if (response.ok) {
-                            console.log(`Session refresh successful on attempt ${attempts}`);
-                            window.location.reload();
-                            return;
-                          }
-                        } catch (error) {
-                          console.log(`Session refresh failed on attempt ${attempts}`);
+                      const periodicCheck = async () => {
+                        checks++;
+                        if (await checkAuthSuccess()) {
+                          return;
                         }
                         
-                        if (attempts < maxAttempts) {
-                          setTimeout(tryRefresh, 500 * attempts); // Increasing delay
+                        if (checks < maxChecks) {
+                          setTimeout(periodicCheck, 500);
                         } else {
-                          console.log('All attempts failed, reloading anyway');
+                          console.log('All auth attempts failed, reloading anyway');
                           window.location.reload();
                         }
                       };
                       
-                      // Start refresh attempts after a brief delay
-                      setTimeout(tryRefresh, 200);
+                      setTimeout(periodicCheck, 200);
                       
                     } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
                       console.error('Google auth error:', event.data.error);
-                      // Show error message to user
                     }
                   };
                   
@@ -371,18 +384,30 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                       clearInterval(checkClosed);
                       window.removeEventListener('message', handleMessage);
                       
-                      // Give a bit more time then try to refresh
+                      // Check localStorage first when popup closes
                       setTimeout(async () => {
+                        console.log('Popup closed, checking authentication...');
+                        
+                        if (await checkAuthSuccess()) {
+                          return;
+                        }
+                        
+                        // Fallback: try refresh
                         try {
                           const response = await fetch('/api/auth/refresh', {
                             credentials: 'include'
                           });
                           
                           if (response.ok) {
+                            console.log('Session refresh successful after popup close');
+                            window.location.reload();
+                          } else {
+                            console.log('No session found, reloading to check');
                             window.location.reload();
                           }
                         } catch (error) {
-                          // Silent fail for fallback
+                          console.log('Refresh failed, reloading anyway');
+                          window.location.reload();
                         }
                       }, 1000);
                     }

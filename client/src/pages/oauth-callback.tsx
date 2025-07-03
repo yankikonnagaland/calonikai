@@ -8,6 +8,15 @@ export default function OAuthCallback() {
       const token = urlParams.get('token');
       const email = urlParams.get('email');
       
+      // Store auth success in localStorage for main window to pick up
+      if (email) {
+        localStorage.setItem('oauth_success', JSON.stringify({
+          email,
+          token,
+          timestamp: Date.now()
+        }));
+      }
+      
       // Success - close popup and let parent window know
       if (window.opener) {
         window.opener.postMessage({ 
