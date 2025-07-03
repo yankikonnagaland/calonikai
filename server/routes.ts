@@ -113,33 +113,41 @@ async function searchFoodWithAI(query: string) {
       return createFallbackFood(query);
     }
 
-    const prompt = `You are a strict food nutrition data extractor. Given a food name, return its nutrition data per 100g or 100ml using reliable scientific sources like USDA, IFCT, or branded nutrition labels.
+    const prompt = `You are a nutrition database expert with access to USDA FoodData Central and IFCT databases. Return STANDARDIZED nutrition values per 100g/100ml based on verified scientific data.
+
+**CRITICAL VALIDATION RULES:**
+1. **Standardized Names**: Use common database names (e.g., "Oats" not "Steel-cut oats")
+2. **Calorie Consistency**: ALL varieties of the same base food MUST have consistent calories:
+   - Oats (all types): 370-390 kcal/100g (USDA standard)
+   - Rice (all types): 350-380 kcal/100g 
+   - Wheat products: 340-370 kcal/100g
+3. **Realistic Ranges**:
+   - Grains/cereals: 350-400 kcal/100g
+   - Fruits: 30-100 kcal/100g
+   - Vegetables: 10-50 kcal/100g
+   - Dairy: 50-150 kcal/100g
+
+**REJECT values that are:**
+- Below 350 kcal for grains/cereals
+- Inconsistent for same food type
+- Protein+carbs+fat > 100g per 100g
 
 Food Item: "${query}"
 
-Respond only in valid JSON following this schema:
+Respond only in valid JSON:
 {
-  "name": "Properly capitalized food name",
-  "calories": number (0–900), // Calories per 100g/100ml
-  "protein": number (0–100), // Grams per 100g/100ml
-  "carbs": number (0–100),   // Grams per 100g/100ml
-  "fat": number (0–100),     // Grams per 100g/100ml
+  "name": "Standardized food name",
+  "calories": number (MUST be realistic for category),
+  "protein": number (0-100),
+  "carbs": number (0-100),
+  "fat": number (0-100),
   "portionSizeValue": 100,
   "portionSizeUnit": "g" or "ml",
-  "category": "Beverages" | "Main Course" | "Snacks" | "Dairy" | "Fruits" | "Vegetables" | "Desserts" | "Grains",
-  "defaultUnit": "cup" | "piece" | "portion" | "grams" | "ml" | "bowl" | "slice",
-  "sodium": optional number (0–5000), // mg per 100g/ml
-  "fiber": optional number (0–30),    // grams per 100g/ml
-  "source": optional string,          // e.g. "USDA", "IFCT"
-  "confidenceScore": optional number (0.0–1.0)
-}
-
-Important rules:
-- Macronutrient sum (protein + carbs + fat) should not exceed 100g.
-- Portion size is always 100g or 100ml.
-- Always select the most accurate food category and defaultUnit.
-- Base your response on verified data sources.
-- If unsure, respond with a confidenceScore < 0.6.`;
+  "category": "Beverages|Main Course|Snacks|Dairy|Fruits|Vegetables|Desserts|Grains",
+  "defaultUnit": "cup|piece|portion|grams|ml|bowl|slice",
+  "source": "USDA|IFCT|Verified Database",
+  "confidenceScore": number (0.8-1.0 for verified data)
+}`;
 
     const response = await genai.models.generateContent({
       model: "gemini-2.5-pro", // Use Pro model for better accuracy
@@ -244,10 +252,35 @@ Important rules:
         return createFallbackFood(query);
       }
 
-      // Validate realistic ranges
-      if (foodData.calories < 0 || foodData.calories > 900) {
-        console.warn(`Gemini API returned unrealistic calories (${foodData.calories}) for "${query}"`);
-        foodData.calories = Math.min(900, Math.max(0, foodData.calories || getDefaultCalories(query)));
+      // Enhanced calorie validation based on food category
+      const categoryRanges = {
+        "Grains": { min: 350, max: 400 },
+        "Dairy": { min: 50, max: 150 },
+        "Fruits": { min: 30, max: 100 },
+        "Vegetables": { min: 10, max: 50 },
+        "Main Course": { min: 100, max: 400 },
+        "Snacks": { min: 200, max: 600 },
+        "Beverages": { min: 0, max: 150 },
+        "Desserts": { min: 200, max: 500 }
+      };
+
+      const expectedRange = categoryRanges[foodData.category] || { min: 0, max: 900 };
+      
+      if (foodData.calories < expectedRange.min || foodData.calories > expectedRange.max) {
+        console.warn(`Gemini API returned unrealistic calories (${foodData.calories}) for "${query}" in category "${foodData.category}". Expected: ${expectedRange.min}-${expectedRange.max}`);
+        
+        // For grains/cereals, enforce minimum standards
+        if (foodData.category === "Grains" && foodData.calories < 350) {
+          console.log(`Rejecting low-calorie grain data for "${query}", using fallback`);
+          return createFallbackFood(query);
+        }
+        
+        foodData.calories = Math.min(expectedRange.max, Math.max(expectedRange.min, getDefaultCalories(query)));
+      }
+
+      // Check for food name consistency (oats should be "Oats", not variants)
+      if (query.toLowerCase().includes("oats") && !foodData.name.toLowerCase().includes("oats")) {
+        foodData.name = "Oats";
       }
 
       console.log(`Gemini API provided enhanced data for "${query}":`, {
