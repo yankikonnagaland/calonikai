@@ -444,7 +444,12 @@ The application follows a client-server architecture with clear separation of co
 - IMPROVED: Enhanced duplicate prevention checks for exact matches, partial matches, and core food name similarities
 - STREAMLINED: Search now returns diverse, relevant results without AI-generated duplicates cluttering the interface
 
-**July 3, 2025 - Enhanced Food Category Display & Added Grams Unit for Main Course:**
+**July 3, 2025 - FIXED Critical Calorie Calculation Bug & Enhanced Unit System:**
+- RESOLVED: Critical calorie scaling bug where 460 cal for 70g incorrectly showed 460 cal for 100g instead of proper 657 cal scaling
+- FIXED: Unit switching calculation error - calories now scale proportionally (460 cal ÷ 70g = 6.57 cal/g, so 100g = 657 cal)
+- ENHANCED: Smart portion detection now calculates accurate per-100g values from AI-detected portion data
+- IMPROVED: Unit selection automatically recalculates nutrition based on actual gram weights for precise tracking
+- VERIFIED: 70g portion showing 460 cal now correctly scales to 657 cal for 100g portions (6.57 cal/g ratio maintained)
 - ADDED: Food category display in search results showing food type badges (Snacks, Beverages, etc.)
 - ENHANCED: Search results now show both nutrition info and food category for better food identification
 - FIXED: Nut piece calculations using specific weights per piece (almond: 1.2g, cashew: 1.7g, walnut: 2.5g)

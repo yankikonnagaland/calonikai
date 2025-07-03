@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import type { Food } from "@shared/schema";
-import { calculateNutritionFromUnit, formatNutritionDisplay, validateCalorieCalculation } from "@shared/unitCalculations";
+import { calculateNutritionFromUnit, formatNutritionDisplay, validateCalorieCalculation, extractGramFromUnit } from "@shared/unitCalculations";
 import SubscriptionModal from "./SubscriptionModal";
 import calonikLogo from "@assets/CALONIK LOGO TRANSPARENT_1751559015747.png";
 
@@ -992,41 +992,50 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
             {/* Accurate Nutrition Display with Gram Equivalent */}
             <div className="mb-4">
               {(() => {
-                // Priority 1: Use enhanced realistic nutrition if available (from smart unit suggestions)
+                // Calculate per-100g values from smart portion data if available
+                let basePer100g = {
+                  calories: selectedFood.calories || 0,
+                  protein: selectedFood.protein || 0,
+                  carbs: selectedFood.carbs || 0,
+                  fat: selectedFood.fat || 0
+                };
+                
+                // If we have smart portion data, calculate the actual per-100g values
                 const hasRealisticData = (selectedFood as any).realisticCalories !== undefined;
-                
-                let calculatedNutrition;
-                
-                if (hasRealisticData && unit === (selectedFood as any).smartUnit) {
-                  // Use the exact realistic values from smart unit suggestions
-                  const smartQuantity = (selectedFood as any).smartQuantity || 1;
-                  const scaleFactor = quantity / smartQuantity;
+                if (hasRealisticData) {
+                  const smartGrams = extractGramFromUnit((selectedFood as any).smartUnit) || 70;
+                  const smartCalories = (selectedFood as any).realisticCalories || 0;
+                  const smartProtein = (selectedFood as any).realisticProtein || 0;
+                  const smartCarbs = (selectedFood as any).realisticCarbs || 0;
+                  const smartFat = (selectedFood as any).realisticFat || 0;
                   
-                  calculatedNutrition = {
-                    calories: Math.round(((selectedFood as any).realisticCalories || 0) * scaleFactor * 10) / 10,
-                    protein: Math.round(((selectedFood as any).realisticProtein || 0) * scaleFactor * 10) / 10,
-                    carbs: Math.round(((selectedFood as any).realisticCarbs || 0) * scaleFactor * 10) / 10,
-                    fat: Math.round(((selectedFood as any).realisticFat || 0) * scaleFactor * 10) / 10,
-                    totalGrams: Math.round(((selectedFood as any).smartQuantity || 100) * scaleFactor),
-                    gramEquivalent: `${Math.round(((selectedFood as any).smartQuantity || 100) * scaleFactor)}g`,
-                    usedSmartPortion: true
-                  };
-                } else {
-                  // Fallback to calculation using base nutrition values
-                  const basePer100g = {
-                    calories: selectedFood.calories || 0,
-                    protein: selectedFood.protein || 0,
-                    carbs: selectedFood.carbs || 0,
-                    fat: selectedFood.fat || 0
+                  // Calculate accurate per-100g values from smart portion
+                  basePer100g = {
+                    calories: Math.round((smartCalories / smartGrams) * 100 * 10) / 10,
+                    protein: Math.round((smartProtein / smartGrams) * 100 * 10) / 10,
+                    carbs: Math.round((smartCarbs / smartGrams) * 100 * 10) / 10,
+                    fat: Math.round((smartFat / smartGrams) * 100 * 10) / 10
                   };
                   
-                  calculatedNutrition = calculateNutritionFromUnit(
-                    selectedFood.name,
-                    unit,
-                    quantity,
-                    basePer100g
-                  );
+                  console.log(`Smart portion calculation for ${selectedFood.name}:`, {
+                    smartGrams,
+                    smartCalories,
+                    calculatedPer100g: basePer100g,
+                    originalPer100g: {
+                      calories: selectedFood.calories,
+                      protein: selectedFood.protein,
+                      carbs: selectedFood.carbs,
+                      fat: selectedFood.fat
+                    }
+                  });
                 }
+                
+                const calculatedNutrition = calculateNutritionFromUnit(
+                  selectedFood.name,
+                  unit,
+                  quantity,
+                  basePer100g
+                );
                 
                 const validation = validateCalorieCalculation(
                   selectedFood.name,
