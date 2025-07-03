@@ -693,7 +693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               lastName: req.user.lastName,
               profileImageUrl: req.user.profileImageUrl,
               subscriptionStatus: req.user.subscriptionStatus,
-              premiumActivated: req.user.premiumActivated,
+              premiumActivated: req.user.premiumActivatedAt,
             }
           });
         }
@@ -732,6 +732,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } else {
       res.status(401).json({ message: "Invalid or expired token" });
+    }
+  });
+
+  // Alternative session establishment endpoint - directly authenticate by email
+  app.post("/api/auth/establish-session", async (req: any, res) => {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ message: "Email required" });
+    }
+    
+    try {
+      // Find user by email and establish session
+      const user = await storage.getUserByEmail(email);
+      
+      if (user) {
+        // Manually set up the session
+        req.session.passport = { user: user.id };
+        (req as any).user = user;
+        
+        req.session.save((err: any) => {
+          if (err) {
+            console.error("Session establishment error:", err);
+            res.status(500).json({ error: "Session establishment failed" });
+          } else {
+            console.log("Session established for user:", user.email);
+            res.json({
+              success: true,
+              user: {
+                id: user.id,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                profileImageUrl: user.profileImageUrl,
+                subscriptionStatus: user.subscriptionStatus,
+                premiumActivated: user.premiumActivatedAt,
+              }
+            });
+          }
+        });
+      } else {
+        res.status(404).json({ message: "User not found" });
+      }
+    } catch (error) {
+      console.error("Error establishing session:", error);
+      res.status(500).json({ message: "Failed to establish session" });
     }
   });
 

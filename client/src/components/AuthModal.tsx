@@ -281,8 +281,9 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                     if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
                       const { token, email } = event.data;
                       
+                      // Multiple strategies to establish session in main window
                       if (token) {
-                        // Validate the auth token from popup
+                        // Strategy 1: Validate the auth token from popup
                         try {
                           const response = await fetch('/api/auth/validate-token', {
                             method: 'POST',
@@ -294,38 +295,68 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                           });
                           
                           if (response.ok) {
-                            // Token validated successfully, session established
+                            console.log('Token validation successful');
                             window.location.reload();
-                          } else {
-                            // Token validation failed, try refresh
-                            setTimeout(() => {
-                              window.location.reload();
-                            }, 1000);
+                            return;
                           }
                         } catch (error) {
-                          // Error validating token, fallback to reload
-                          setTimeout(() => {
-                            window.location.reload();
-                          }, 1000);
+                          console.log('Token validation failed, trying alternative methods');
                         }
-                      } else {
-                        // No token, try session refresh
-                        setTimeout(async () => {
-                          try {
-                            const response = await fetch('/api/auth/refresh', {
-                              credentials: 'include'
-                            });
-                            
-                            if (response.ok) {
-                              window.location.reload();
-                            } else {
-                              window.location.reload();
-                            }
-                          } catch (error) {
-                            window.location.reload();
-                          }
-                        }, 1000);
                       }
+                      
+                      // Strategy 2: Try session establishment by email
+                      if (email) {
+                        try {
+                          const response = await fetch('/api/auth/establish-session', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            credentials: 'include',
+                            body: JSON.stringify({ email })
+                          });
+                          
+                          if (response.ok) {
+                            console.log('Session establishment successful');
+                            window.location.reload();
+                            return;
+                          }
+                        } catch (error) {
+                          console.log('Session establishment failed, trying refresh');
+                        }
+                      }
+                      
+                      // Strategy 3: Try multiple session refresh attempts
+                      let attempts = 0;
+                      const maxAttempts = 5;
+                      
+                      const tryRefresh = async () => {
+                        attempts++;
+                        try {
+                          const response = await fetch('/api/auth/refresh', {
+                            credentials: 'include'
+                          });
+                          
+                          if (response.ok) {
+                            console.log(`Session refresh successful on attempt ${attempts}`);
+                            window.location.reload();
+                            return;
+                          }
+                        } catch (error) {
+                          console.log(`Session refresh failed on attempt ${attempts}`);
+                        }
+                        
+                        if (attempts < maxAttempts) {
+                          setTimeout(tryRefresh, 500 * attempts); // Increasing delay
+                        } else {
+                          console.log('All attempts failed, reloading anyway');
+                          window.location.reload();
+                        }
+                      };
+                      
+                      // Start refresh attempts after a brief delay
+                      setTimeout(tryRefresh, 200);
+                      
                     } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
                       console.error('Google auth error:', event.data.error);
                       // Show error message to user
