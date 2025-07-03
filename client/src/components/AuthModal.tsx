@@ -50,30 +50,13 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       if (event.origin !== window.location.origin) return;
       
       if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
-        console.log('Popup closed, checking authentication...');
+        console.log('OAuth success received, reloading page to get session...');
         
-        // Wait a moment then check if user is authenticated
-        setTimeout(async () => {
-          try {
-            const response = await fetch('/api/auth/user', {
-              credentials: 'include'
-            });
-            
-            if (response.ok) {
-              console.log('Authentication successful');
-              setIsGoogleLoading(false);
-              setError("");
-              onSuccess();
-            } else {
-              console.log('No session found, reloading');
-              window.location.reload();
-            }
-          } catch (error) {
-            console.log('Auth check failed:', error);
-            setIsGoogleLoading(false);
-            setError("Authentication failed");
-          }
-        }, 1500);
+        // Simple approach: just reload the page to pick up the authenticated session
+        // This avoids all the complex session sharing issues between popup and main window
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       }
       
       if (event.data.type === 'GOOGLE_AUTH_ERROR') {
