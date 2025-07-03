@@ -279,30 +279,33 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                     const authSuccess = localStorage.getItem('oauth_success');
                     if (authSuccess) {
                       try {
-                        const { email, token, sessionId, cacheKey, timestamp } = JSON.parse(authSuccess);
+                        const { email, token, sessionId, cacheKey, transferUserId, timestamp } = JSON.parse(authSuccess);
                         
                         // Check if the auth success is recent (within 30 seconds)
                         if (Date.now() - timestamp < 30000) {
-                          console.log('Found OAuth success in localStorage:', email, 'cacheKey:', cacheKey);
+                          console.log('Found OAuth success in localStorage:', email, 'transferUserId:', transferUserId, 'cacheKey:', cacheKey);
                           
                           // Clear the localStorage flag
                           localStorage.removeItem('oauth_success');
                           
-                          // Try cache retrieval first if we have cacheKey
-                          if (cacheKey) {
-                            const cacheResponse = await fetch('/api/auth/retrieve-cache', {
+                          // Try session claim first if we have required data
+                          if (transferUserId && cacheKey) {
+                            const claimResponse = await fetch('/api/auth/claim-session', {
                               method: 'POST',
                               headers: {
                                 'Content-Type': 'application/json',
                               },
                               credentials: 'include',
-                              body: JSON.stringify({ cacheKey })
+                              body: JSON.stringify({ transferUserId, cacheKey })
                             });
                             
-                            if (cacheResponse.ok) {
-                              console.log('Session established successfully from auth cache');
+                            if (claimResponse.ok) {
+                              console.log('Session claimed successfully from localStorage');
                               window.location.reload();
                               return true;
+                            } else {
+                              const errorData = await claimResponse.json();
+                              console.log('Session claim from localStorage failed:', errorData.message);
                             }
                           }
                           
@@ -356,29 +359,32 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                     if (event.origin !== window.location.origin) return;
                     
                     if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
-                      const { token, email, cacheKey, sessionId } = event.data;
+                      const { token, email, cacheKey, sessionId, transferUserId } = event.data;
                       
-                      console.log('Received OAuth success message:', email, 'cacheKey:', cacheKey);
+                      console.log('Received OAuth success message:', email, 'transferUserId:', transferUserId, 'cacheKey:', cacheKey);
                       
-                      // Strategy 1: Try cache retrieval with postMessage data
-                      if (cacheKey) {
+                      // Strategy 1: Try direct session claim with postMessage data
+                      if (transferUserId && cacheKey) {
                         try {
-                          const cacheResponse = await fetch('/api/auth/retrieve-cache', {
+                          const claimResponse = await fetch('/api/auth/claim-session', {
                             method: 'POST',
                             headers: {
                               'Content-Type': 'application/json',
                             },
                             credentials: 'include',
-                            body: JSON.stringify({ cacheKey })
+                            body: JSON.stringify({ transferUserId, cacheKey })
                           });
                           
-                          if (cacheResponse.ok) {
-                            console.log('Session established successfully from postMessage cache');
+                          if (claimResponse.ok) {
+                            console.log('Session claimed successfully from postMessage');
                             window.location.reload();
                             return;
+                          } else {
+                            const errorData = await claimResponse.json();
+                            console.log('Session claim failed:', errorData.message);
                           }
                         } catch (error) {
-                          console.log('Cache retrieval from postMessage failed:', error);
+                          console.log('Session claim from postMessage failed:', error);
                         }
                       }
                       

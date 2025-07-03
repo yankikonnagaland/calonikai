@@ -311,7 +311,7 @@ export async function setupAuth(app: Express) {
             }
           }, 60000);
           
-          res.redirect(`/oauth-callback?success=true&email=${encodeURIComponent(userEmail)}&token=${authToken}&sessionId=${req.sessionID}&cacheKey=${cacheKey}`);
+          res.redirect(`/oauth-callback?success=true&email=${encodeURIComponent(userEmail)}&token=${authToken}&sessionId=${req.sessionID}&cacheKey=${cacheKey}&transferUserId=${userId}`);
         });
       }
     );
@@ -326,6 +326,57 @@ export async function setupAuth(app: Express) {
       });
     });
   }
+
+  // Direct session claim endpoint - allows main window to claim authenticated session
+  app.post("/api/auth/claim-session", async (req, res) => {
+    try {
+      const { transferUserId, cacheKey } = req.body;
+      
+      if (!transferUserId || !cacheKey) {
+        return res.status(400).json({ message: "Missing transfer parameters" });
+      }
+      
+      // Check if we have cached auth data for this user
+      const authCache = (global as any).authCache;
+      if (!authCache || !authCache.has(cacheKey)) {
+        return res.status(404).json({ message: "No session data found" });
+      }
+      
+      const cachedData = authCache.get(cacheKey);
+      
+      // Verify the cached data is recent (within 2 minutes)
+      if (Date.now() - cachedData.timestamp > 2 * 60 * 1000) {
+        authCache.delete(cacheKey);
+        return res.status(410).json({ message: "Session data expired" });
+      }
+      
+      // Establish the session for this request
+      req.login(cachedData.user, (err) => {
+        if (err) {
+          console.error("Session claim login error:", err);
+          return res.status(500).json({ message: "Failed to establish session" });
+        }
+        
+        // Clean up the used cache entry
+        authCache.delete(cacheKey);
+        
+        console.log("Session claimed successfully for user:", cachedData.email);
+        res.json({ 
+          message: "Session claimed successfully",
+          user: {
+            id: cachedData.user.id,
+            email: cachedData.user.email,
+            firstName: cachedData.user.firstName,
+            lastName: cachedData.user.lastName
+          }
+        });
+      });
+      
+    } catch (error) {
+      console.error("Session claim error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   // Logout endpoint
   app.get("/api/logout", (req, res) => {
