@@ -941,11 +941,12 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
             <div className="mb-4">
               {(() => {
                 // Calculate accurate nutrition using new unit system
+                // Prioritize realisticCalories for special foods like water (0 cal)
                 const basePer100g = {
-                  calories: selectedFood.calories || 0,
-                  protein: selectedFood.protein || 0,
-                  carbs: selectedFood.carbs || 0,
-                  fat: selectedFood.fat || 0
+                  calories: (selectedFood as any).realisticCalories !== undefined ? (selectedFood as any).realisticCalories : (selectedFood.calories || 0),
+                  protein: (selectedFood as any).realisticProtein !== undefined ? (selectedFood as any).realisticProtein : (selectedFood.protein || 0),
+                  carbs: (selectedFood as any).realisticCarbs !== undefined ? (selectedFood as any).realisticCarbs : (selectedFood.carbs || 0),
+                  fat: (selectedFood as any).realisticFat !== undefined ? (selectedFood as any).realisticFat : (selectedFood.fat || 0)
                 };
                 
                 const calculatedNutrition = calculateNutritionFromUnit(
