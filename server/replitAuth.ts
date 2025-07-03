@@ -276,11 +276,14 @@ export async function setupAuth(app: Express) {
         req.session.save((err) => {
           if (err) {
             console.error("Session save error:", err);
+            res.redirect("/oauth-callback?error=session_save_failed");
+            return;
           }
           
-          // Direct redirect to home page now that we're not using popups
-          console.log("Redirecting to home page after successful OAuth");
-          res.redirect('/');
+          // Redirect to oauth callback page with success parameters for popup communication
+          const user = req.user as any;
+          console.log("Redirecting to OAuth callback page with success parameters");
+          res.redirect(`/oauth-callback?success=true&email=${encodeURIComponent(user.email)}&userId=${encodeURIComponent(user.id)}`);
         });
       }
     );

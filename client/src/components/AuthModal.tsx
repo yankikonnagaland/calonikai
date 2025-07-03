@@ -50,12 +50,60 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     // Focus the popup
     popup.focus();
     
-    // Poll for authentication success every 2 seconds
+    // Listen for messages from the popup
+    const handleMessage = (event: MessageEvent) => {
+      console.log('Received message from popup:', event.data, 'from origin:', event.origin);
+      
+      if (event.origin !== window.location.origin) {
+        console.log('Message ignored - wrong origin');
+        return;
+      }
+      
+      if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
+        console.log('OAuth success received, cleaning up...');
+        
+        // Clean up
+        clearInterval(authCheckInterval);
+        clearInterval(checkClosed);
+        window.removeEventListener('message', handleMessage);
+        
+        // Close popup
+        if (!popup.closed) {
+          popup.close();
+        }
+        
+        setIsGoogleLoading(false);
+        setError("");
+        onSuccess();
+      }
+      
+      if (event.data.type === 'GOOGLE_AUTH_ERROR') {
+        console.log('OAuth error received:', event.data.error);
+        
+        // Clean up
+        clearInterval(authCheckInterval);
+        clearInterval(checkClosed);
+        window.removeEventListener('message', handleMessage);
+        
+        setError("Authentication failed");
+        setIsGoogleLoading(false);
+        
+        if (!popup.closed) {
+          popup.close();
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    
+    // Fallback: Poll for authentication success every 2 seconds (in case message doesn't come through)
     const authCheckInterval = setInterval(async () => {
       try {
         // Check if popup is closed
         if (popup.closed) {
           clearInterval(authCheckInterval);
+          clearInterval(checkClosed);
+          window.removeEventListener('message', handleMessage);
           setIsGoogleLoading(false);
           setError("Authentication window was closed");
           return;
@@ -66,7 +114,10 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
         });
         
         if (response.ok) {
+          console.log('Authentication detected via polling, cleaning up...');
           clearInterval(authCheckInterval);
+          clearInterval(checkClosed);
+          window.removeEventListener('message', handleMessage);
           popup.close();
           setIsGoogleLoading(false);
           setError("");
@@ -77,9 +128,21 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       }
     }, 2000);
     
+    // Check if popup is closed manually
+    const checkClosed = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(checkClosed);
+        clearInterval(authCheckInterval);
+        window.removeEventListener('message', handleMessage);
+        setIsGoogleLoading(false);
+      }
+    }, 1000);
+    
     // Auto-stop polling after 5 minutes
     setTimeout(() => {
       clearInterval(authCheckInterval);
+      clearInterval(checkClosed);
+      window.removeEventListener('message', handleMessage);
       if (!popup.closed) {
         popup.close();
       }
