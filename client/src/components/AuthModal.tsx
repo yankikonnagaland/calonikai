@@ -32,22 +32,36 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     setIsGoogleLoading(true);
     setError("");
     
-    // Create a direct link and click it to force navigation outside iframe context
-    console.log('Opening Google OAuth in new tab...');
+    // Create iframe for Google OAuth
+    console.log('Opening Google OAuth in iframe...');
     
-    const link = document.createElement('a');
-    link.href = '/api/auth/google';
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
+    const iframe = document.createElement('iframe');
+    iframe.src = '/api/auth/google';
+    iframe.style.width = '500px';
+    iframe.style.height = '600px';
+    iframe.style.border = '1px solid #ccc';
+    iframe.style.borderRadius = '8px';
+    iframe.style.position = 'fixed';
+    iframe.style.top = '50%';
+    iframe.style.left = '50%';
+    iframe.style.transform = 'translate(-50%, -50%)';
+    iframe.style.zIndex = '10000';
+    iframe.style.backgroundColor = 'white';
+    iframe.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
     
-    // Append to body, click, and remove
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Add overlay background
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    overlay.style.zIndex = '9999';
     
-    // Show message to user
-    setError("Please complete authentication in the new tab, then return here");
-    setIsGoogleLoading(false);
+    // Add iframe to overlay
+    overlay.appendChild(iframe);
+    document.body.appendChild(overlay);
     
     // Poll for authentication success every 2 seconds
     const authCheckInterval = setInterval(async () => {
@@ -58,6 +72,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
         
         if (response.ok) {
           clearInterval(authCheckInterval);
+          document.body.removeChild(overlay);
+          setIsGoogleLoading(false);
           setError("");
           onSuccess();
         }
@@ -66,10 +82,38 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       }
     }, 2000);
     
-    // Auto-stop polling after 5 minutes
-    setTimeout(() => {
+    // Close button for iframe
+    const closeButton = document.createElement('button');
+    closeButton.innerHTML = '×';
+    closeButton.style.position = 'absolute';
+    closeButton.style.top = '10px';
+    closeButton.style.right = '10px';
+    closeButton.style.background = 'white';
+    closeButton.style.border = '1px solid #ccc';
+    closeButton.style.borderRadius = '50%';
+    closeButton.style.width = '30px';
+    closeButton.style.height = '30px';
+    closeButton.style.cursor = 'pointer';
+    closeButton.style.fontSize = '20px';
+    closeButton.style.zIndex = '10001';
+    
+    closeButton.onclick = () => {
       clearInterval(authCheckInterval);
-      setError("Authentication timeout - please try again");
+      document.body.removeChild(overlay);
+      setIsGoogleLoading(false);
+      setError("Authentication cancelled");
+    };
+    
+    overlay.appendChild(closeButton);
+    
+    // Auto-close after 5 minutes
+    setTimeout(() => {
+      if (document.body.contains(overlay)) {
+        clearInterval(authCheckInterval);
+        document.body.removeChild(overlay);
+        setIsGoogleLoading(false);
+        setError("Authentication timeout - please try again");
+      }
     }, 300000);
     
     return;

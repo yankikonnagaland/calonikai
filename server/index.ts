@@ -10,22 +10,23 @@ const app = express();
 app.use(express.json({ limit: '10mb' })); // Increase limit for image uploads
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
-// Security headers - prevent iframe embedding and clickjacking attacks
+// Security headers - allow iframe embedding for OAuth but maintain other security
 app.use((req, res, next) => {
-  res.setHeader('X-Frame-Options', 'DENY');
+  // Allow iframe embedding for OAuth integration
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   
-  // Content Security Policy - prevent various attacks
+  // Content Security Policy - allow iframe for OAuth while maintaining security
   res.setHeader('Content-Security-Policy', 
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://apis.google.com; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://apis.google.com https://accounts.google.com; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "font-src 'self' https://fonts.gstatic.com; " +
     "img-src 'self' data: https: blob:; " +
     "connect-src 'self' https://api.gemini.ai https://generativelanguage.googleapis.com https://accounts.google.com; " +
-    "frame-src 'none'; " +
+    "frame-src 'self' https://accounts.google.com https://apis.google.com; " +
     "object-src 'none'; " +
     "base-uri 'self';"
   );
