@@ -113,47 +113,123 @@ async function searchFoodWithAI(query: string) {
       return createFallbackFood(query);
     }
 
-    const prompt = `You are a nutrition expert specializing in Indian, Asian, and international cuisines. Provide accurate nutritional information. Return only valid JSON with exact fields: name, calories, protein, carbs, fat, portionSize, category, defaultUnit. Focus on realistic values for authentic dishes.
+    const prompt = `You are a certified nutritionist with expertise in global cuisines. Analyze "${query}" and provide precise nutritional data per 100g/100ml.
 
-Analyze this food item and provide comprehensive nutrition data: "${query}"
+CRITICAL REQUIREMENTS:
+- Use authentic nutrition data from USDA/scientific sources
+- Return ONLY valid JSON with no additional text
+- Values must be realistic and accurate
+- For beverages: use per 100ml basis
+- For solids: use per 100g basis
 
-Return JSON format:
+Food Item: "${query}"
+
+Required JSON Response Format:
 {
-  "name": "proper food name",
-  "calories": number (per 100g),
-  "protein": number (grams),
-  "carbs": number (grams), 
-  "fat": number (grams),
-  "portionSize": "typical serving size description",
-  "category": "food category (Main Course/Snacks/Beverages/etc)",
-  "defaultUnit": "best measurement unit (pieces/cups/portions/grams)"
+  "name": "exact food name (capitalize properly)",
+  "calories": precise_number_per_100g_or_100ml,
+  "protein": protein_grams_per_100g_or_100ml,
+  "carbs": carbs_grams_per_100g_or_100ml,
+  "fat": fat_grams_per_100g_or_100ml,
+  "portionSize": "100g" or "100ml",
+  "category": "Beverages|Main Course|Snacks|Dairy|Fruits|Vegetables",
+  "defaultUnit": "cup|piece|portion|grams|ml"
 }
 
 Consider regional variations and authentic preparation methods.`;
 
     const response = await genai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.5-pro", // Use Pro model for better accuracy
       config: {
         responseMimeType: "application/json",
         responseSchema: {
           type: "object",
           properties: {
-            name: { type: "string" },
-            calories: { type: "number" },
-            protein: { type: "number" },
-            carbs: { type: "number" },
-            fat: { type: "number" },
-            portionSize: { type: "string" },
-            category: { type: "string" },
-            defaultUnit: { type: "string" },
+            name: { 
+              type: "string",
+              description: "Properly capitalized food name" 
+            },
+            calories: { 
+              type: "number", 
+              minimum: 0,
+              maximum: 900,
+              description: "Calories per 100g/100ml from USDA/scientific data"
+            },
+            protein: { 
+              type: "number", 
+              minimum: 0,
+              maximum: 100,
+              description: "Protein grams per 100g/100ml"
+            },
+            carbs: { 
+              type: "number", 
+              minimum: 0, 
+              maximum: 100,
+              description: "Carbohydrate grams per 100g/100ml"
+            },
+            fat: { 
+              type: "number", 
+              minimum: 0,
+              maximum: 100,
+              description: "Fat grams per 100g/100ml"
+            },
+            portionSize: { 
+              type: "string",
+              enum: ["100g", "100ml"],
+              description: "Standard measurement basis"
+            },
+            category: { 
+              type: "string",
+              enum: ["Beverages", "Main Course", "Snacks", "Dairy", "Fruits", "Vegetables", "Desserts", "Grains"],
+              description: "Primary food category"
+            },
+            defaultUnit: { 
+              type: "string",
+              enum: ["cup", "piece", "portion", "grams", "ml", "bowl", "slice"],
+              description: "Most appropriate measurement unit"
+            }
           },
           required: ["name", "calories", "protein", "carbs", "fat", "portionSize", "category", "defaultUnit"],
         },
+        temperature: 0.1, // Lower temperature for more consistent results
+        topP: 0.8,
+        maxOutputTokens: 300
       },
       contents: prompt,
     });
 
-    const foodData = JSON.parse(response.text || "{}");
+    // Enhanced response validation and error handling
+    if (!response.text) {
+      console.warn(`Gemini API returned empty response for "${query}"`);
+      return createFallbackFood(query);
+    }
+
+    let foodData;
+    try {
+      foodData = JSON.parse(response.text);
+      
+      // Validate essential fields
+      if (!foodData.name || !foodData.calories || !foodData.category) {
+        console.warn(`Gemini API returned incomplete data for "${query}":`, foodData);
+        return createFallbackFood(query);
+      }
+
+      // Validate realistic ranges
+      if (foodData.calories < 0 || foodData.calories > 900) {
+        console.warn(`Gemini API returned unrealistic calories (${foodData.calories}) for "${query}"`);
+        foodData.calories = Math.min(900, Math.max(0, foodData.calories || getDefaultCalories(query)));
+      }
+
+      console.log(`Gemini API provided accurate data for "${query}":`, {
+        name: foodData.name,
+        calories: foodData.calories,
+        category: foodData.category
+      });
+
+    } catch (parseError) {
+      console.error(`Failed to parse Gemini API response for "${query}":`, parseError);
+      return createFallbackFood(query);
+    }
 
     // Generate consistent hash-based ID
     const foodHash = crypto
