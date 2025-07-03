@@ -11,6 +11,7 @@ import { apiRequest } from "@/lib/queryClient";
 import type { Food } from "@shared/schema";
 import { calculateNutritionFromUnit, formatNutritionDisplay, validateCalorieCalculation } from "@shared/unitCalculations";
 import SubscriptionModal from "./SubscriptionModal";
+import calonikLogo from "@assets/CALONIK LOGO TRANSPARENT_1751559015747.png";
 
 interface FoodSearchProps {
   sessionId: string;
@@ -752,11 +753,15 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
             className="w-full pr-10"
           />
           
-          {/* Snail Loading Spinner */}
+          {/* Logo Loading Spinner */}
           {isSearching && debouncedQuery.length > 0 && (
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-              <div className="flex items-center gap-1">
-                <div className="animate-bounce text-lg">🐌</div>
+              <div className="flex items-center gap-2">
+                <img 
+                  src={calonikLogo} 
+                  alt="Loading..." 
+                  className="w-6 h-6 animate-spin"
+                />
                 <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                   Searching...
                 </div>
