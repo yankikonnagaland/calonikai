@@ -159,6 +159,142 @@ Consider regional variations and authentic preparation methods.`;
 }
 
 // Enhanced fallback food creation with intelligent defaults
+function getBasicFoodDefinition(query: string): any | null {
+  const normalizedQuery = query.toLowerCase().trim();
+  
+  // Basic foods that should always be found in our pre-set database
+  const basicFoods: { [key: string]: any } = {
+    'water': {
+      id: 9999999,
+      name: "Water",
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+      portionSize: "100ml",
+      category: "Beverage",
+      defaultUnit: "glass",
+      smartPortionGrams: null,
+      smartCalories: null,
+      smartProtein: null,
+      smartCarbs: null,
+      smartFat: null,
+      aiConfidence: null
+    },
+    'rice': {
+      id: 9999998,
+      name: "Rice",
+      calories: 130,
+      protein: 2.7,
+      carbs: 28,
+      fat: 0.3,
+      portionSize: "100g",
+      category: "Grain",
+      defaultUnit: "medium portion",
+      smartPortionGrams: null,
+      smartCalories: null,
+      smartProtein: null,
+      smartCarbs: null,
+      smartFat: null,
+      aiConfidence: null
+    },
+    'milk': {
+      id: 9999997,
+      name: "Milk",
+      calories: 42,
+      protein: 3.4,
+      carbs: 5,
+      fat: 1,
+      portionSize: "100ml",
+      category: "Dairy",
+      defaultUnit: "glass",
+      smartPortionGrams: null,
+      smartCalories: null,
+      smartProtein: null,
+      smartCarbs: null,
+      smartFat: null,
+      aiConfidence: null
+    },
+    'tea': {
+      id: 9999996,
+      name: "Tea",
+      calories: 2,
+      protein: 0,
+      carbs: 0.5,
+      fat: 0,
+      portionSize: "100ml",
+      category: "Beverage",
+      defaultUnit: "cup",
+      smartPortionGrams: null,
+      smartCalories: null,
+      smartProtein: null,
+      smartCarbs: null,
+      smartFat: null,
+      aiConfidence: null
+    },
+    'coffee': {
+      id: 9999995,
+      name: "Coffee",
+      calories: 2,
+      protein: 0.3,
+      carbs: 0,
+      fat: 0,
+      portionSize: "100ml",
+      category: "Beverage",
+      defaultUnit: "cup",
+      smartPortionGrams: null,
+      smartCalories: null,
+      smartProtein: null,
+      smartCarbs: null,
+      smartFat: null,
+      aiConfidence: null
+    },
+    'bread': {
+      id: 9999994,
+      name: "Bread",
+      calories: 265,
+      protein: 9,
+      carbs: 49,
+      fat: 3.2,
+      portionSize: "100g",
+      category: "Bakery",
+      defaultUnit: "slice",
+      smartPortionGrams: null,
+      smartCalories: null,
+      smartProtein: null,
+      smartCarbs: null,
+      smartFat: null,
+      aiConfidence: null
+    },
+    'egg': {
+      id: 9999993,
+      name: "Egg",
+      calories: 155,
+      protein: 13,
+      carbs: 1.1,
+      fat: 11,
+      portionSize: "100g",
+      category: "Protein",
+      defaultUnit: "piece",
+      smartPortionGrams: null,
+      smartCalories: null,
+      smartProtein: null,
+      smartCarbs: null,
+      smartFat: null,
+      aiConfidence: null
+    }
+  };
+
+  // Check for exact matches and partial matches
+  for (const [key, food] of Object.entries(basicFoods)) {
+    if (normalizedQuery === key || normalizedQuery.includes(key) || key.includes(normalizedQuery)) {
+      return food;
+    }
+  }
+
+  return null;
+}
+
 function createFallbackFood(query: string) {
   const foodHash = crypto
     .createHash("md5")
@@ -874,16 +1010,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { query } = validation.data;
       let foods: any[] = [];
 
-      // Use fallback storage and AI search
+      // PRIORITY 1: Search main database first
       try {
         foods = await storage.searchFoods(query);
+        console.log(`Database search for "${query}": found ${foods.length} results`);
       } catch (error) {
-        console.warn("Storage search failed");
+        console.warn("Database search failed:", error);
       }
 
-      // If no foods found, use AI search
-      if (foods.length === 0 && process.env.OPENAI_API_KEY) {
+      // PRIORITY 2: Check for basic foods with manual definitions
+      if (foods.length === 0) {
+        const basicFood = getBasicFoodDefinition(query);
+        if (basicFood) {
+          console.log(`Using basic food definition for: ${query}`);
+          foods = [basicFood];
+        }
+      }
+
+      // PRIORITY 3: Only use AI search for truly unknown foods
+      if (foods.length === 0 && process.env.GEMINI_API_KEY && query.length >= 3) {
         try {
+          console.log(`No database results for "${query}", trying AI search...`);
           const aiFood = await searchFoodDirectly(query);
           await storage.storeAiFood(aiFood);
           foods = [aiFood];
