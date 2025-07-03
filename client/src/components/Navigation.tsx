@@ -2,6 +2,8 @@ import { Utensils, User, Activity, Calendar, LogOut, Crown } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import calonikLogo from "@/assets/calonik-logo.png";
+import type { User as UserType } from "@shared/schema";
 
 interface NavigationProps {
   activeTab: string;
@@ -18,9 +20,11 @@ export default function Navigation({ activeTab, onTabChange }: NavigationProps) 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary to-emerald-600 rounded-lg flex items-center justify-center">
-                <Utensils className="w-4 h-4 text-white" />
-              </div>
+              <img 
+                src={calonikLogo} 
+                alt="Calonik Logo"
+                className="w-8 h-8 object-contain"
+              />
               <div className="flex items-center gap-3">
                 <div>
                   <h1 className="text-xl font-semibold">Calonik.ai</h1>
@@ -31,11 +35,11 @@ export default function Navigation({ activeTab, onTabChange }: NavigationProps) 
                 {user && (
                   <div className="flex items-center">
                     <span className="text-sm text-muted-foreground">
-                      Welcome, {user.email?.split('@')[0] || 'User'}
-                      {user.subscriptionStatus === 'premium' && (
+                      Welcome, {(user as any)?.email?.split('@')[0] || 'User'}
+                      {(user as any)?.subscriptionStatus === 'premium' && (
                         <Crown className="w-3 h-3 text-yellow-500 inline ml-0.5" />
                       )}
-                      {user.subscriptionStatus === 'basic' && (
+                      {(user as any)?.subscriptionStatus === 'basic' && (
                         <span className="inline ml-1">🔰</span>
                       )}
                     </span>
