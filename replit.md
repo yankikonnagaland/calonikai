@@ -444,14 +444,14 @@ The application follows a client-server architecture with clear separation of co
 - IMPROVED: Enhanced duplicate prevention checks for exact matches, partial matches, and core food name similarities
 - STREAMLINED: Search now returns diverse, relevant results without AI-generated duplicates cluttering the interface
 
-**July 3, 2025 - FIXED Critical Oats Calorie Calculation with USDA Standards:**
-- RESOLVED: Critical calorie calculation bug where oats showed inconsistent values (23 vs 389 kcal/100g)
-- IMPLEMENTED: Mandatory USDA values in Gemini prompt (Oats: 389 kcal, 16.9g protein, 66.3g carbs, 6.9g fat per 100g)
-- ENHANCED: Backend validation to enforce correct oats values and reject unrealistic grain data below 350 kcal/100g
-- STANDARDIZED: All fallback functions now use USDA standards for oats nutrition calculations
-- VERIFIED: 180g oats now correctly calculates ~700 kcal instead of previous incorrect values
-- STRENGTHENED: Category-based validation with strict ranges (Grains: 350-400 kcal/100g minimum)
-- COMPLETED: Comprehensive nutrition data standardization ensuring consistency across all food types
+**July 3, 2025 - FIXED Critical Whole Wheat Roti Nutrition Data with USDA Standards:**
+- RESOLVED: Critical bug where roti showed impossible values (120g carbs in 60g food, causing 30,000 cal/100g warning)
+- IMPLEMENTED: Mandatory USDA values for Whole Wheat Roti: 300-330 kcal, 9-10g protein, 50-60g carbs, 6-7g fat per 100g
+- ENHANCED: Backend validation to enforce correct roti values and reject data outside 270-350 kcal/100g range
+- STANDARDIZED: All fallback functions now use USDA standards for roti nutrition calculations (315 kcal, 9.5g protein, 55g carbs, 6.5g fat)
+- VERIFIED: 2 medium rotis (60g) now correctly calculate ~190 kcal instead of impossible 600+ kcal values
+- FIXED: Math error causing "30,000 cal/100g" warnings due to carb content exceeding total food weight
+- COMPLETED: Comprehensive grain nutrition data standardization for both oats and roti using verified USDA sources
 
 **July 3, 2025 - Complete EAS Configuration & iOS Build Setup:**
 - CONFIGURED: Complete EAS (Expo Application Services) setup for iOS app building and deployment

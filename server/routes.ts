@@ -119,6 +119,7 @@ async function searchFoodWithAI(query: string) {
 - Oats (rolled/steel-cut): 389 kcal, 16.9g protein, 66.3g carbs, 6.9g fat per 100g
 - Rice (white): 365 kcal, 7.1g protein, 80g carbs, 0.7g fat per 100g
 - Wheat flour: 364 kcal, 10.3g protein, 76g carbs, 1.9g fat per 100g
+- Whole Wheat Roti: 300-330 kcal, 9-10g protein, 50-60g carbs, 6-7g fat per 100g
 
 **STRICT VALIDATION:**
 - Grains/cereals: 350-400 kcal/100g (NO EXCEPTIONS)
@@ -282,6 +283,16 @@ Return ONLY valid JSON:
           foodData.carbs = 66.3;
           foodData.fat = 6.9;
           foodData.name = "Oats";
+        }
+
+        // Enforce specific USDA values for roti
+        if (query.toLowerCase().includes("roti") && (foodData.calories < 270 || foodData.calories > 350)) {
+          console.log(`Roti calories outside range (${foodData.calories}), enforcing USDA standard`);
+          foodData.calories = 315; // Mid-range of 300-330
+          foodData.protein = 9.5; // Mid-range of 9-10
+          foodData.carbs = 55; // Mid-range of 50-60
+          foodData.fat = 6.5; // Mid-range of 6-7
+          foodData.name = "Whole Wheat Roti";
         }
         
         foodData.calories = Math.min(expectedRange.max, Math.max(expectedRange.min, getDefaultCalories(query)));
@@ -597,7 +608,7 @@ function getDefaultCalories(foodName: string): number {
     name.includes("banana")
   )
     return 50;
-  if (name.includes("bread") || name.includes("roti")) return 250;
+  if (name.includes("bread") || name.includes("roti")) return 315;
   if (name.includes("sweet") || name.includes("dessert")) return 300;
   return 100;
 }
@@ -605,6 +616,7 @@ function getDefaultCalories(foodName: string): number {
 function getDefaultProtein(foodName: string): number {
   const name = foodName.toLowerCase();
   if (name.includes("oats")) return 16.9; // USDA standard
+  if (name.includes("roti") || name.includes("bread")) return 9.5; // USDA standard
   if (name.includes("chicken") || name.includes("fish") || name.includes("egg"))
     return 20;
   if (name.includes("dal") || name.includes("lentil")) return 8;
@@ -616,8 +628,8 @@ function getDefaultProtein(foodName: string): number {
 function getDefaultCarbs(foodName: string): number {
   const name = foodName.toLowerCase();
   if (name.includes("oats")) return 66.3; // USDA standard
-  if (name.includes("rice") || name.includes("bread") || name.includes("roti"))
-    return 25;
+  if (name.includes("rice")) return 25;
+  if (name.includes("bread") || name.includes("roti")) return 55;
   if (name.includes("fruit") || name.includes("sweet")) return 15;
   if (name.includes("vegetable")) return 5;
   return 15;
@@ -626,6 +638,7 @@ function getDefaultCarbs(foodName: string): number {
 function getDefaultFat(foodName: string): number {
   const name = foodName.toLowerCase();
   if (name.includes("oats")) return 6.9; // USDA standard
+  if (name.includes("roti") || name.includes("bread")) return 6.5; // USDA standard
   if (
     name.includes("fried") ||
     name.includes("pakora") ||
