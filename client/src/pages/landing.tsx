@@ -6,7 +6,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import AuthModal from "@/components/AuthModal";
 import { useQueryClient } from "@tanstack/react-query";
-import calonikLogo from "@/assets/calonik-logo.png";
 
 export default function Landing() {
   const { toast } = useToast();
@@ -82,19 +81,14 @@ export default function Landing() {
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 to-blue-600/20" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
           <div className="text-center">
-            <div className="flex justify-center mb-8">
-              <img 
-                src={calonikLogo} 
-                alt="Calonik Logo"
-                className="w-40 h-40 md:w-56 md:h-56 object-contain"
-              />
-            </div>
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-             
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-500">
+                Calonik.ai
+              </span>
             </h1>
             <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-              Track calories, manage weight, and achieve fitness goals with our AI-powered food recognition. 
-              Track your nutrition & exercises for a disciplined and healthier living.
+              Track calories, manage weight, and achieve fitness goals with AI-powered food recognition. 
+              Personalized nutrition insights for healthier living with comprehensive exercise tracking.
             </p>
             
             <div className="flex flex-col gap-4 justify-center max-w-md mx-auto">

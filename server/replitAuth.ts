@@ -39,10 +39,9 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: false, // Disable secure cookies for development/Replit
+      secure: process.env.NODE_ENV === 'production', // Enable secure cookies in production
       maxAge: sessionTtl,
       sameSite: 'lax', // Required for OAuth flows
-      domain: undefined, // Let browser handle domain automatically
     },
   });
 }
@@ -113,7 +112,6 @@ export async function setupAuth(app: Express) {
     console.log(`Google OAuth configured with callback URL: ${callbackURL}`);
     console.log(`Using domain: ${domain} (auto-detected for production: ${domain === customDomain})`);
     console.log(`Client ID configured: ${process.env.GOOGLE_CLIENT_ID ? 'Yes' : 'No'}`);
-    console.log(`NOTE: If OAuth fails with DNS_PROBE_FINISHED_NXDOMAIN, configure Google Cloud Console with this callback URL: ${callbackURL}`);
     
     passport.use(new GoogleStrategy(
       {
@@ -130,7 +128,7 @@ export async function setupAuth(app: Express) {
           const profileImageUrl = profile.photos?.[0]?.value;
           
           if (!email) {
-            return done(new Error('No email provided by Google'), false);
+            return done(new Error('No email provided by Google'), null);
           }
 
           // Check if user already exists
@@ -161,7 +159,7 @@ export async function setupAuth(app: Express) {
           return done(null, user);
         } catch (error) {
           console.error('Google OAuth error:', error);
-          return done(error, false);
+          return done(error, null);
         }
       }
     ));
@@ -271,34 +269,8 @@ export async function setupAuth(app: Express) {
       }),
       (req, res) => {
         console.log("Google OAuth callback successful for user:", req.user);
-        
-        // Set a special cookie that the main window can read
-        const user = req.user as any;
-        
-        // Ensure session is saved before redirecting
-        req.session.save((err) => {
-          if (err) {
-            console.error("Session save error:", err);
-            res.redirect("/oauth-callback?error=session_save_failed");
-            return;
-          }
-          
-          // Generate a simple auth token for localStorage transfer
-          const authToken = `auth_${Date.now()}_${Math.random().toString(36).substring(2)}`;
-          
-          // Store token temporarily in global storage
-          const tempAuthStore = (global as any).tempAuthStore || ((global as any).tempAuthStore = new Map());
-          tempAuthStore.set(authToken, {
-            userId: user.id,
-            email: user.email,
-            sessionData: req.session,
-            expires: Date.now() + 30000 // 30 seconds
-          });
-          
-          // Redirect to oauth callback page with token
-          console.log("Redirecting to OAuth callback page with auth token");
-          res.redirect(`/oauth-callback?success=true&email=${encodeURIComponent(user.email)}&userId=${encodeURIComponent(user.id)}&token=${authToken}`);
-        });
+        // For popup flow, redirect to a simple success page that closes the popup
+        res.redirect("/oauth-callback?success=true");
       }
     );
   } else {
@@ -312,73 +284,6 @@ export async function setupAuth(app: Express) {
       });
     });
   }
-
-  // Endpoint to sync session after OAuth completion
-  app.post("/api/auth/sync-session", async (req, res) => {
-    try {
-      const { token } = req.body;
-      
-      if (!token) {
-        return res.status(400).json({ success: false, error: 'Auth token required' });
-      }
-      
-      // Check temp auth store for token
-      const tempAuthStore = (global as any).tempAuthStore;
-      if (!tempAuthStore) {
-        return res.status(400).json({ success: false, error: 'No temp auth store' });
-      }
-      
-      const authData = tempAuthStore.get(token);
-      if (!authData) {
-        return res.status(400).json({ success: false, error: 'Invalid or expired token' });
-      }
-      
-      if (authData.expires < Date.now()) {
-        tempAuthStore.delete(token);
-        return res.status(400).json({ success: false, error: 'Token expired' });
-      }
-      
-      const user = await storage.getUser(authData.userId);
-      if (!user) {
-        tempAuthStore.delete(token);
-        return res.status(400).json({ success: false, error: 'User not found' });
-      }
-      
-      // Clean up token
-      tempAuthStore.delete(token);
-      
-      // Log the user in by creating a session
-      req.login(user, (err) => {
-        if (err) {
-          console.error("Login error in sync:", err);
-          return res.status(500).json({ success: false, error: 'Failed to create session' });
-        }
-        
-        // Save session
-        req.session.save((err) => {
-          if (err) {
-            console.error("Session save error in sync:", err);
-            return res.status(500).json({ success: false, error: 'Session save failed' });
-          }
-          
-          console.log("Session synced for user:", user.email);
-          res.json({ 
-            success: true, 
-            user: { 
-              id: user.id, 
-              email: user.email,
-              name: `${user.firstName} ${user.lastName}`,
-              subscriptionStatus: user.subscriptionStatus
-            }
-          });
-        });
-      });
-      
-    } catch (error) {
-      console.error("Error in session sync:", error);
-      res.status(500).json({ success: false, error: 'Internal server error' });
-    }
-  });
 
   // Logout endpoint
   app.get("/api/logout", (req, res) => {

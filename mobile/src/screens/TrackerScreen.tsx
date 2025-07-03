@@ -7,7 +7,6 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
-  Image,
 } from 'react-native';
 import { Card, Button, ActivityIndicator } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -131,17 +130,8 @@ const TrackerScreen = () => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <Image 
-            source={require('../../assets/icon.png')}
-            style={styles.headerLogo}
-            resizeMode="contain"
-          />
-          <View style={styles.headerText}>
-            <Text style={styles.title}>Calonik.ai</Text>
-            <Text style={styles.subtitle}>Track your daily nutrition</Text>
-          </View>
-        </View>
+        <Text style={styles.title}>Food Tracker</Text>
+        <Text style={styles.subtitle}>Track your daily nutrition</Text>
       </View>
 
       {/* AI Camera Button */}
@@ -283,18 +273,6 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 20,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerLogo: {
-    width: 40,
-    height: 40,
-    marginRight: 12,
-  },
-  headerText: {
-    flex: 1,
   },
   title: {
     fontSize: 28,
