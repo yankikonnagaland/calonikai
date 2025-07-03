@@ -940,21 +940,41 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
             {/* Accurate Nutrition Display with Gram Equivalent */}
             <div className="mb-4">
               {(() => {
-                // Calculate accurate nutrition using new unit system
-                // Prioritize realisticCalories for special foods like water (0 cal)
-                const basePer100g = {
-                  calories: (selectedFood as any).realisticCalories !== undefined ? (selectedFood as any).realisticCalories : (selectedFood.calories || 0),
-                  protein: (selectedFood as any).realisticProtein !== undefined ? (selectedFood as any).realisticProtein : (selectedFood.protein || 0),
-                  carbs: (selectedFood as any).realisticCarbs !== undefined ? (selectedFood as any).realisticCarbs : (selectedFood.carbs || 0),
-                  fat: (selectedFood as any).realisticFat !== undefined ? (selectedFood as any).realisticFat : (selectedFood.fat || 0)
-                };
+                // Priority 1: Use enhanced realistic nutrition if available (from smart unit suggestions)
+                const hasRealisticData = (selectedFood as any).realisticCalories !== undefined;
                 
-                const calculatedNutrition = calculateNutritionFromUnit(
-                  selectedFood.name,
-                  unit,
-                  quantity,
-                  basePer100g
-                );
+                let calculatedNutrition;
+                
+                if (hasRealisticData && unit === (selectedFood as any).smartUnit) {
+                  // Use the exact realistic values from smart unit suggestions
+                  const smartQuantity = (selectedFood as any).smartQuantity || 1;
+                  const scaleFactor = quantity / smartQuantity;
+                  
+                  calculatedNutrition = {
+                    calories: Math.round(((selectedFood as any).realisticCalories || 0) * scaleFactor * 10) / 10,
+                    protein: Math.round(((selectedFood as any).realisticProtein || 0) * scaleFactor * 10) / 10,
+                    carbs: Math.round(((selectedFood as any).realisticCarbs || 0) * scaleFactor * 10) / 10,
+                    fat: Math.round(((selectedFood as any).realisticFat || 0) * scaleFactor * 10) / 10,
+                    totalGrams: Math.round(((selectedFood as any).smartQuantity || 100) * scaleFactor),
+                    gramEquivalent: `${Math.round(((selectedFood as any).smartQuantity || 100) * scaleFactor)}g`,
+                    usedSmartPortion: true
+                  };
+                } else {
+                  // Fallback to calculation using base nutrition values
+                  const basePer100g = {
+                    calories: selectedFood.calories || 0,
+                    protein: selectedFood.protein || 0,
+                    carbs: selectedFood.carbs || 0,
+                    fat: selectedFood.fat || 0
+                  };
+                  
+                  calculatedNutrition = calculateNutritionFromUnit(
+                    selectedFood.name,
+                    unit,
+                    quantity,
+                    basePer100g
+                  );
+                }
                 
                 const validation = validateCalorieCalculation(
                   selectedFood.name,
