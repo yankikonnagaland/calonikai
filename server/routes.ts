@@ -113,39 +113,38 @@ async function searchFoodWithAI(query: string) {
       return createFallbackFood(query);
     }
 
-    const prompt = `You are a nutrition database expert with access to USDA FoodData Central and IFCT databases. Return STANDARDIZED nutrition values per 100g/100ml based on verified scientific data.
+    const prompt = `You are a nutrition database expert. Use ONLY verified USDA FoodData Central or IFCT values. Return nutrition data per 100g/100ml.
 
-**CRITICAL VALIDATION RULES:**
-1. **Standardized Names**: Use common database names (e.g., "Oats" not "Steel-cut oats")
-2. **Calorie Consistency**: ALL varieties of the same base food MUST have consistent calories:
-   - Oats (all types): 370-390 kcal/100g (USDA standard)
-   - Rice (all types): 350-380 kcal/100g 
-   - Wheat products: 340-370 kcal/100g
-3. **Realistic Ranges**:
-   - Grains/cereals: 350-400 kcal/100g
-   - Fruits: 30-100 kcal/100g
-   - Vegetables: 10-50 kcal/100g
-   - Dairy: 50-150 kcal/100g
+**MANDATORY USDA VALUES (DO NOT DEVIATE):**
+- Oats (rolled/steel-cut): 389 kcal, 16.9g protein, 66.3g carbs, 6.9g fat per 100g
+- Rice (white): 365 kcal, 7.1g protein, 80g carbs, 0.7g fat per 100g
+- Wheat flour: 364 kcal, 10.3g protein, 76g carbs, 1.9g fat per 100g
 
-**REJECT values that are:**
-- Below 350 kcal for grains/cereals
-- Inconsistent for same food type
-- Protein+carbs+fat > 100g per 100g
+**STRICT VALIDATION:**
+- Grains/cereals: 350-400 kcal/100g (NO EXCEPTIONS)
+- Fruits: 30-100 kcal/100g
+- Vegetables: 10-50 kcal/100g
+- Protein+carbs+fat must NOT exceed 100g per 100g
+
+**REJECT and return error for:**
+- Oats below 380 kcal/100g
+- Any grain below 350 kcal/100g
+- Unrealistic macronutrient ratios
 
 Food Item: "${query}"
 
-Respond only in valid JSON:
+Return ONLY valid JSON:
 {
   "name": "Standardized food name",
-  "calories": number (MUST be realistic for category),
-  "protein": number (0-100),
-  "carbs": number (0-100),
-  "fat": number (0-100),
+  "calories": number (per 100g - MUST match USDA standards),
+  "protein": number (0-100g per 100g),
+  "carbs": number (0-100g per 100g),
+  "fat": number (0-100g per 100g),
   "portionSizeValue": 100,
   "portionSizeUnit": "g" or "ml",
   "category": "Beverages|Main Course|Snacks|Dairy|Fruits|Vegetables|Desserts|Grains",
   "defaultUnit": "cup|piece|portion|grams|ml|bowl|slice",
-  "source": "USDA|IFCT|Verified Database",
+  "source": "USDA|IFCT|Scientific Database",
   "confidenceScore": number (0.8-1.0 for verified data)
 }`;
 
@@ -269,10 +268,20 @@ Respond only in valid JSON:
       if (foodData.calories < expectedRange.min || foodData.calories > expectedRange.max) {
         console.warn(`Gemini API returned unrealistic calories (${foodData.calories}) for "${query}" in category "${foodData.category}". Expected: ${expectedRange.min}-${expectedRange.max}`);
         
-        // For grains/cereals, enforce minimum standards
+        // For grains/cereals, enforce strict USDA standards
         if (foodData.category === "Grains" && foodData.calories < 350) {
           console.log(`Rejecting low-calorie grain data for "${query}", using fallback`);
           return createFallbackFood(query);
+        }
+        
+        // Enforce specific USDA values for oats
+        if (query.toLowerCase().includes("oats") && foodData.calories < 380) {
+          console.log(`Oats calories too low (${foodData.calories}), enforcing USDA standard`);
+          foodData.calories = 389;
+          foodData.protein = 16.9;
+          foodData.carbs = 66.3;
+          foodData.fat = 6.9;
+          foodData.name = "Oats";
         }
         
         foodData.calories = Math.min(expectedRange.max, Math.max(expectedRange.min, getDefaultCalories(query)));
@@ -576,6 +585,7 @@ function getSmartDefaultUnit(foodName: string, category: string): string {
 // Intelligent calorie defaults based on food type
 function getDefaultCalories(foodName: string): number {
   const name = foodName.toLowerCase();
+  if (name.includes("oats")) return 389; // USDA standard
   if (name.includes("rice") || name.includes("biryani")) return 130;
   if (name.includes("curry") || name.includes("dal")) return 120;
   if (name.includes("chicken")) return 165;
@@ -594,6 +604,7 @@ function getDefaultCalories(foodName: string): number {
 
 function getDefaultProtein(foodName: string): number {
   const name = foodName.toLowerCase();
+  if (name.includes("oats")) return 16.9; // USDA standard
   if (name.includes("chicken") || name.includes("fish") || name.includes("egg"))
     return 20;
   if (name.includes("dal") || name.includes("lentil")) return 8;
@@ -604,6 +615,7 @@ function getDefaultProtein(foodName: string): number {
 
 function getDefaultCarbs(foodName: string): number {
   const name = foodName.toLowerCase();
+  if (name.includes("oats")) return 66.3; // USDA standard
   if (name.includes("rice") || name.includes("bread") || name.includes("roti"))
     return 25;
   if (name.includes("fruit") || name.includes("sweet")) return 15;
@@ -613,6 +625,7 @@ function getDefaultCarbs(foodName: string): number {
 
 function getDefaultFat(foodName: string): number {
   const name = foodName.toLowerCase();
+  if (name.includes("oats")) return 6.9; // USDA standard
   if (
     name.includes("fried") ||
     name.includes("pakora") ||

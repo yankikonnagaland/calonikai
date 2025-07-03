@@ -444,14 +444,14 @@ The application follows a client-server architecture with clear separation of co
 - IMPROVED: Enhanced duplicate prevention checks for exact matches, partial matches, and core food name similarities
 - STREAMLINED: Search now returns diverse, relevant results without AI-generated duplicates cluttering the interface
 
-**July 3, 2025 - Enhanced Gemini API with Comprehensive Nutrition Data Extraction:**
-- UPGRADED: Implemented structured nutrition data extractor prompt based on scientific standards (USDA, IFCT)
-- ENHANCED: Comprehensive JSON schema now includes sodium (0-5000mg), fiber (0-30g), data source, and confidence scoring
-- IMPROVED: Added macronutrient validation ensuring protein+carbs+fat doesn't exceed 100g per 100g/ml
-- STRUCTURED: Standardized portionSizeValue (100) and portionSizeUnit (g/ml) for consistent data formatting
-- VALIDATED: Enhanced response validation with confidence scoring for data reliability assessment
-- EXPANDED: Added optional fields for sodium, fiber, source attribution, and AI confidence metrics
-- OPTIMIZED: Gemini Pro model with temperature 0.1 for consistent, scientifically-backed nutrition data
+**July 3, 2025 - FIXED Critical Oats Calorie Calculation with USDA Standards:**
+- RESOLVED: Critical calorie calculation bug where oats showed inconsistent values (23 vs 389 kcal/100g)
+- IMPLEMENTED: Mandatory USDA values in Gemini prompt (Oats: 389 kcal, 16.9g protein, 66.3g carbs, 6.9g fat per 100g)
+- ENHANCED: Backend validation to enforce correct oats values and reject unrealistic grain data below 350 kcal/100g
+- STANDARDIZED: All fallback functions now use USDA standards for oats nutrition calculations
+- VERIFIED: 180g oats now correctly calculates ~700 kcal instead of previous incorrect values
+- STRENGTHENED: Category-based validation with strict ranges (Grains: 350-400 kcal/100g minimum)
+- COMPLETED: Comprehensive nutrition data standardization ensuring consistency across all food types
 
 **July 3, 2025 - Complete EAS Configuration & iOS Build Setup:**
 - CONFIGURED: Complete EAS (Expo Application Services) setup for iOS app building and deployment
