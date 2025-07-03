@@ -657,11 +657,14 @@ function calculatePortionNutrition(food: any, unit: string, quantity: number) {
   else if (unitLower.includes('80g')) multiplier = quantity * 0.8; // Small item
   else if (unitLower.includes('50g')) multiplier = quantity * 0.5; // Small portion
   
-  // Beverage calculations
-  else if (unitLower.includes('cup') && unitLower.includes('250ml')) multiplier = quantity * 2.5;
-  else if (unitLower.includes('200ml')) multiplier = quantity * 2;
-  else if (unitLower.includes('350ml')) multiplier = quantity * 3.5;
-  else if (unitLower.includes('500ml')) multiplier = quantity * 5;
+  // Beverage calculations - more specific patterns first
+  else if (unitLower.includes('300ml')) multiplier = quantity * 3; // 300ml cup/glass
+  else if (unitLower.includes('250ml')) multiplier = quantity * 2.5; // 250ml cup/glass  
+  else if (unitLower.includes('200ml')) multiplier = quantity * 2; // 200ml glass
+  else if (unitLower.includes('350ml')) multiplier = quantity * 3.5; // 350ml large cup
+  else if (unitLower.includes('400ml')) multiplier = quantity * 4; // 400ml large cup
+  else if (unitLower.includes('500ml')) multiplier = quantity * 5; // 500ml bottle/large cup
+  else if (unitLower.includes('150ml')) multiplier = quantity * 1.5; // 150ml small cup
   
   // Pack size calculations
   else if (unitLower.includes('30g')) multiplier = quantity * 0.3; // Small pack
