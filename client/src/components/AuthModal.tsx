@@ -32,6 +32,13 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     setIsGoogleLoading(true);
     setError("");
     
+    // Direct redirect approach - bypasses popup session isolation issues
+    console.log('Redirecting to Google OAuth...');
+    window.location.href = '/api/auth/google';
+    
+    // The following popup code is kept as backup but not used
+    return;
+    
     // Open popup window for Google OAuth
     const popup = window.open(
       '/api/auth/google',

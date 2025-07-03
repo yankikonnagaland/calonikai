@@ -278,10 +278,9 @@ export async function setupAuth(app: Express) {
             console.error("Session save error:", err);
           }
           
-          // For popup flow, redirect to a success page that closes the popup
-          const userEmail = (req.user as any)?.email || '';
-          
-          res.redirect(`/oauth-callback?success=true&email=${encodeURIComponent(userEmail)}`);
+          // Direct redirect to home page now that we're not using popups
+          console.log("Redirecting to home page after successful OAuth");
+          res.redirect('/');
         });
       }
     );
