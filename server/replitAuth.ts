@@ -113,6 +113,7 @@ export async function setupAuth(app: Express) {
     console.log(`Google OAuth configured with callback URL: ${callbackURL}`);
     console.log(`Using domain: ${domain} (auto-detected for production: ${domain === customDomain})`);
     console.log(`Client ID configured: ${process.env.GOOGLE_CLIENT_ID ? 'Yes' : 'No'}`);
+    console.log(`NOTE: If OAuth fails with DNS_PROBE_FINISHED_NXDOMAIN, configure Google Cloud Console with this callback URL: ${callbackURL}`);
     
     passport.use(new GoogleStrategy(
       {
