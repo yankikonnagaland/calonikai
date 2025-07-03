@@ -436,14 +436,14 @@ The application follows a client-server architecture with clear separation of co
 - FINAL FIX: Removed duplicate division by 100 in Dashboard removal calculation logic that was causing 6-calorie results instead of proper values
 - ENHANCED: Added analytics chart cache invalidation to meal submission and food removal for immediate graph updates
 
-**July 3, 2025 - Optimized Gemini API for Enhanced Food Search Accuracy:**
-- OPTIMIZED: Upgraded from Gemini Flash to Gemini Pro model for significantly better accuracy and reliability
-- ENHANCED: Implemented comprehensive JSON schema validation with strict field requirements and realistic value ranges
-- IMPROVED: Added intelligent response validation to catch incomplete or unrealistic nutrition data from AI
-- CONFIGURED: Fine-tuned API parameters (temperature: 0.1, topP: 0.8) for consistent, accurate responses
-- IMPLEMENTED: Smart result limiting system showing only top 5 most relevant foods instead of overwhelming 20+ options
-- ADDED: Intelligent scoring algorithm prioritizing exact matches, starts-with patterns, and popular foods
-- VERIFIED: Enhanced accuracy in food search with comprehensive error handling and fallback mechanisms
+**July 3, 2025 - Enhanced Gemini API with Comprehensive Nutrition Data Extraction:**
+- UPGRADED: Implemented structured nutrition data extractor prompt based on scientific standards (USDA, IFCT)
+- ENHANCED: Comprehensive JSON schema now includes sodium (0-5000mg), fiber (0-30g), data source, and confidence scoring
+- IMPROVED: Added macronutrient validation ensuring protein+carbs+fat doesn't exceed 100g per 100g/ml
+- STRUCTURED: Standardized portionSizeValue (100) and portionSizeUnit (g/ml) for consistent data formatting
+- VALIDATED: Enhanced response validation with confidence scoring for data reliability assessment
+- EXPANDED: Added optional fields for sodium, fiber, source attribution, and AI confidence metrics
+- OPTIMIZED: Gemini Pro model with temperature 0.1 for consistent, scientifically-backed nutrition data
 
 **July 3, 2025 - Complete EAS Configuration & iOS Build Setup:**
 - CONFIGURED: Complete EAS (Expo Application Services) setup for iOS app building and deployment

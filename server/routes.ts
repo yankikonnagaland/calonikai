@@ -113,30 +113,33 @@ async function searchFoodWithAI(query: string) {
       return createFallbackFood(query);
     }
 
-    const prompt = `You are a certified nutritionist with expertise in global cuisines. Analyze "${query}" and provide precise nutritional data per 100g/100ml.
-
-CRITICAL REQUIREMENTS:
-- Use authentic nutrition data from USDA/scientific sources
-- Return ONLY valid JSON with no additional text
-- Values must be realistic and accurate
-- For beverages: use per 100ml basis
-- For solids: use per 100g basis
+    const prompt = `You are a strict food nutrition data extractor. Given a food name, return its nutrition data per 100g or 100ml using reliable scientific sources like USDA, IFCT, or branded nutrition labels.
 
 Food Item: "${query}"
 
-Required JSON Response Format:
+Respond only in valid JSON following this schema:
 {
-  "name": "exact food name (capitalize properly)",
-  "calories": precise_number_per_100g_or_100ml,
-  "protein": protein_grams_per_100g_or_100ml,
-  "carbs": carbs_grams_per_100g_or_100ml,
-  "fat": fat_grams_per_100g_or_100ml,
-  "portionSize": "100g" or "100ml",
-  "category": "Beverages|Main Course|Snacks|Dairy|Fruits|Vegetables",
-  "defaultUnit": "cup|piece|portion|grams|ml"
+  "name": "Properly capitalized food name",
+  "calories": number (0–900), // Calories per 100g/100ml
+  "protein": number (0–100), // Grams per 100g/100ml
+  "carbs": number (0–100),   // Grams per 100g/100ml
+  "fat": number (0–100),     // Grams per 100g/100ml
+  "portionSizeValue": 100,
+  "portionSizeUnit": "g" or "ml",
+  "category": "Beverages" | "Main Course" | "Snacks" | "Dairy" | "Fruits" | "Vegetables" | "Desserts" | "Grains",
+  "defaultUnit": "cup" | "piece" | "portion" | "grams" | "ml" | "bowl" | "slice",
+  "sodium": optional number (0–5000), // mg per 100g/ml
+  "fiber": optional number (0–30),    // grams per 100g/ml
+  "source": optional string,          // e.g. "USDA", "IFCT"
+  "confidenceScore": optional number (0.0–1.0)
 }
 
-Consider regional variations and authentic preparation methods.`;
+Important rules:
+- Macronutrient sum (protein + carbs + fat) should not exceed 100g.
+- Portion size is always 100g or 100ml.
+- Always select the most accurate food category and defaultUnit.
+- Base your response on verified data sources.
+- If unsure, respond with a confidenceScore < 0.6.`;
 
     const response = await genai.models.generateContent({
       model: "gemini-2.5-pro", // Use Pro model for better accuracy
@@ -153,7 +156,7 @@ Consider regional variations and authentic preparation methods.`;
               type: "number", 
               minimum: 0,
               maximum: 900,
-              description: "Calories per 100g/100ml from USDA/scientific data"
+              description: "Calories per 100g/100ml from scientific sources"
             },
             protein: { 
               type: "number", 
@@ -173,10 +176,15 @@ Consider regional variations and authentic preparation methods.`;
               maximum: 100,
               description: "Fat grams per 100g/100ml"
             },
-            portionSize: { 
+            portionSizeValue: {
+              type: "number",
+              enum: [100],
+              description: "Always 100"
+            },
+            portionSizeUnit: { 
               type: "string",
-              enum: ["100g", "100ml"],
-              description: "Standard measurement basis"
+              enum: ["g", "ml"],
+              description: "Unit for portion size"
             },
             category: { 
               type: "string",
@@ -187,9 +195,31 @@ Consider regional variations and authentic preparation methods.`;
               type: "string",
               enum: ["cup", "piece", "portion", "grams", "ml", "bowl", "slice"],
               description: "Most appropriate measurement unit"
+            },
+            sodium: {
+              type: "number",
+              minimum: 0,
+              maximum: 5000,
+              description: "Sodium content in mg per 100g/100ml"
+            },
+            fiber: {
+              type: "number",
+              minimum: 0,
+              maximum: 30,
+              description: "Fiber content in grams per 100g/100ml"
+            },
+            source: {
+              type: "string",
+              description: "Data source like USDA, IFCT"
+            },
+            confidenceScore: {
+              type: "number",
+              minimum: 0.0,
+              maximum: 1.0,
+              description: "Confidence in data accuracy"
             }
           },
-          required: ["name", "calories", "protein", "carbs", "fat", "portionSize", "category", "defaultUnit"],
+          required: ["name", "calories", "protein", "carbs", "fat", "portionSizeValue", "portionSizeUnit", "category", "defaultUnit"],
         },
         temperature: 0.1, // Lower temperature for more consistent results
         topP: 0.8,
@@ -220,10 +250,14 @@ Consider regional variations and authentic preparation methods.`;
         foodData.calories = Math.min(900, Math.max(0, foodData.calories || getDefaultCalories(query)));
       }
 
-      console.log(`Gemini API provided accurate data for "${query}":`, {
+      console.log(`Gemini API provided enhanced data for "${query}":`, {
         name: foodData.name,
         calories: foodData.calories,
-        category: foodData.category
+        category: foodData.category,
+        source: foodData.source || "Gemini AI",
+        confidenceScore: foodData.confidenceScore || "N/A",
+        sodium: foodData.sodium || "N/A",
+        fiber: foodData.fiber || "N/A"
       });
 
     } catch (parseError) {
@@ -251,7 +285,9 @@ Consider regional variations and authentic preparation methods.`;
         Math.round((Number(foodData.carbs) || getDefaultCarbs(query)) * 10) /
         10,
       fat: Math.round((Number(foodData.fat) || getDefaultFat(query)) * 10) / 10,
-      portionSize: foodData.portionSize || "100g",
+      portionSize: foodData.portionSizeValue && foodData.portionSizeUnit 
+        ? `${foodData.portionSizeValue}${foodData.portionSizeUnit}` 
+        : "100g",
       category: foodData.category || categorizeFood(query),
       defaultUnit:
         foodData.defaultUnit || getSmartDefaultUnit(query, foodData.category),
@@ -260,7 +296,11 @@ Consider regional variations and authentic preparation methods.`;
       smartProtein: null,
       smartCarbs: null,
       smartFat: null,
-      aiConfidence: null,
+      aiConfidence: foodData.confidenceScore || null,
+      // Enhanced nutrition fields
+      sodium: foodData.sodium || null,
+      fiber: foodData.fiber || null,
+      source: foodData.source || "Gemini AI",
     };
 
     // Store for future searches
