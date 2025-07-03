@@ -86,7 +86,7 @@ export default function Landing() {
               <img 
                 src={calonikLogo} 
                 alt="Calonik Logo"
-                className="w-32 h-32 md:w-40 md:h-40 object-contain"
+                className="w-40 h-40 md:w-56 md:h-56 object-contain"
               />
             </div>
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">

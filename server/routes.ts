@@ -703,6 +703,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Auth token validation endpoint for OAuth popup flow
+  app.post("/api/auth/validate-token", async (req: any, res) => {
+    const { token } = req.body;
+    
+    if ((req.session as any).tempAuthToken === token && req.user) {
+      // Token is valid and user is authenticated, establish main session
+      delete (req.session as any).tempAuthToken; // Clean up temp token
+      
+      req.session.save((err: any) => {
+        if (err) {
+          console.error("Session validation error:", err);
+          res.status(500).json({ error: "Session validation failed" });
+        } else {
+          res.json({
+            success: true,
+            user: {
+              id: req.user.id,
+              email: req.user.email,
+              firstName: req.user.firstName,
+              lastName: req.user.lastName,
+              profileImageUrl: req.user.profileImageUrl,
+              subscriptionStatus: req.user.subscriptionStatus,
+              premiumActivated: req.user.premiumActivated,
+            }
+          });
+        }
+      });
+    } else {
+      res.status(401).json({ message: "Invalid or expired token" });
+    }
+  });
+
   // Admin testing route - bypasses all usage limits
   app.post("/api/admin-login", async (req: any, res) => {
     try {

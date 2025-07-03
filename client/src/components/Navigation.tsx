@@ -23,7 +23,7 @@ export default function Navigation({ activeTab, onTabChange }: NavigationProps) 
               <img 
                 src={calonikLogo} 
                 alt="Calonik Logo"
-                className="w-8 h-8 object-contain"
+                className="w-10 h-10 object-contain"
               />
               <div className="flex items-center gap-3">
                 <div>

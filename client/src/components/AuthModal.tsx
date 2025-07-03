@@ -275,30 +275,57 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                   );
                   
                   // Listen for messages from popup
-                  const handleMessage = (event: MessageEvent) => {
+                  const handleMessage = async (event: MessageEvent) => {
                     if (event.origin !== window.location.origin) return;
                     
                     if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
-                      // Authentication successful, refresh session
-                      setTimeout(async () => {
+                      const { token, email } = event.data;
+                      
+                      if (token) {
+                        // Validate the auth token from popup
                         try {
-                          // Try to refresh the session
-                          const response = await fetch('/api/auth/refresh', {
-                            credentials: 'include'
+                          const response = await fetch('/api/auth/validate-token', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            credentials: 'include',
+                            body: JSON.stringify({ token })
                           });
                           
                           if (response.ok) {
-                            // Session is active, reload the page
+                            // Token validated successfully, session established
                             window.location.reload();
                           } else {
-                            // Fallback: just reload
-                            window.location.reload();
+                            // Token validation failed, try refresh
+                            setTimeout(() => {
+                              window.location.reload();
+                            }, 1000);
                           }
                         } catch (error) {
-                          // Fallback: just reload
-                          window.location.reload();
+                          // Error validating token, fallback to reload
+                          setTimeout(() => {
+                            window.location.reload();
+                          }, 1000);
                         }
-                      }, 500);
+                      } else {
+                        // No token, try session refresh
+                        setTimeout(async () => {
+                          try {
+                            const response = await fetch('/api/auth/refresh', {
+                              credentials: 'include'
+                            });
+                            
+                            if (response.ok) {
+                              window.location.reload();
+                            } else {
+                              window.location.reload();
+                            }
+                          } catch (error) {
+                            window.location.reload();
+                          }
+                        }, 1000);
+                      }
                     } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
                       console.error('Google auth error:', event.data.error);
                       // Show error message to user

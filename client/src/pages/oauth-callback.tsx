@@ -5,9 +5,16 @@ export default function OAuthCallback() {
     const urlParams = new URLSearchParams(window.location.search);
     
     if (urlParams.get('success') === 'true') {
+      const token = urlParams.get('token');
+      const email = urlParams.get('email');
+      
       // Success - close popup and let parent window know
       if (window.opener) {
-        window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS' }, window.location.origin);
+        window.opener.postMessage({ 
+          type: 'GOOGLE_AUTH_SUCCESS', 
+          token, 
+          email 
+        }, window.location.origin);
         window.close();
       } else {
         // Fallback if not in popup
