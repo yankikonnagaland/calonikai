@@ -61,9 +61,9 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       }
       
       if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
-        console.log('OAuth success received, cleaning up...');
+        console.log('OAuth success received with token, authenticating main window...');
         
-        // Clean up
+        // Clean up intervals and listeners immediately
         clearInterval(authCheckInterval);
         clearInterval(checkClosed);
         window.removeEventListener('message', handleMessage);
@@ -73,12 +73,46 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
           popup.close();
         }
         
-        setIsGoogleLoading(false);
-        setError("");
-        
-        // Invalidate auth query to refresh user state
-        queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
-        onSuccess();
+        // Use the temporary token to authenticate the main window
+        const token = event.data.token;
+        if (token) {
+          console.log('Using temp token to establish main window session');
+          
+          // Call temp login API to establish session in main window
+          fetch('/api/auth/temp-login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ token }),
+            credentials: 'include' // Important for session cookies
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              console.log('Main window session established successfully');
+              setIsGoogleLoading(false);
+              setError("");
+              
+              // Invalidate auth query to refresh user state
+              queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+              onSuccess();
+            } else {
+              console.error('Failed to establish main window session:', data.error);
+              setError("Authentication failed. Please try again.");
+              setIsGoogleLoading(false);
+            }
+          })
+          .catch(error => {
+            console.error('Error during temp login:', error);
+            setError("Authentication failed. Please try again.");
+            setIsGoogleLoading(false);
+          });
+        } else {
+          console.error('No token received from popup');
+          setError("Authentication failed. Please try again.");
+          setIsGoogleLoading(false);
+        }
       }
       
       if (event.data.type === 'GOOGLE_AUTH_ERROR') {

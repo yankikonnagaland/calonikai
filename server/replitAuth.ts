@@ -272,6 +272,25 @@ export async function setupAuth(app: Express) {
       (req, res) => {
         console.log("Google OAuth callback successful for user:", req.user);
         
+        // Generate a temporary auth token for session transfer
+        const user = req.user as any;
+        const tempToken = `temp_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+        
+        // Store the temporary token with user info for 60 seconds
+        const tempAuthStore = (global as any).tempAuthStore || ((global as any).tempAuthStore = new Map());
+        tempAuthStore.set(tempToken, {
+          userId: user.id,
+          email: user.email,
+          expires: Date.now() + 60000 // 60 seconds
+        });
+        
+        // Clean up expired tokens
+        for (const [key, value] of tempAuthStore.entries()) {
+          if ((value as any).expires < Date.now()) {
+            tempAuthStore.delete(key);
+          }
+        }
+        
         // Ensure session is saved before redirecting
         req.session.save((err) => {
           if (err) {
@@ -280,10 +299,9 @@ export async function setupAuth(app: Express) {
             return;
           }
           
-          // Redirect to oauth callback page with success parameters for popup communication
-          const user = req.user as any;
-          console.log("Redirecting to OAuth callback page with success parameters");
-          res.redirect(`/oauth-callback?success=true&email=${encodeURIComponent(user.email)}&userId=${encodeURIComponent(user.id)}`);
+          // Redirect to oauth callback page with temp token for main window authentication
+          console.log("Redirecting to OAuth callback page with temp token");
+          res.redirect(`/oauth-callback?success=true&email=${encodeURIComponent(user.email)}&userId=${encodeURIComponent(user.id)}&token=${tempToken}`);
         });
       }
     );
@@ -298,6 +316,69 @@ export async function setupAuth(app: Express) {
       });
     });
   }
+
+  // Endpoint for main window to authenticate using temporary token from popup
+  app.post("/api/auth/temp-login", async (req, res) => {
+    try {
+      const { token } = req.body;
+      
+      if (!token) {
+        return res.status(400).json({ error: "Token required" });
+      }
+      
+      const tempAuthStore = (global as any).tempAuthStore || new Map();
+      const tokenData = tempAuthStore.get(token);
+      
+      if (!tokenData) {
+        return res.status(401).json({ error: "Invalid or expired token" });
+      }
+      
+      if (tokenData.expires < Date.now()) {
+        tempAuthStore.delete(token);
+        return res.status(401).json({ error: "Token expired" });
+      }
+      
+      // Get user from database
+      const user = await storage.getUser(tokenData.userId);
+      if (!user) {
+        tempAuthStore.delete(token);
+        return res.status(401).json({ error: "User not found" });
+      }
+      
+      // Delete the temporary token (single use)
+      tempAuthStore.delete(token);
+      
+      // Log the user in by creating a session
+      req.login(user, (err) => {
+        if (err) {
+          console.error("Login error:", err);
+          return res.status(500).json({ error: "Failed to create session" });
+        }
+        
+        // Save session and return user data
+        req.session.save((err) => {
+          if (err) {
+            console.error("Session save error:", err);
+            return res.status(500).json({ error: "Failed to save session" });
+          }
+          
+          res.json({
+            success: true,
+            user: {
+              id: user.id,
+              email: user.email,
+              name: `${user.firstName} ${user.lastName}`,
+              subscriptionStatus: user.subscriptionStatus
+            }
+          });
+        });
+      });
+      
+    } catch (error) {
+      console.error("Temp login error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
 
   // Logout endpoint
   app.get("/api/logout", (req, res) => {
