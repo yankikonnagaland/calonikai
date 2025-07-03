@@ -272,24 +272,8 @@ export async function setupAuth(app: Express) {
       (req, res) => {
         console.log("Google OAuth callback successful for user:", req.user);
         
-        // Generate a temporary auth token for session transfer
+        // Set a special cookie that the main window can read
         const user = req.user as any;
-        const tempToken = `temp_${Date.now()}_${Math.random().toString(36).substring(2)}`;
-        
-        // Store the temporary token with user info for 60 seconds
-        const tempAuthStore = (global as any).tempAuthStore || ((global as any).tempAuthStore = new Map());
-        tempAuthStore.set(tempToken, {
-          userId: user.id,
-          email: user.email,
-          expires: Date.now() + 60000 // 60 seconds
-        });
-        
-        // Clean up expired tokens
-        for (const [key, value] of tempAuthStore.entries()) {
-          if ((value as any).expires < Date.now()) {
-            tempAuthStore.delete(key);
-          }
-        }
         
         // Ensure session is saved before redirecting
         req.session.save((err) => {
@@ -299,9 +283,21 @@ export async function setupAuth(app: Express) {
             return;
           }
           
-          // Redirect to oauth callback page with temp token for main window authentication
-          console.log("Redirecting to OAuth callback page with temp token");
-          res.redirect(`/oauth-callback?success=true&email=${encodeURIComponent(user.email)}&userId=${encodeURIComponent(user.id)}&token=${tempToken}`);
+          // Set a temporary auth success cookie that main window can detect
+          res.cookie('oauth_success', JSON.stringify({
+            userId: user.id,
+            email: user.email,
+            timestamp: Date.now()
+          }), {
+            maxAge: 10000, // 10 seconds
+            httpOnly: false, // Allow JS access
+            secure: false,
+            sameSite: 'lax'
+          });
+          
+          // Redirect to oauth callback page for popup communication
+          console.log("Redirecting to OAuth callback page with success");
+          res.redirect(`/oauth-callback?success=true&email=${encodeURIComponent(user.email)}&userId=${encodeURIComponent(user.id)}`);
         });
       }
     );

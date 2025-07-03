@@ -4,11 +4,12 @@ export default function OAuthCallback() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     console.log('OAuth callback page loaded with params:', Object.fromEntries(urlParams));
+    console.log('window.opener exists:', !!window.opener);
+    console.log('window.opener.closed:', window.opener?.closed);
     
     if (urlParams.get('success') === 'true') {
       const email = urlParams.get('email');
-      const token = urlParams.get('token');
-      console.log('OAuth success detected, email:', email, 'token:', token);
+      console.log('OAuth success detected, email:', email);
       
       // Success - close popup and let parent window know
       if (window.opener && !window.opener.closed) {
@@ -20,10 +21,9 @@ export default function OAuthCallback() {
             window.opener.postMessage({ 
               type: 'GOOGLE_AUTH_SUCCESS', 
               email,
-              token,
               timestamp: Date.now()
             }, window.location.origin);
-            console.log('Success message sent with token');
+            console.log('Success message sent');
           } catch (error) {
             console.error('Error sending message:', error);
           }
