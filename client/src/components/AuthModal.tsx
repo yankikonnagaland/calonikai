@@ -356,16 +356,38 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                     if (event.origin !== window.location.origin) return;
                     
                     if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
-                      const { token, email } = event.data;
+                      const { token, email, cacheKey, sessionId } = event.data;
                       
-                      console.log('Received OAuth success message:', email);
+                      console.log('Received OAuth success message:', email, 'cacheKey:', cacheKey);
                       
-                      // Strategy 1: Check localStorage first
+                      // Strategy 1: Try cache retrieval with postMessage data
+                      if (cacheKey) {
+                        try {
+                          const cacheResponse = await fetch('/api/auth/retrieve-cache', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            credentials: 'include',
+                            body: JSON.stringify({ cacheKey })
+                          });
+                          
+                          if (cacheResponse.ok) {
+                            console.log('Session established successfully from postMessage cache');
+                            window.location.reload();
+                            return;
+                          }
+                        } catch (error) {
+                          console.log('Cache retrieval from postMessage failed:', error);
+                        }
+                      }
+                      
+                      // Strategy 2: Check localStorage 
                       if (await checkAuthSuccess()) {
                         return;
                       }
                       
-                      // Strategy 2: Try session establishment by email
+                      // Strategy 3: Try session establishment by email
                       if (email) {
                         try {
                           const response = await fetch('/api/auth/establish-session', {
