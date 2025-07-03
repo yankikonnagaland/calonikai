@@ -231,7 +231,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       return {
         unit: isSpecialRice ? "medium portion (200g)" : "medium portion (150g)",
         quantity: 1,
-        unitOptions: ["small portion (100g)", "medium portion (150g)", "large portion (200g)", "bowl", "cup"],
+        unitOptions: ["small portion (100g)", "medium portion (150g)", "large portion (200g)", "bowl", "cup", "grams"],
         reasoning: isSpecialRice ? "Special rice dishes are served in larger 200g portions" : "Plain rice typically served in 150g portions"
       };
     }
@@ -245,21 +245,21 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
         return {
           unit: "medium bowl (200g)",
           quantity: 1,
-          unitOptions: ["small bowl (150g)", "medium bowl (200g)", "large bowl (300g)"],
+          unitOptions: ["small bowl (150g)", "medium bowl (200g)", "large bowl (300g)", "grams"],
           reasoning: "Dal is typically served in 200g portions as main accompaniment"
         };
       } else if (isSoup) {
         return {
           unit: "bowl (250ml)",
           quantity: 1,
-          unitOptions: ["small bowl (200ml)", "bowl (250ml)", "large bowl (350ml)"],
+          unitOptions: ["small bowl (200ml)", "bowl (250ml)", "large bowl (350ml)", "grams"],
           reasoning: "Soups are liquid-based, measured in ml portions"
         };
       } else {
         return {
           unit: "serving (150g)",
           quantity: 1,
-          unitOptions: ["small serving (100g)", "serving (150g)", "large serving (200g)"],
+          unitOptions: ["small serving (100g)", "serving (150g)", "large serving (200g)", "grams"],
           reasoning: "Curries are typically served in 150g portions with rice"
         };
       }

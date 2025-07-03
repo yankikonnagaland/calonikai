@@ -444,7 +444,7 @@ The application follows a client-server architecture with clear separation of co
 - IMPROVED: Enhanced duplicate prevention checks for exact matches, partial matches, and core food name similarities
 - STREAMLINED: Search now returns diverse, relevant results without AI-generated duplicates cluttering the interface
 
-**July 3, 2025 - Enhanced Food Category Display & Fixed Nut Piece Calculations:**
+**July 3, 2025 - Enhanced Food Category Display & Added Grams Unit for Main Course:**
 - ADDED: Food category display in search results showing food type badges (Snacks, Beverages, etc.)
 - ENHANCED: Search results now show both nutrition info and food category for better food identification
 - FIXED: Nut piece calculations using specific weights per piece (almond: 1.2g, cashew: 1.7g, walnut: 2.5g)
@@ -453,6 +453,9 @@ The application follows a client-server architecture with clear separation of co
 - STANDARDIZED: Individual nuts (almond, cashew, walnut, peanut) use piece-based measurements
 - MAINTAINED: Dried fruits and mixed nuts continue using handful-based measurements
 - VERIFIED: Almond pieces now show realistic calorie calculations based on 1.2g per piece
+- ADDED: "grams" unit option for main course foods (rice, dal, curries, soups) for precise measurements
+- ENHANCED: Users can now enter exact gram amounts for rice, biryani, dal, and curry dishes
+- IMPROVED: Main course foods now support both portion-based (bowl, serving) and weight-based (grams) measurements
 
 **July 3, 2025 - FIXED Critical Beverage Unit Calculation Bug & Coca-Cola Standards:**
 - RESOLVED: Unit calculation bug where "can (330ml)" showed 43 calories instead of correct 141.9 calories
