@@ -39,9 +39,10 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // Enable secure cookies in production
+      secure: false, // Disable secure cookies for development/Replit
       maxAge: sessionTtl,
       sameSite: 'lax', // Required for OAuth flows
+      domain: undefined, // Let browser handle domain automatically
     },
   });
 }
@@ -128,7 +129,7 @@ export async function setupAuth(app: Express) {
           const profileImageUrl = profile.photos?.[0]?.value;
           
           if (!email) {
-            return done(new Error('No email provided by Google'), null);
+            return done(new Error('No email provided by Google'), false);
           }
 
           // Check if user already exists
@@ -159,7 +160,7 @@ export async function setupAuth(app: Express) {
           return done(null, user);
         } catch (error) {
           console.error('Google OAuth error:', error);
-          return done(error, null);
+          return done(error, false);
         }
       }
     ));
@@ -269,8 +270,18 @@ export async function setupAuth(app: Express) {
       }),
       (req, res) => {
         console.log("Google OAuth callback successful for user:", req.user);
-        // For popup flow, redirect to a simple success page that closes the popup
-        res.redirect("/oauth-callback?success=true");
+        
+        // Ensure session is saved before redirecting
+        req.session.save((err) => {
+          if (err) {
+            console.error("Session save error:", err);
+          }
+          
+          // For popup flow, redirect to a success page that closes the popup
+          // Pass user data to help with state refresh
+          const userEmail = (req.user as any)?.email || '';
+          res.redirect(`/oauth-callback?success=true&email=${encodeURIComponent(userEmail)}`);
+        });
       }
     );
   } else {

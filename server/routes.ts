@@ -675,6 +675,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Session refresh endpoint to help with OAuth popup issues
+  app.get("/api/auth/refresh", async (req: any, res) => {
+    if (req.user) {
+      // Force session save and return user
+      req.session.save((err: any) => {
+        if (err) {
+          console.error("Session refresh error:", err);
+          res.status(500).json({ error: "Session refresh failed" });
+        } else {
+          res.json({ 
+            success: true, 
+            user: {
+              id: req.user.id,
+              email: req.user.email,
+              firstName: req.user.firstName,
+              lastName: req.user.lastName,
+              profileImageUrl: req.user.profileImageUrl,
+              subscriptionStatus: req.user.subscriptionStatus,
+              premiumActivated: req.user.premiumActivated,
+            }
+          });
+        }
+      });
+    } else {
+      res.status(401).json({ message: "No session found" });
+    }
+  });
+
   // Admin testing route - bypasses all usage limits
   app.post("/api/admin-login", async (req: any, res) => {
     try {

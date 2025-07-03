@@ -35,11 +35,11 @@ export default function Navigation({ activeTab, onTabChange }: NavigationProps) 
                 {user && (
                   <div className="flex items-center">
                     <span className="text-sm text-muted-foreground">
-                      Welcome, {(user as any)?.email?.split('@')[0] || 'User'}
-                      {(user as any)?.subscriptionStatus === 'premium' && (
+                      Welcome, {(user as { email?: string })?.email?.split('@')[0] || 'User'}
+                      {(user as { subscriptionStatus?: string })?.subscriptionStatus === 'premium' && (
                         <Crown className="w-3 h-3 text-yellow-500 inline ml-0.5" />
                       )}
-                      {(user as any)?.subscriptionStatus === 'basic' && (
+                      {(user as { subscriptionStatus?: string })?.subscriptionStatus === 'basic' && (
                         <span className="inline ml-1">🔰</span>
                       )}
                     </span>

@@ -274,14 +274,59 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                     'width=500,height=600,scrollbars=yes,resizable=yes'
                   );
                   
-                  // Listen for popup close or success
+                  // Listen for messages from popup
+                  const handleMessage = (event: MessageEvent) => {
+                    if (event.origin !== window.location.origin) return;
+                    
+                    if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
+                      // Authentication successful, refresh session
+                      setTimeout(async () => {
+                        try {
+                          // Try to refresh the session
+                          const response = await fetch('/api/auth/refresh', {
+                            credentials: 'include'
+                          });
+                          
+                          if (response.ok) {
+                            // Session is active, reload the page
+                            window.location.reload();
+                          } else {
+                            // Fallback: just reload
+                            window.location.reload();
+                          }
+                        } catch (error) {
+                          // Fallback: just reload
+                          window.location.reload();
+                        }
+                      }, 500);
+                    } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
+                      console.error('Google auth error:', event.data.error);
+                      // Show error message to user
+                    }
+                  };
+                  
+                  window.addEventListener('message', handleMessage);
+                  
+                  // Fallback: check if popup is closed manually
                   const checkClosed = setInterval(() => {
                     if (popup?.closed) {
                       clearInterval(checkClosed);
-                      // Check if authentication was successful by refreshing user state
-                      setTimeout(() => {
-                        window.location.reload();
-                      }, 500);
+                      window.removeEventListener('message', handleMessage);
+                      
+                      // Give a bit more time then try to refresh
+                      setTimeout(async () => {
+                        try {
+                          const response = await fetch('/api/auth/refresh', {
+                            credentials: 'include'
+                          });
+                          
+                          if (response.ok) {
+                            window.location.reload();
+                          }
+                        } catch (error) {
+                          // Silent fail for fallback
+                        }
+                      }, 1000);
                     }
                   }, 1000);
                   
@@ -290,6 +335,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                     if (!popup?.closed) {
                       popup?.close();
                       clearInterval(checkClosed);
+                      window.removeEventListener('message', handleMessage);
                     }
                   }, 300000);
                 }}
