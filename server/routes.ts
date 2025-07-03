@@ -856,6 +856,8 @@ function calculatePortionNutrition(food: any, unit: string, quantity: number) {
   // Extract weight/volume from unit descriptions and calculate multiplier
   const unitLower = unit.toLowerCase();
   
+
+  
   // For grams unit, calculate direct multiplier based on gram amount
   if (unitLower === 'grams' || unit === 'grams') {
     // For raw gram units, divide by 100 to get the multiplier (since base is per 100g)
@@ -885,7 +887,11 @@ function calculatePortionNutrition(food: any, unit: string, quantity: number) {
   else if (unitLower.includes('120g')) multiplier = quantity * 1.2; // Medium fruit/item
   else if (unitLower.includes('100g')) multiplier = quantity * 1; // Standard portion
   else if (unitLower.includes('80g')) multiplier = quantity * 0.8; // Small item
+  else if (unitLower.includes('70g')) multiplier = quantity * 0.7; // 70g portion
+  else if (unitLower.includes('60g')) multiplier = quantity * 0.6; // 60g portion
   else if (unitLower.includes('50g')) multiplier = quantity * 0.5; // Small portion
+  else if (unitLower.includes('40g')) multiplier = quantity * 0.4; // 40g portion
+  else if (unitLower.includes('30g')) multiplier = quantity * 0.3; // 30g portion
   
   // Beverage calculations - more specific patterns first
   else if (unitLower.includes('300ml')) multiplier = quantity * 3; // 300ml cup/glass
