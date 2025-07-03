@@ -279,16 +279,34 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                     const authSuccess = localStorage.getItem('oauth_success');
                     if (authSuccess) {
                       try {
-                        const { email, token, sessionId, timestamp } = JSON.parse(authSuccess);
+                        const { email, token, sessionId, cacheKey, timestamp } = JSON.parse(authSuccess);
                         
                         // Check if the auth success is recent (within 30 seconds)
                         if (Date.now() - timestamp < 30000) {
-                          console.log('Found OAuth success in localStorage:', email, 'sessionId:', sessionId);
+                          console.log('Found OAuth success in localStorage:', email, 'cacheKey:', cacheKey);
                           
                           // Clear the localStorage flag
                           localStorage.removeItem('oauth_success');
                           
-                          // Try session transfer first if we have sessionId
+                          // Try cache retrieval first if we have cacheKey
+                          if (cacheKey) {
+                            const cacheResponse = await fetch('/api/auth/retrieve-cache', {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              credentials: 'include',
+                              body: JSON.stringify({ cacheKey })
+                            });
+                            
+                            if (cacheResponse.ok) {
+                              console.log('Session established successfully from auth cache');
+                              window.location.reload();
+                              return true;
+                            }
+                          }
+                          
+                          // Fallback to session transfer if we have sessionId
                           if (sessionId) {
                             const transferResponse = await fetch('/api/auth/transfer-session', {
                               method: 'POST',
@@ -306,7 +324,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                             }
                           }
                           
-                          // Fallback to establish session
+                          // Final fallback to establish session
                           const response = await fetch('/api/auth/establish-session', {
                             method: 'POST',
                             headers: {

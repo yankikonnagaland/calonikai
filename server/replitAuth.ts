@@ -291,7 +291,27 @@ export async function setupAuth(app: Express) {
           // Store the session ID for transfer
           console.log('OAuth session ID for transfer:', req.sessionID);
           
-          res.redirect(`/oauth-callback?success=true&email=${encodeURIComponent(userEmail)}&token=${authToken}&sessionId=${req.sessionID}`);
+          // Store the authenticated user data in a temporary cache for main window pickup
+          global.authCache = global.authCache || new Map();
+          const cacheKey = `auth_${userId}_${Date.now()}`;
+          global.authCache.set(cacheKey, {
+            userId,
+            email: userEmail,
+            sessionId: req.sessionID,
+            timestamp: Date.now(),
+            user: req.user
+          });
+          
+          // Clean up old cache entries (older than 1 minute)
+          setTimeout(() => {
+            for (const [key, value] of global.authCache.entries()) {
+              if (Date.now() - value.timestamp > 60000) {
+                global.authCache.delete(key);
+              }
+            }
+          }, 60000);
+          
+          res.redirect(`/oauth-callback?success=true&email=${encodeURIComponent(userEmail)}&token=${authToken}&sessionId=${req.sessionID}&cacheKey=${cacheKey}`);
         });
       }
     );

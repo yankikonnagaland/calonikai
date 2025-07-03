@@ -831,6 +831,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cache retrieval endpoint for OAuth authentication
+  app.post("/api/auth/retrieve-cache", async (req: any, res) => {
+    try {
+      const { cacheKey } = req.body;
+      
+      if (!cacheKey) {
+        return res.status(400).json({ message: "Cache key required" });
+      }
+      
+      const authCache = global.authCache || new Map();
+      const cachedAuth = authCache.get(cacheKey);
+      
+      if (!cachedAuth) {
+        return res.status(404).json({ message: "Auth cache not found or expired" });
+      }
+      
+      // Check if cache is still valid (within 1 minute)
+      if (Date.now() - cachedAuth.timestamp > 60000) {
+        authCache.delete(cacheKey);
+        return res.status(404).json({ message: "Auth cache expired" });
+      }
+      
+      console.log('Retrieved auth cache for user:', cachedAuth.email);
+      
+      // Log the user in using cached data
+      req.login(cachedAuth.user, (err: any) => {
+        if (err) {
+          console.error("Cache login error:", err);
+          return res.status(500).json({ message: "Failed to establish session from cache" });
+        }
+        
+        // Force session save
+        req.session.save((saveErr: any) => {
+          if (saveErr) {
+            console.error("Cache session save error:", saveErr);
+          }
+          
+          // Clean up used cache
+          authCache.delete(cacheKey);
+          
+          console.log("Session established from cache for user:", cachedAuth.email);
+          res.json({
+            success: true,
+            user: {
+              id: cachedAuth.user.id,
+              email: cachedAuth.user.email,
+              firstName: cachedAuth.user.firstName,
+              lastName: cachedAuth.user.lastName,
+              profileImageUrl: cachedAuth.user.profileImageUrl,
+              subscriptionStatus: cachedAuth.user.subscriptionStatus,
+              premiumActivated: cachedAuth.user.premiumActivatedAt,
+            }
+          });
+        });
+      });
+    } catch (error) {
+      console.error('Cache retrieval error:', error);
+      res.status(500).json({ message: "Failed to retrieve auth cache" });
+    }
+  });
+
   // Admin testing route - bypasses all usage limits
   app.post("/api/admin-login", async (req: any, res) => {
     try {
