@@ -34,7 +34,19 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     
     // Direct redirect approach - bypasses popup session isolation issues
     console.log('Redirecting to Google OAuth...');
-    window.location.href = '/api/auth/google';
+    
+    // Force a direct navigation to break out of any iframe restrictions
+    try {
+      if (window.top && window.top !== window) {
+        window.top.location.assign('/api/auth/google');
+      } else {
+        window.location.assign('/api/auth/google');
+      }
+    } catch (error) {
+      // Fallback if cross-origin restrictions prevent access to window.top
+      console.log('Using fallback redirect method');
+      window.location.replace('/api/auth/google');
+    }
     
     // The following popup code is kept as backup but not used
     return;
