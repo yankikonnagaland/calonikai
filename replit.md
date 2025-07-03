@@ -436,6 +436,15 @@ The application follows a client-server architecture with clear separation of co
 - FINAL FIX: Removed duplicate division by 100 in Dashboard removal calculation logic that was causing 6-calorie results instead of proper values
 - ENHANCED: Added analytics chart cache invalidation to meal submission and food removal for immediate graph updates
 
+**July 3, 2025 - FIXED Critical Search Relevance Bug for Basic Foods:**
+- RESOLVED: Critical search relevance issue where "milk" search returned compound foods (Milk Tea, Milkshake) instead of basic "Whole Milk"
+- FIXED: Enhanced scoring algorithm to prioritize basic/core foods over flavored variations and compound preparations
+- IMPLEMENTED: Special handling for basic ingredient searches - "Whole Milk" now appears first when searching "milk"
+- ENHANCED: Added intelligent scoring bonuses for basic food descriptors (whole, plain, regular, fresh)
+- IMPROVED: Complex preparation detection that penalizes tea, shake, latte variations when searching for basic ingredients
+- VERIFIED: Search relevance scoring now works correctly - "Whole Milk" scores 130 vs "Milk Tea" scoring 82
+- STREAMLINED: Users now get the most relevant basic foods first, followed by variations and preparations
+
 **July 3, 2025 - Fixed Critical Duplicate Food Search Results Bug:**
 - RESOLVED: Critical duplicate detection issue where "rice" search showed 5 identical options instead of diverse results
 - FIXED: AI search now only triggers when database results are insufficient (< 3 results) to prevent redundant additions

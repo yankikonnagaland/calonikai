@@ -60,6 +60,14 @@ function limitToMostRelevant(foods: any[], query: string, maxResults: number = 5
     // Exact match gets highest score
     if (nameLower === queryLower) score += 100;
     
+    // Basic form of food (like "Whole Milk" for "milk") gets very high score
+    else if (nameLower === `whole ${queryLower}` || nameLower === `${queryLower} whole`) score += 95;
+    
+    // Special handling for basic foods - if someone searches "milk", "Whole Milk" should be top result
+    else if (queryLower === 'milk' && nameLower === 'whole milk') score += 95;
+    else if (queryLower === 'rice' && nameLower === 'basmati rice') score += 95;
+    else if (queryLower === 'bread' && nameLower === 'white bread') score += 95;
+    
     // Starts with query gets high score
     else if (nameLower.startsWith(queryLower)) score += 80;
     
@@ -75,6 +83,14 @@ function limitToMostRelevant(foods: any[], query: string, maxResults: number = 5
     // Common/popular foods get slight boost
     const popularFoods = ['tea', 'milk', 'coffee', 'rice', 'dal', 'chicken', 'paneer'];
     if (popularFoods.some(popular => nameLower.includes(popular))) score += 10;
+    
+    // Boost basic/core foods over flavored varieties
+    const basicWords = ['plain', 'whole', 'regular', 'fresh'];
+    if (basicWords.some(basic => nameLower.includes(basic))) score += 15;
+    
+    // Penalize complex preparations when searching for basic ingredient
+    const complexWords = ['tea', 'shake', 'latte', 'cappuccino', 'frappe', 'smoothie'];
+    if (complexWords.some(complexWord => nameLower.includes(complexWord)) && !complexWords.some(complexWord => queryLower.includes(complexWord))) score -= 20;
     
     return { food, score };
   });
