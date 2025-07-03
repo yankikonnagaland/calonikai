@@ -1181,16 +1181,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // PRIORITY 3: Only use AI search for truly unknown foods
-      if (foods.length === 0 && process.env.GEMINI_API_KEY && query.length >= 3) {
+      // PRIORITY 3: Add AI search results alongside database results for enhanced variety
+      if (process.env.GEMINI_API_KEY && query.length >= 3) {
         try {
-          console.log(`No database results for "${query}", trying AI search...`);
+          console.log(`Searching AI for additional "${query}" options...`);
           const aiFood = await searchFoodDirectly(query);
-          await storage.storeAiFood(aiFood);
-          foods = [aiFood];
+          
+          // Check if this AI food is similar to existing database foods
+          const isUnique = !foods.some(existingFood => 
+            existingFood.name.toLowerCase().includes(aiFood.name.toLowerCase()) ||
+            aiFood.name.toLowerCase().includes(existingFood.name.toLowerCase())
+          );
+          
+          if (isUnique) {
+            await storage.storeAiFood(aiFood);
+            foods.push(aiFood); // Add AI food to existing results
+            console.log(`Added unique AI food: ${aiFood.name} to results`);
+          } else {
+            console.log(`AI food "${aiFood.name}" too similar to existing results, skipping`);
+          }
         } catch (aiError) {
-          console.warn("AI search failed, using intelligent fallback");
-          foods = [createFallbackFood(query)];
+          console.warn("AI search failed:", aiError.message);
+          if (foods.length === 0) {
+            foods = [createFallbackFood(query)];
+          }
         }
       } else if (foods.length === 0) {
         foods = [createFallbackFood(query)];
