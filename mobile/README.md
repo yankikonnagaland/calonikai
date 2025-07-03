@@ -45,26 +45,48 @@ mobile/
 
 ## Setup Instructions
 
-1. **Install Dependencies**:
+### Quick Setup
+```bash
+cd mobile
+./setup-eas.sh
+```
+
+### Manual Setup
+1. **Install EAS CLI**:
    ```bash
-   cd mobile
+   npm install -g @expo/eas-cli
+   ```
+
+2. **Login to Expo**:
+   ```bash
+   eas login
+   ```
+
+3. **Initialize Project**:
+   ```bash
+   eas init --id
+   ```
+
+4. **Install Dependencies**:
+   ```bash
    npm install
    ```
 
-2. **Install Expo CLI**:
-   ```bash
-   npm install -g @expo/cli
-   ```
-
-3. **Start Development Server**:
+5. **Start Development Server**:
    ```bash
    npm start
    ```
 
-4. **Run on Device/Simulator**:
-   - iOS: `npm run ios` (requires Xcode)
-   - Android: `npm run android` (requires Android Studio)
-   - Web: `npm run web`
+### Building for iOS
+```bash
+# Preview build for TestFlight
+npm run preview:ios
+
+# Production build for App Store
+eas build --platform ios --profile production
+```
+
+See `QUICK_COMMANDS.md` for all available commands.
 
 ## Development Setup
 
