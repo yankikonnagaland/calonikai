@@ -283,21 +283,21 @@ export async function setupAuth(app: Express) {
             return;
           }
           
-          // Set a temporary auth success cookie that main window can detect
-          res.cookie('oauth_success', JSON.stringify({
+          // Generate a simple auth token for localStorage transfer
+          const authToken = `auth_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+          
+          // Store token temporarily in global storage
+          const tempAuthStore = (global as any).tempAuthStore || ((global as any).tempAuthStore = new Map());
+          tempAuthStore.set(authToken, {
             userId: user.id,
             email: user.email,
-            timestamp: Date.now()
-          }), {
-            maxAge: 10000, // 10 seconds
-            httpOnly: false, // Allow JS access
-            secure: false,
-            sameSite: 'lax'
+            sessionData: req.session,
+            expires: Date.now() + 30000 // 30 seconds
           });
           
-          // Redirect to oauth callback page for popup communication
-          console.log("Redirecting to OAuth callback page with success");
-          res.redirect(`/oauth-callback?success=true&email=${encodeURIComponent(user.email)}&userId=${encodeURIComponent(user.id)}`);
+          // Redirect to oauth callback page with token
+          console.log("Redirecting to OAuth callback page with auth token");
+          res.redirect(`/oauth-callback?success=true&email=${encodeURIComponent(user.email)}&userId=${encodeURIComponent(user.id)}&token=${authToken}`);
         });
       }
     );
@@ -316,19 +316,36 @@ export async function setupAuth(app: Express) {
   // Endpoint to sync session after OAuth completion
   app.post("/api/auth/sync-session", async (req, res) => {
     try {
-      // Check if there's an oauth_success cookie
-      const oauthCookie = req.cookies.oauth_success;
+      const { token } = req.body;
       
-      if (!oauthCookie) {
-        return res.status(400).json({ success: false, error: 'No OAuth session found' });
+      if (!token) {
+        return res.status(400).json({ success: false, error: 'Auth token required' });
       }
       
-      const oauthData = JSON.parse(oauthCookie);
-      const user = await storage.getUser(oauthData.userId);
+      // Check temp auth store for token
+      const tempAuthStore = (global as any).tempAuthStore;
+      if (!tempAuthStore) {
+        return res.status(400).json({ success: false, error: 'No temp auth store' });
+      }
       
+      const authData = tempAuthStore.get(token);
+      if (!authData) {
+        return res.status(400).json({ success: false, error: 'Invalid or expired token' });
+      }
+      
+      if (authData.expires < Date.now()) {
+        tempAuthStore.delete(token);
+        return res.status(400).json({ success: false, error: 'Token expired' });
+      }
+      
+      const user = await storage.getUser(authData.userId);
       if (!user) {
+        tempAuthStore.delete(token);
         return res.status(400).json({ success: false, error: 'User not found' });
       }
+      
+      // Clean up token
+      tempAuthStore.delete(token);
       
       // Log the user in by creating a session
       req.login(user, (err) => {
@@ -336,9 +353,6 @@ export async function setupAuth(app: Express) {
           console.error("Login error in sync:", err);
           return res.status(500).json({ success: false, error: 'Failed to create session' });
         }
-        
-        // Clear the OAuth cookie
-        res.clearCookie('oauth_success');
         
         // Save session
         req.session.save((err) => {

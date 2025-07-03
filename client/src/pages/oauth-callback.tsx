@@ -9,11 +9,18 @@ export default function OAuthCallback() {
     
     if (urlParams.get('success') === 'true') {
       const email = urlParams.get('email');
-      console.log('OAuth success detected, email:', email);
+      const token = urlParams.get('token');
+      console.log('OAuth success detected, email:', email, 'token:', token);
+      
+      // Store token in localStorage for main window to access
+      if (token) {
+        console.log('Storing auth token in localStorage');
+        localStorage.setItem('oauth_auth_token', token);
+      }
       
       // Success - close popup and let parent window know
       if (window.opener && !window.opener.closed) {
-        console.log('Sending success message to parent window with token');
+        console.log('Sending success message to parent window');
         
         // Try multiple times to ensure message gets through
         const sendMessage = () => {
@@ -21,9 +28,10 @@ export default function OAuthCallback() {
             window.opener.postMessage({ 
               type: 'GOOGLE_AUTH_SUCCESS', 
               email,
+              token,
               timestamp: Date.now()
             }, window.location.origin);
-            console.log('Success message sent');
+            console.log('Success message sent with token');
           } catch (error) {
             console.error('Error sending message:', error);
           }

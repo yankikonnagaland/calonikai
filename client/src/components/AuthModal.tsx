@@ -76,12 +76,27 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
         // Sync session after OAuth completion
         console.log('Popup completed OAuth, syncing session...');
         
+        // Get auth token from event data or localStorage
+        const authToken = event.data.token || localStorage.getItem('oauth_auth_token');
+        console.log('Auth token found:', !!authToken);
+        
+        if (!authToken) {
+          console.error('No auth token available for session sync');
+          setError("Authentication failed. Please try again.");
+          setIsGoogleLoading(false);
+          return;
+        }
+        
+        // Clear token from localStorage
+        localStorage.removeItem('oauth_auth_token');
+        
         // Call session sync API to establish main window session
         fetch('/api/auth/sync-session', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
+          body: JSON.stringify({ token: authToken }),
           credentials: 'include' // Important for session cookies
         })
         .then(response => response.json())
