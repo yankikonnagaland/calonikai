@@ -90,13 +90,11 @@ export default function Landing() {
               />
             </div>
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-500">
-                Calonik.ai
-              </span>
+             
             </h1>
             <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-              Track calories, manage weight, and achieve fitness goals with AI-powered food recognition. 
-              Personalized nutrition insights for healthier living with comprehensive exercise tracking.
+              Track calories, manage weight, and achieve fitness goals with our AI-powered food recognition. 
+              Track your nutrition & exercises for a disciplined and healthier living.
             </p>
             
             <div className="flex flex-col gap-4 justify-center max-w-md mx-auto">

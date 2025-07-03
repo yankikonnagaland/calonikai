@@ -73,17 +73,21 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
           popup.close();
         }
         
-        // Check for auth success cookie and clear it
-        const checkAuthCookie = () => {
-          const cookies = document.cookie.split(';');
-          const authCookie = cookies.find(cookie => cookie.trim().startsWith('oauth_success='));
-          
-          if (authCookie) {
-            console.log('Auth success cookie found, clearing and refreshing auth state');
-            
-            // Clear the cookie
-            document.cookie = 'oauth_success=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-            
+        // Sync session after OAuth completion
+        console.log('Popup completed OAuth, syncing session...');
+        
+        // Call session sync API to establish main window session
+        fetch('/api/auth/sync-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include' // Important for session cookies
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            console.log('Session synced successfully');
             setIsGoogleLoading(false);
             setError("");
             
@@ -91,14 +95,16 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
             queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
             onSuccess();
           } else {
-            console.log('No auth cookie found yet, waiting...');
-            // Try again in 500ms, up to 10 times (5 seconds total)
-            setTimeout(checkAuthCookie, 500);
+            console.error('Failed to sync session:', data.error);
+            setError("Authentication failed. Please try again.");
+            setIsGoogleLoading(false);
           }
-        };
-        
-        // Start checking for the cookie
-        setTimeout(checkAuthCookie, 100);
+        })
+        .catch(error => {
+          console.error('Error during session sync:', error);
+          setError("Authentication failed. Please try again.");
+          setIsGoogleLoading(false);
+        });
       }
       
       if (event.data.type === 'GOOGLE_AUTH_ERROR') {

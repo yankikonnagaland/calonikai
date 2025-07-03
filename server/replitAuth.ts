@@ -313,55 +313,45 @@ export async function setupAuth(app: Express) {
     });
   }
 
-  // Endpoint for main window to authenticate using temporary token from popup
-  app.post("/api/auth/temp-login", async (req, res) => {
+  // Endpoint to sync session after OAuth completion
+  app.post("/api/auth/sync-session", async (req, res) => {
     try {
-      const { token } = req.body;
+      // Check if there's an oauth_success cookie
+      const oauthCookie = req.cookies.oauth_success;
       
-      if (!token) {
-        return res.status(400).json({ error: "Token required" });
+      if (!oauthCookie) {
+        return res.status(400).json({ success: false, error: 'No OAuth session found' });
       }
       
-      const tempAuthStore = (global as any).tempAuthStore || new Map();
-      const tokenData = tempAuthStore.get(token);
+      const oauthData = JSON.parse(oauthCookie);
+      const user = await storage.getUser(oauthData.userId);
       
-      if (!tokenData) {
-        return res.status(401).json({ error: "Invalid or expired token" });
-      }
-      
-      if (tokenData.expires < Date.now()) {
-        tempAuthStore.delete(token);
-        return res.status(401).json({ error: "Token expired" });
-      }
-      
-      // Get user from database
-      const user = await storage.getUser(tokenData.userId);
       if (!user) {
-        tempAuthStore.delete(token);
-        return res.status(401).json({ error: "User not found" });
+        return res.status(400).json({ success: false, error: 'User not found' });
       }
-      
-      // Delete the temporary token (single use)
-      tempAuthStore.delete(token);
       
       // Log the user in by creating a session
       req.login(user, (err) => {
         if (err) {
-          console.error("Login error:", err);
-          return res.status(500).json({ error: "Failed to create session" });
+          console.error("Login error in sync:", err);
+          return res.status(500).json({ success: false, error: 'Failed to create session' });
         }
         
-        // Save session and return user data
+        // Clear the OAuth cookie
+        res.clearCookie('oauth_success');
+        
+        // Save session
         req.session.save((err) => {
           if (err) {
-            console.error("Session save error:", err);
-            return res.status(500).json({ error: "Failed to save session" });
+            console.error("Session save error in sync:", err);
+            return res.status(500).json({ success: false, error: 'Session save failed' });
           }
           
-          res.json({
-            success: true,
-            user: {
-              id: user.id,
+          console.log("Session synced for user:", user.email);
+          res.json({ 
+            success: true, 
+            user: { 
+              id: user.id, 
               email: user.email,
               name: `${user.firstName} ${user.lastName}`,
               subscriptionStatus: user.subscriptionStatus
@@ -371,8 +361,8 @@ export async function setupAuth(app: Express) {
       });
       
     } catch (error) {
-      console.error("Temp login error:", error);
-      res.status(500).json({ error: "Internal server error" });
+      console.error("Error in session sync:", error);
+      res.status(500).json({ success: false, error: 'Internal server error' });
     }
   });
 
