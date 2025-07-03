@@ -977,6 +977,14 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
 
   // === BREAD AND GRAINS ===
   
+  // Cereals and grains - including oats
+  if (name.includes("oats") || name.includes("cereal") || name.includes("granola") || name.includes("muesli") || name.includes("quinoa") || name.includes("barley")) {
+    return {
+      unit: "cup (40g dry)",
+      unitOptions: ["serving (40g)", "small portion (30g)", "medium portion (50g)", "large portion (80g)", "cup (40g dry)", "bowl", "grams"],
+    };
+  }
+  
   // Indian breads - piece-based with weight
   if (name.includes("roti") || name.includes("chapati") || name.includes("naan") || name.includes("paratha")) {
     const breadType = name.includes("naan") ? "80g" : "50g";
