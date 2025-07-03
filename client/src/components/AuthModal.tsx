@@ -32,47 +32,42 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     setIsGoogleLoading(true);
     setError("");
     
-    // Create iframe for Google OAuth
-    console.log('Opening Google OAuth in iframe...');
+    // Use popup window since Google blocks iframe embedding
+    console.log('Opening Google OAuth in popup window...');
     
-    const iframe = document.createElement('iframe');
-    iframe.src = '/api/auth/google';
-    iframe.style.width = '500px';
-    iframe.style.height = '600px';
-    iframe.style.border = '1px solid #ccc';
-    iframe.style.borderRadius = '8px';
-    iframe.style.position = 'fixed';
-    iframe.style.top = '50%';
-    iframe.style.left = '50%';
-    iframe.style.transform = 'translate(-50%, -50%)';
-    iframe.style.zIndex = '10000';
-    iframe.style.backgroundColor = 'white';
-    iframe.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
+    const popup = window.open(
+      '/api/auth/google',
+      'googleAuth',
+      'width=500,height=600,scrollbars=yes,resizable=yes,status=yes,location=yes,toolbar=no,menubar=no'
+    );
     
-    // Add overlay background
-    const overlay = document.createElement('div');
-    overlay.style.position = 'fixed';
-    overlay.style.top = '0';
-    overlay.style.left = '0';
-    overlay.style.width = '100%';
-    overlay.style.height = '100%';
-    overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
-    overlay.style.zIndex = '9999';
+    if (!popup) {
+      setError("Popup blocked. Please allow popups and try again.");
+      setIsGoogleLoading(false);
+      return;
+    }
     
-    // Add iframe to overlay
-    overlay.appendChild(iframe);
-    document.body.appendChild(overlay);
+    // Focus the popup
+    popup.focus();
     
     // Poll for authentication success every 2 seconds
     const authCheckInterval = setInterval(async () => {
       try {
+        // Check if popup is closed
+        if (popup.closed) {
+          clearInterval(authCheckInterval);
+          setIsGoogleLoading(false);
+          setError("Authentication window was closed");
+          return;
+        }
+        
         const response = await fetch('/api/auth/user', {
           credentials: 'include'
         });
         
         if (response.ok) {
           clearInterval(authCheckInterval);
-          document.body.removeChild(overlay);
+          popup.close();
           setIsGoogleLoading(false);
           setError("");
           onSuccess();
@@ -82,132 +77,14 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       }
     }, 2000);
     
-    // Close button for iframe
-    const closeButton = document.createElement('button');
-    closeButton.innerHTML = '×';
-    closeButton.style.position = 'absolute';
-    closeButton.style.top = '10px';
-    closeButton.style.right = '10px';
-    closeButton.style.background = 'white';
-    closeButton.style.border = '1px solid #ccc';
-    closeButton.style.borderRadius = '50%';
-    closeButton.style.width = '30px';
-    closeButton.style.height = '30px';
-    closeButton.style.cursor = 'pointer';
-    closeButton.style.fontSize = '20px';
-    closeButton.style.zIndex = '10001';
-    
-    closeButton.onclick = () => {
+    // Auto-stop polling after 5 minutes
+    setTimeout(() => {
       clearInterval(authCheckInterval);
-      document.body.removeChild(overlay);
-      setIsGoogleLoading(false);
-      setError("Authentication cancelled");
-    };
-    
-    overlay.appendChild(closeButton);
-    
-    // Auto-close after 5 minutes
-    setTimeout(() => {
-      if (document.body.contains(overlay)) {
-        clearInterval(authCheckInterval);
-        document.body.removeChild(overlay);
-        setIsGoogleLoading(false);
-        setError("Authentication timeout - please try again");
-      }
-    }, 300000);
-    
-    return;
-    
-    // Open popup window for Google OAuth
-    const popup = window.open(
-      '/api/auth/google',
-      'google-auth',
-      'width=500,height=600,scrollbars=yes,resizable=yes'
-    );
-
-    if (!popup) {
-      setError("Please allow popups for this site");
-      setIsGoogleLoading(false);
-      return;
-    }
-
-    // Listen for messages from popup
-    const handleMessage = (event: MessageEvent) => {
-      console.log('Received message:', event.data, 'from origin:', event.origin);
-      
-      if (event.origin !== window.location.origin) {
-        console.log('Message ignored - wrong origin');
-        return;
-      }
-      
-      if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
-        console.log('OAuth success received, reloading page to get session...');
-        
-        // Remove event listener to prevent multiple reloads
-        window.removeEventListener('message', handleMessage);
-        
-        // Simple approach: just reload the page to pick up the authenticated session
-        // This avoids all the complex session sharing issues between popup and main window
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
-      }
-      
-      if (event.data.type === 'GOOGLE_AUTH_ERROR') {
-        console.log('OAuth error received:', event.data.error);
-        setError("Authentication failed");
-        setIsGoogleLoading(false);
-        window.removeEventListener('message', handleMessage);
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-
-    // Fallback: Check authentication status periodically in case popup message doesn't arrive
-    const checkAuthInterval = setInterval(async () => {
-      try {
-        const response = await fetch('/api/auth/user', {
-          credentials: 'include'
-        });
-        
-        if (response.ok) {
-          console.log('Authentication detected via polling, cleaning up...');
-          clearInterval(checkAuthInterval);
-          clearInterval(checkClosed);
-          window.removeEventListener('message', handleMessage);
-          setIsGoogleLoading(false);
-          setError("");
-          onSuccess();
-          
-          // Close any open popup
-          if (popup && !popup.closed) {
-            popup.close();
-          }
-        }
-      } catch (error) {
-        // Continue polling on error
-        console.log('Auth polling check failed:', error);
-      }
-    }, 2000); // Check every 2 seconds
-
-    // Check if popup is closed
-    const checkClosed = setInterval(() => {
-      if (popup.closed) {
-        clearInterval(checkClosed);
-        clearInterval(checkAuthInterval);
-        window.removeEventListener('message', handleMessage);
-        setIsGoogleLoading(false);
-      }
-    }, 1000);
-
-    // Auto-close after 5 minutes
-    setTimeout(() => {
       if (!popup.closed) {
         popup.close();
-        clearInterval(checkClosed);
-        window.removeEventListener('message', handleMessage);
-        setIsGoogleLoading(false);
       }
+      setIsGoogleLoading(false);
+      setError("Authentication timeout - please try again");
     }, 300000);
   };
 

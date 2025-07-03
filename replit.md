@@ -440,15 +440,15 @@ The application follows a client-server architecture with clear separation of co
 - UPDATED: Larger, transparent Calonik logo implementation across all platforms (web and mobile)
 - ENHANCED: Logo sizes - Landing page hero (40x40 to 56x56), Navigation header (8x8 to 10x10)  
 - UPDATED: All mobile app assets with new transparent logo (icon, splash, adaptive-icon, favicon)
-- RESOLVED: Authentication system session cookie isolation problem with iframe OAuth approach
-- IMPLEMENTED: Iframe-based authentication flow with modal overlay and polling for authentication completion
-- CONFIGURED: X-Frame-Options: SAMEORIGIN to allow iframe embedding for OAuth while maintaining security
-- ENHANCED: Content Security Policy to allow Google OAuth iframes while blocking malicious embedding
-- WORKING: Google OAuth now functions reliably within iframe context with automatic authentication detection
-- SECURED: Comprehensive security headers implementation with OAuth-compatible iframe settings
+- RESOLVED: Authentication system session cookie isolation problem with popup OAuth approach
+- IMPLEMENTED: Popup-based authentication flow with automatic polling for authentication completion
+- CONFIGURED: X-Frame-Options: SAMEORIGIN to allow OAuth compatibility while maintaining security
+- ENHANCED: Content Security Policy to allow Google OAuth domains while blocking malicious embedding
+- WORKING: Google OAuth now functions reliably with popup windows and automatic authentication detection
+- SECURED: Comprehensive security headers implementation with OAuth-compatible settings
 - ADDED: Content Security Policy (CSP) headers preventing XSS and injection attacks while allowing OAuth
 - PROTECTED: X-Content-Type-Options, X-XSS-Protection, and Referrer-Policy headers for defense-in-depth
-- BALANCED: Security configuration allowing legitimate OAuth iframes while preventing clickjacking attacks
+- BALANCED: Security configuration allowing legitimate OAuth functionality while preventing clickjacking attacks
 - COMPREHENSIVE: Full security stack protecting against XSS and content injection while enabling OAuth functionality
 
 **July 3, 2025 - Official Calonik Logo Implementation & Complete EAS Configuration:**
