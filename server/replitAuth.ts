@@ -279,39 +279,9 @@ export async function setupAuth(app: Express) {
           }
           
           // For popup flow, redirect to a success page that closes the popup
-          // Pass user data to help with state refresh
           const userEmail = (req.user as any)?.email || '';
-          const userId = (req.user as any)?.id || '';
           
-          // Set a temporary auth token that the main window can pick up
-          const authToken = `auth_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-          (req.session as any).tempAuthToken = authToken;
-          (req.session as any).transferUserId = userId;
-          
-          // Store the session ID for transfer
-          console.log('OAuth session ID for transfer:', req.sessionID);
-          
-          // Store the authenticated user data in a temporary cache for main window pickup
-          global.authCache = global.authCache || new Map();
-          const cacheKey = `auth_${userId}_${Date.now()}`;
-          global.authCache.set(cacheKey, {
-            userId,
-            email: userEmail,
-            sessionId: req.sessionID,
-            timestamp: Date.now(),
-            user: req.user
-          });
-          
-          // Clean up old cache entries (older than 1 minute)
-          setTimeout(() => {
-            for (const [key, value] of global.authCache.entries()) {
-              if (Date.now() - value.timestamp > 60000) {
-                global.authCache.delete(key);
-              }
-            }
-          }, 60000);
-          
-          res.redirect(`/oauth-callback?success=true&email=${encodeURIComponent(userEmail)}&token=${authToken}&sessionId=${req.sessionID}&cacheKey=${cacheKey}&transferUserId=${userId}`);
+          res.redirect(`/oauth-callback?success=true&email=${encodeURIComponent(userEmail)}`);
         });
       }
     );
@@ -326,57 +296,6 @@ export async function setupAuth(app: Express) {
       });
     });
   }
-
-  // Direct session claim endpoint - allows main window to claim authenticated session
-  app.post("/api/auth/claim-session", async (req, res) => {
-    try {
-      const { transferUserId, cacheKey } = req.body;
-      
-      if (!transferUserId || !cacheKey) {
-        return res.status(400).json({ message: "Missing transfer parameters" });
-      }
-      
-      // Check if we have cached auth data for this user
-      const authCache = (global as any).authCache;
-      if (!authCache || !authCache.has(cacheKey)) {
-        return res.status(404).json({ message: "No session data found" });
-      }
-      
-      const cachedData = authCache.get(cacheKey);
-      
-      // Verify the cached data is recent (within 2 minutes)
-      if (Date.now() - cachedData.timestamp > 2 * 60 * 1000) {
-        authCache.delete(cacheKey);
-        return res.status(410).json({ message: "Session data expired" });
-      }
-      
-      // Establish the session for this request
-      req.login(cachedData.user, (err) => {
-        if (err) {
-          console.error("Session claim login error:", err);
-          return res.status(500).json({ message: "Failed to establish session" });
-        }
-        
-        // Clean up the used cache entry
-        authCache.delete(cacheKey);
-        
-        console.log("Session claimed successfully for user:", cachedData.email);
-        res.json({ 
-          message: "Session claimed successfully",
-          user: {
-            id: cachedData.user.id,
-            email: cachedData.user.email,
-            firstName: cachedData.user.firstName,
-            lastName: cachedData.user.lastName
-          }
-        });
-      });
-      
-    } catch (error) {
-      console.error("Session claim error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
 
   // Logout endpoint
   app.get("/api/logout", (req, res) => {

@@ -8,32 +8,11 @@ export default function OAuthCallback() {
       const token = urlParams.get('token');
       const email = urlParams.get('email');
       
-      // Get auth data from URL
-      const sessionId = urlParams.get('sessionId');
-      const cacheKey = urlParams.get('cacheKey');
-      const transferUserId = urlParams.get('transferUserId');
-      
-      // Store auth success in localStorage for main window to pick up
-      if (email) {
-        localStorage.setItem('oauth_success', JSON.stringify({
-          email,
-          token,
-          sessionId,
-          cacheKey,
-          transferUserId,
-          timestamp: Date.now()
-        }));
-      }
-      
-      // Success - close popup and let parent window know with all data
+      // Success - close popup and let parent window know
       if (window.opener) {
         window.opener.postMessage({ 
           type: 'GOOGLE_AUTH_SUCCESS', 
-          token, 
-          email,
-          sessionId,
-          cacheKey,
-          transferUserId
+          email 
         }, window.location.origin);
         window.close();
       } else {
