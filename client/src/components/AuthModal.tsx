@@ -47,21 +47,31 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
 
     // Listen for messages from popup
     const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
+      console.log('Received message:', event.data, 'from origin:', event.origin);
+      
+      if (event.origin !== window.location.origin) {
+        console.log('Message ignored - wrong origin');
+        return;
+      }
       
       if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
         console.log('OAuth success received, reloading page to get session...');
+        
+        // Remove event listener to prevent multiple reloads
+        window.removeEventListener('message', handleMessage);
         
         // Simple approach: just reload the page to pick up the authenticated session
         // This avoids all the complex session sharing issues between popup and main window
         setTimeout(() => {
           window.location.reload();
-        }, 1000);
+        }, 500);
       }
       
       if (event.data.type === 'GOOGLE_AUTH_ERROR') {
+        console.log('OAuth error received:', event.data.error);
         setError("Authentication failed");
         setIsGoogleLoading(false);
+        window.removeEventListener('message', handleMessage);
       }
     };
 
