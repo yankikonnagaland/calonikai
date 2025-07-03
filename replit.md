@@ -436,6 +436,14 @@ The application follows a client-server architecture with clear separation of co
 - FINAL FIX: Removed duplicate division by 100 in Dashboard removal calculation logic that was causing 6-calorie results instead of proper values
 - ENHANCED: Added analytics chart cache invalidation to meal submission and food removal for immediate graph updates
 
+**July 3, 2025 - Fixed Critical Duplicate Food Search Results Bug:**
+- RESOLVED: Critical duplicate detection issue where "rice" search showed 5 identical options instead of diverse results
+- FIXED: AI search now only triggers when database results are insufficient (< 3 results) to prevent redundant additions
+- ENHANCED: Improved duplicate detection logic with better name similarity checking and core word matching
+- OPTIMIZED: Prevents AI search when database already contains sufficient good results (e.g., 20 rice varieties)
+- IMPROVED: Enhanced duplicate prevention checks for exact matches, partial matches, and core food name similarities
+- STREAMLINED: Search now returns diverse, relevant results without AI-generated duplicates cluttering the interface
+
 **July 3, 2025 - Enhanced Gemini API with Comprehensive Nutrition Data Extraction:**
 - UPGRADED: Implemented structured nutrition data extractor prompt based on scientific standards (USDA, IFCT)
 - ENHANCED: Comprehensive JSON schema now includes sodium (0-5000mg), fiber (0-30g), data source, and confidence scoring

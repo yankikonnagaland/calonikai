@@ -1341,17 +1341,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // PRIORITY 3: Add AI search results alongside database results for enhanced variety
-      if (process.env.GEMINI_API_KEY && query.length >= 3) {
+      // PRIORITY 3: Only use AI search when database results are insufficient (< 3 results)
+      if (process.env.GEMINI_API_KEY && query.length >= 3 && foods.length < 3) {
         try {
-          console.log(`Searching AI for additional "${query}" options...`);
+          console.log(`Searching AI for additional "${query}" options (only ${foods.length} database results found)...`);
           const aiFood = await searchFoodDirectly(query);
           
-          // Check if this AI food is similar to existing database foods
-          const isUnique = !foods.some(existingFood => 
-            existingFood.name.toLowerCase().includes(aiFood.name.toLowerCase()) ||
-            aiFood.name.toLowerCase().includes(existingFood.name.toLowerCase())
-          );
+          // Enhanced duplicate detection - check for very similar names
+          const isUnique = !foods.some(existingFood => {
+            const existingName = existingFood.name.toLowerCase().trim();
+            const aiName = aiFood.name.toLowerCase().trim();
+            
+            // Check for exact matches or very similar names
+            return existingName === aiName ||
+                   existingName.includes(aiName) ||
+                   aiName.includes(existingName) ||
+                   // Check if core food name is the same (e.g., "rice" vs "white rice")
+                   existingName.split(' ').some(word => aiName.split(' ').includes(word) && word.length > 3);
+          });
           
           if (isUnique) {
             await storage.storeAiFood(aiFood);
@@ -1360,7 +1367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else {
             console.log(`AI food "${aiFood.name}" too similar to existing results, skipping`);
           }
-        } catch (aiError) {
+        } catch (aiError: any) {
           console.warn("AI search failed:", aiError.message);
           if (foods.length === 0) {
             foods = [createFallbackFood(query)];
