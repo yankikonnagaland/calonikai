@@ -87,7 +87,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     setQuantityInput(quantity.toString());
   }, [quantity]);
 
-  const { data: searchResults = [] } = useQuery<Food[]>({
+  const { data: searchResults = [], isLoading: isSearching } = useQuery<Food[]>({
     queryKey: [`/api/foods/search`, debouncedQuery],
     queryFn: async () => {
       const response = await fetch(`/api/foods/search?query=${encodeURIComponent(debouncedQuery)}`);
@@ -749,8 +749,20 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
             }}
             onFocus={handleInputFocus}
             onBlur={handleInputBlur}
-            className="w-full"
+            className="w-full pr-10"
           />
+          
+          {/* Snail Loading Spinner */}
+          {isSearching && debouncedQuery.length > 0 && (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <div className="flex items-center gap-1">
+                <div className="animate-bounce text-lg">🐌</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                  Searching...
+                </div>
+              </div>
+            </div>
+          )}
           
           {shouldShowSuggestions && (
             <div 
