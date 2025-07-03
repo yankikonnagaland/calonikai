@@ -24,23 +24,23 @@ import TestNotification from "@/components/TestNotification";
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
 
-  // Handle OAuth popup messages
-  React.useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
-      
-      if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
-        console.log('Google authentication successful via popup');
-        // Refresh the page to update auth state
-        window.location.reload();
-      } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
-        console.error('Google authentication failed:', event.data.error);
-      }
-    };
+  // Handle OAuth popup messages - disabled since AuthModal handles this directly
+  // React.useEffect(() => {
+  //   const handleMessage = (event: MessageEvent) => {
+  //     if (event.origin !== window.location.origin) return;
+  //     
+  //     if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
+  //       console.log('Google authentication successful via popup');
+  //       // Refresh the page to update auth state
+  //       window.location.reload();
+  //     } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
+  //       console.error('Google authentication failed:', event.data.error);
+  //     }
+  //   };
 
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, []);
+  //   window.addEventListener('message', handleMessage);
+  //   return () => window.removeEventListener('message', handleMessage);
+  // }, []);
 
   // Show loading state
   if (isLoading) {

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
 // Simple Google icon component
 const GoogleIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24">
@@ -74,6 +75,9 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
         
         setIsGoogleLoading(false);
         setError("");
+        
+        // Invalidate auth query to refresh user state
+        queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
         onSuccess();
       }
       
