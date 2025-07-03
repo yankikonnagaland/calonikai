@@ -444,6 +444,16 @@ The application follows a client-server architecture with clear separation of co
 - IMPROVED: Enhanced duplicate prevention checks for exact matches, partial matches, and core food name similarities
 - STREAMLINED: Search now returns diverse, relevant results without AI-generated duplicates cluttering the interface
 
+**July 3, 2025 - Enhanced Food Category Display & Fixed Nut Piece Calculations:**
+- ADDED: Food category display in search results showing food type badges (Snacks, Beverages, etc.)
+- ENHANCED: Search results now show both nutrition info and food category for better food identification
+- FIXED: Nut piece calculations using specific weights per piece (almond: 1.2g, cashew: 1.7g, walnut: 2.5g)
+- UPDATED: Intelligent unit selection for nuts to default to "pieces" instead of "handful"
+- IMPROVED: Nuts now suggest 10 pieces as default quantity with accurate per-piece calorie calculations
+- STANDARDIZED: Individual nuts (almond, cashew, walnut, peanut) use piece-based measurements
+- MAINTAINED: Dried fruits and mixed nuts continue using handful-based measurements
+- VERIFIED: Almond pieces now show realistic calorie calculations based on 1.2g per piece
+
 **July 3, 2025 - FIXED Critical Beverage Unit Calculation Bug & Coca-Cola Standards:**
 - RESOLVED: Unit calculation bug where "can (330ml)" showed 43 calories instead of correct 141.9 calories
 - FIXED: Regex pattern in frontend unit multiplier to properly extract ml amounts from parentheses format

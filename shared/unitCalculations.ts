@@ -121,10 +121,17 @@ export const getFoodCategoryMultiplier = (foodName: string, unit: string): numbe
   const name = foodName.toLowerCase();
   const unitLower = unit.toLowerCase();
   
-  // Nuts and dried fruits are denser
+  // Nuts and dried fruits - specific weights per piece
   if (name.match(/\b(almond|cashew|walnut|peanut|raisin|dates|nuts)\b/)) {
-    if (unitLower.includes('handful')) return 0.6; // Nuts are denser, smaller handful
-    if (unitLower.includes('piece') || unitLower === 'pieces') return 0.3;   // Individual nuts are small
+    if (unitLower.includes('handful')) return 2.0; // ~30g handful for nuts
+    if (unitLower.includes('piece') || unitLower === 'pieces') {
+      // Specific weights for different nuts per piece
+      if (name.includes('almond')) return 0.08; // ~1.2g per almond
+      if (name.includes('cashew')) return 0.11; // ~1.7g per cashew
+      if (name.includes('walnut')) return 0.17; // ~2.5g per walnut half
+      if (name.includes('peanut')) return 0.06; // ~0.9g per peanut
+      return 0.08; // Default nut weight ~1.2g
+    }
   }
   
   // Leafy vegetables are lighter

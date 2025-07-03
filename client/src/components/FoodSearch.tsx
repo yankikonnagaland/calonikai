@@ -443,13 +443,24 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       };
     }
     
-    // 10. NUTS & DRY FRUITS - Enhanced with realistic portions
+    // 10. NUTS & DRY FRUITS - Enhanced with pieces and realistic portions
     if (name.match(/\b(almond|cashew|walnut|peanut|raisin|dates|nuts)\b/)) {
+      // Individual nuts - default to pieces
+      if (name.match(/\b(almond|cashew|walnut|peanut)\b/)) {
+        return {
+          unit: "pieces",
+          quantity: 10,
+          unitOptions: ["pieces", "handful (30g)", "small handful (15g)", "large handful (45g)", "grams"],
+          reasoning: "Individual nuts typically counted in pieces, about 10 pieces = 1 serving"
+        };
+      }
+      
+      // Dried fruits and mixed nuts - default to handful
       return {
         unit: "handful (30g)",
         quantity: 1,
-        unitOptions: ["handful (30g)", "small handful (15g)", "large handful (45g)", "tablespoon (10g)"],
-        reasoning: "Nuts typically consumed in handfuls, about 30g"
+        unitOptions: ["handful (30g)", "small handful (15g)", "large handful (45g)", "tablespoon (10g)", "pieces"],
+        reasoning: "Dried fruits typically consumed in handfuls, about 30g"
       };
     }
     
@@ -830,18 +841,25 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                             </Badge>
                           )}
                         </div>
-                        <div className="text-xs text-muted-foreground mt-1 flex items-center justify-between">
-                          {(food as any).realisticCalories ? (
-                            <span>
-                              <span className="font-medium text-green-600 dark:text-green-400">{(food as any).realisticCalories} cal</span> 
-                              <span className="text-gray-400 dark:text-gray-500"> ({(food as any).smartQuantity} {(food as any).smartUnit})</span> • {food.protein}g protein
+                        <div className="text-xs text-muted-foreground mt-1">
+                          <div className="flex items-center justify-between">
+                            {(food as any).realisticCalories ? (
+                              <span>
+                                <span className="font-medium text-green-600 dark:text-green-400">{(food as any).realisticCalories} cal</span> 
+                                <span className="text-gray-400 dark:text-gray-500"> ({(food as any).smartQuantity} {(food as any).smartUnit})</span> • {food.protein}g protein
+                              </span>
+                            ) : (
+                              <span>{food.calories} cal • {food.protein}g protein</span>
+                            )}
+                            <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full">
+                              {(food as any).smartUnit || getIntelligentUnits(food).unit}
                             </span>
-                          ) : (
-                            <span>{food.calories} cal • {food.protein}g protein</span>
-                          )}
-                          <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full">
-                            {(food as any).smartUnit || getIntelligentUnits(food).unit}
-                          </span>
+                          </div>
+                          <div className="mt-1">
+                            <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded-full">
+                              {food.category}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
