@@ -153,65 +153,75 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     const name = food.name.toLowerCase();
     const category = food.category?.toLowerCase() || "";
     
-    // Comprehensive food categorization with intelligent unit selection
-    const isBeverage = category.includes("beverage") || category.includes("drink") || 
-        name.match(/\b(tea|coffee|juice|milk|latte|cappuccino|smoothie|shake|cola|soda|water|lassi|chai|beer|wine|alcohol)\b/);
+    // === BEVERAGES ===
     
-    // 1. BEVERAGES - Enhanced with realistic serving sizes
-    if (isBeverage) {
-      
-      // Alcoholic beverages - use bottle/can sizes
-      if (name.match(/\b(beer|wine|whiskey|vodka|rum|gin|alcohol)\b/)) {
-        if (name.includes("beer")) {
-          return {
-            unit: "bottle/big can (650ml)",
-            quantity: 1,
-            unitOptions: ["bottle/big can (330ml)", "bottle/big can (500ml)", "bottle/big can (650ml)", "can (330ml)", "ml"],
-            reasoning: "Beer is typically consumed in bottles or big cans, 650ml is standard large size"
-          };
-        } else if (name.includes("wine")) {
-          return {
-            unit: "glass (150ml)",
-            quantity: 1,
-            unitOptions: ["glass (150ml)", "bottle/big can (750ml)", "ml"],
-            reasoning: "Wine is served in 150ml glasses, full bottle is 750ml"
-          };
-        } else {
-          return {
-            unit: "shot (30ml)",
-            quantity: 1,
-            unitOptions: ["shot (30ml)", "ml", "bottle/big can"],
-            reasoning: "Spirits are measured in 30ml shots"
-          };
-        }
-      }
-      
-      // Non-alcoholic beverages
-      if (name.match(/\b(juice|cola|soda|soft drink)\b/)) {
-        return {
-          unit: "glass (250ml)",
-          quantity: 1,
-          unitOptions: ["glass (250ml)", "bottle/big can (500ml)", "can (330ml)", "ml"],
-          reasoning: "Soft drinks typically served in 250ml glasses or standard bottles/big cans"
-        };
-      }
-      
-      // Hot beverages
-      if (name.match(/\b(tea|coffee|chai|latte|cappuccino)\b/)) {
-        return {
-          unit: "cup (240ml)",
-          quantity: 1,
-          unitOptions: ["cup (240ml)", "mug (350ml)", "ml"],
-          reasoning: "Hot beverages served in standard 240ml cups"
-        };
-      }
-      
-      // Default beverages
+    // Water - zero calories
+    if (name.includes("water")) {
       return {
         unit: "glass (250ml)",
         quantity: 1,
-        unitOptions: ["glass (250ml)", "cup (240ml)", "bottle/big can (500ml)", "ml"],
-        reasoning: "Standard beverage serving is 250ml glass"
+        unitOptions: ["glass (250ml)", "bottle (500ml)", "bottle (1000ml)", "ml"],
+        reasoning: "Water is typically consumed in glasses or bottles"
+      };
+    }
+    
+    // Hot beverages - smaller servings
+    if (name.match(/\b(tea|coffee|chai|latte|cappuccino|espresso)\b/)) {
+      return {
+        unit: "cup (240ml)",
+        quantity: 1,
+        unitOptions: ["small cup (150ml)", "cup (240ml)", "large cup (350ml)", "mug (400ml)", "ml"],
+        reasoning: "Hot beverages served in cups, 240ml is standard"
+      };
+    }
+    
+    // Cold beverages and soft drinks
+    if (name.match(/\b(juice|cola|soda|soft drink|coke|pepsi)\b/)) {
+      return {
+        unit: "glass (250ml)",
+        quantity: 1,
+        unitOptions: ["glass (250ml)", "can (330ml)", "bottle (500ml)", "bottle (600ml)", "ml"],
+        reasoning: "Cold drinks in glasses or cans/bottles"
+      };
+    }
+    
+    // Dairy beverages
+    if (name.match(/\b(milk|lassi|shake|smoothie|milkshake)\b/)) {
+      return {
+        unit: "glass (250ml)",
+        quantity: 1,
+        unitOptions: ["glass (200ml)", "glass (250ml)", "cup (300ml)", "large glass (400ml)", "ml"],
+        reasoning: "Dairy beverages typically served in glasses"
+      };
+    }
+    
+    // Beer
+    if (name.includes("beer")) {
+      return {
+        unit: "bottle (650ml)",
+        quantity: 1,
+        unitOptions: ["glass (250ml)", "can (330ml)", "bottle (500ml)", "bottle (650ml)", "pint (568ml)"],
+        reasoning: "Beer commonly served in bottles, 650ml is large bottle size"
+      };
+    }
+    
+    // Wine
+    if (name.includes("wine")) {
+      return {
+        unit: "glass (150ml)",
+        quantity: 1,
+        unitOptions: ["glass (150ml)", "glass (200ml)", "bottle (750ml)", "ml"],
+        reasoning: "Wine served in 150ml standard glasses"
+      };
+    }
+    
+    // Spirits
+    if (name.match(/\b(whiskey|vodka|rum|gin|spirit)\b/)) {
+      return {
+        unit: "shot (30ml)",
+        quantity: 1,
+        unitOptions: ["shot (30ml)", "double (60ml)", "ml"],
+        reasoning: "Spirits measured in 30ml shots"
       };
     }
     
@@ -308,162 +318,186 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
         };
       } else {
         // Specific fruit weights
-        if (name.match(/\b(apple|orange)\b/)) {
+        if (name.includes("apple") || name.includes("orange")) {
           return {
-            unit: "medium (180g)",
+            unit: "piece (180g)",
             quantity: 1,
-            unitOptions: ["small (150g)", "medium (180g)", "large (220g)"],
+            unitOptions: ["small (120g)", "piece (180g)", "large (250g)"],
             reasoning: "Medium apple/orange weighs about 180g"
           };
         } else if (name.includes("banana")) {
           return {
-            unit: "medium (120g)",
+            unit: "piece (120g)",
             quantity: 1,
-            unitOptions: ["small (100g)", "medium (120g)", "large (150g)"],
+            unitOptions: ["small (80g)", "piece (120g)", "large (150g)"],
             reasoning: "Medium banana weighs about 120g"
           };
         } else if (name.includes("mango")) {
           return {
-            unit: "medium (200g)",
+            unit: "piece (200g)",
             quantity: 1,
-            unitOptions: ["small (150g)", "medium (200g)", "large (300g)"],
+            unitOptions: ["small (150g)", "piece (200g)", "large (300g)"],
             reasoning: "Medium mango weighs about 200g"
           };
         } else {
           return {
-            unit: "piece (100g)",
+            unit: "piece (150g)",
             quantity: 1,
-            unitOptions: ["small (80g)", "piece (100g)", "large (150g)"],
-            reasoning: "Average fruit piece weighs about 100g"
+            unitOptions: ["small (100g)", "piece (150g)", "large (200g)"],
+            reasoning: "Medium fruit weighs about 150g"
           };
         }
       }
     }
     
-    // 6. VEGETABLES
+    // 6. VEGETABLES - Enhanced with realistic portions
     if (category.includes("vegetable") || 
-        name.match(/\b(potato|onion|tomato|carrot|broccoli|spinach|cabbage|cauliflower|okra|eggplant)\b/)) {
-      if (name.match(/\b(salad|mixed|chopped|diced)\b/)) {
+        name.match(/\b(potato|onion|tomato|carrot|spinach|cabbage|peas|beans|cauliflower|broccoli)\b/)) {
+      
+      // Leafy vegetables
+      if (name.match(/\b(spinach|cabbage|lettuce|kale)\b/)) {
         return {
-          unit: "cup",
+          unit: "cup (100g)",
           quantity: 1,
-          unitOptions: ["cup", "bowl", "serving", "gram"],
-          reasoning: "Mixed vegetables are best measured in cups"
-        };
-      } else {
-        return {
-          unit: "piece",
-          quantity: 1,
-          unitOptions: ["piece", "cup", "medium", "large", "gram"],
-          reasoning: "Individual vegetables are counted as pieces"
+          unitOptions: ["cup (100g)", "handful (50g)", "large portion (150g)"],
+          reasoning: "Leafy vegetables measured by volume, 100g per cup"
         };
       }
-    }
-    
-    // 7. MEAT & PROTEIN
-    if (category.includes("meat") || category.includes("protein") ||
-        name.match(/\b(chicken|mutton|fish|egg|paneer|tofu|beef|pork|prawns|crab)\b/)) {
-      if (name.includes("curry") || name.includes("gravy")) {
+      
+      // Root vegetables
+      if (name.match(/\b(potato|onion|carrot|radish|beetroot)\b/)) {
         return {
-          unit: "serving",
+          unit: "medium (100g)",
           quantity: 1,
-          unitOptions: ["serving", "bowl", "cup", "gram"],
-          reasoning: "Meat curries are served as portions"
-        };
-      } else {
-        return {
-          unit: "piece",
-          quantity: 1,
-          unitOptions: ["piece", "gram", "serving", "small", "medium", "large"],
-          reasoning: "Meat items are typically counted as pieces or by weight"
+          unitOptions: ["small (50g)", "medium (100g)", "large (150g)", "pieces"],
+          reasoning: "Root vegetables vary in size, medium is about 100g"
         };
       }
-    }
-    
-    // 8. SNACKS & PROCESSED FOODS
-    if (category.includes("snack") || 
-        name.match(/\b(biscuit|cookie|chips|namkeen|samosa|pakora|vada|bhajia|mathri|sev)\b/)) {
-      const isHighCalorie = food.calories > 150;
+      
       return {
-        unit: "piece",
-        quantity: isHighCalorie ? 1 : 2,
-        unitOptions: ["piece", "small pack", "gram", "handful"],
-        reasoning: isHighCalorie ? "High-calorie snack, single piece recommended" : "Light snack, multiple pieces typical"
-      };
-    }
-    
-    // 9. DESSERTS & SWEETS
-    if (category.includes("dessert") || category.includes("sweet") ||
-        name.match(/\b(cake|pastry|ice cream|laddu|gulab jamun|rasgulla|kheer|halwa|jalebi)\b/)) {
-      if (name.includes("ice cream") || name.includes("frozen")) {
-        return {
-          unit: "scoop",
-          quantity: 1,
-          unitOptions: ["scoop", "cup", "serving", "small cup"],
-          reasoning: "Ice cream is typically served in scoops"
-        };
-      } else if (name.includes("cake") || name.includes("pastry")) {
-        return {
-          unit: "slice",
-          quantity: 1,
-          unitOptions: ["slice", "piece", "small slice", "medium slice"],
-          reasoning: "Cakes and pastries are served as slices"
-        };
-      } else {
-        return {
-          unit: "piece",
-          quantity: 1,
-          unitOptions: ["piece", "small", "medium", "serving"],
-          reasoning: "Traditional sweets are counted as pieces"
-        };
-      }
-    }
-    
-    // 10. NUTS & DRIED FRUITS
-    if (name.match(/\b(almond|cashew|walnut|peanut|raisin|dates|dried|nuts)\b/)) {
-      return {
-        unit: "handful",
+        unit: "serving (100g)",
         quantity: 1,
-        unitOptions: ["handful", "piece", "gram", "tablespoon"],
-        reasoning: "Nuts and dried fruits are typically consumed in handfuls"
+        unitOptions: ["small serving (50g)", "serving (100g)", "large serving (150g)"],
+        reasoning: "Standard vegetable serving is 100g"
       };
     }
     
-    // 11. PASTA & NOODLES
-    if (name.match(/\b(pasta|noodles|spaghetti|macaroni|maggi|ramen)\b/)) {
+    // 7. PROTEIN FOODS - Enhanced with realistic portions
+    if (name.match(/\b(chicken|mutton|beef|pork|fish|paneer|egg|tofu)\b/)) {
+      
+      if (name.match(/\b(egg|omelette)\b/)) {
+        return {
+          unit: "piece (50g)",
+          quantity: 2,
+          unitOptions: ["1 piece (50g)", "2 pieces (100g)", "3 pieces (150g)"],
+          reasoning: "Eggs are typically eaten 1-2 at a time, 50g each"
+        };
+      }
+      
+      if (name.includes("paneer") || name.includes("tofu")) {
+        return {
+          unit: "medium portion (100g)",
+          quantity: 1,
+          unitOptions: ["small portion (50g)", "medium portion (100g)", "large portion (150g)"],
+          reasoning: "Paneer/tofu typically served in 100g portions"
+        };
+      }
+      
+      // Meat dishes
       return {
-        unit: "cup",
+        unit: "medium portion (120g)",
         quantity: 1,
-        unitOptions: ["cup", "bowl", "serving", "plate"],
-        reasoning: "Pasta and noodles are typically served in cups or bowls"
+        unitOptions: ["small portion (80g)", "medium portion (120g)", "large portion (180g)", "piece"],
+        reasoning: "Meat dishes typically served in 120g portions"
       };
     }
     
-    // 12. PIZZA & FAST FOOD
-    if (name.match(/\b(pizza|burger|sandwich|wrap|roll)\b/)) {
+    // 8. PASTA & NOODLES - Enhanced with realistic portions
+    if (name.match(/\b(pasta|noodles|spaghetti|macaroni|maggi|ramen|hakka)\b/)) {
+      return {
+        unit: "medium portion (150g)",
+        quantity: 1,
+        unitOptions: ["small portion (100g)", "medium portion (150g)", "large portion (200g)", "bowl"],
+        reasoning: "Pasta/noodles typically served in 150g cooked portions"
+      };
+    }
+    
+    // 9. SNACKS & SWEETS - Enhanced with realistic portions
+    if (name.match(/\b(samosa|pakora|vada|bhaji|sweet|laddu|barfi|halwa)\b/)) {
+      
+      if (name.match(/\b(sweet|laddu|barfi|halwa)\b/)) {
+        return {
+          unit: "piece (30g)",
+          quantity: 2,
+          unitOptions: ["1 piece (30g)", "2 pieces (60g)", "small portion (50g)", "medium portion (80g)"],
+          reasoning: "Traditional sweets are small, typically 30g each"
+        };
+      }
+      
+      // Fried snacks
+      return {
+        unit: "piece (40g)",
+        quantity: 2,
+        unitOptions: ["1 piece (40g)", "2 pieces (80g)", "3 pieces (120g)", "pieces"],
+        reasoning: "Fried snacks like samosa/pakora are about 40g each"
+      };
+    }
+    
+    // 10. NUTS & DRY FRUITS - Enhanced with realistic portions
+    if (name.match(/\b(almond|cashew|walnut|peanut|raisin|dates|nuts)\b/)) {
+      return {
+        unit: "handful (30g)",
+        quantity: 1,
+        unitOptions: ["handful (30g)", "small handful (15g)", "large handful (45g)", "tablespoon (10g)"],
+        reasoning: "Nuts typically consumed in handfuls, about 30g"
+      };
+    }
+    
+    // 11. FAST FOOD - Enhanced with realistic portions
+    if (name.match(/\b(burger|sandwich|pizza|wrap|roll)\b/)) {
+      
       if (name.includes("pizza")) {
         return {
-          unit: "slice",
+          unit: "slice (80g)",
           quantity: 2,
-          unitOptions: ["slice", "piece", "quarter", "half"],
-          reasoning: "Pizza is typically consumed as slices"
-        };
-      } else {
-        return {
-          unit: "piece",
-          quantity: 1,
-          unitOptions: ["piece", "half", "quarter", "serving"],
-          reasoning: "Fast food items are counted as pieces"
+          unitOptions: ["1 slice (80g)", "2 slices (160g)", "3 slices (240g)", "slices"],
+          reasoning: "Pizza slices are about 80g each, typically eaten 2 slices"
         };
       }
+      
+      if (name.includes("burger")) {
+        return {
+          unit: "medium (180g)",
+          quantity: 1,
+          unitOptions: ["small (120g)", "medium (180g)", "large (250g)", "pieces"],
+          reasoning: "Medium burger weighs about 180g"
+        };
+      }
+      
+      return {
+        unit: "piece (150g)",
+        quantity: 1,
+        unitOptions: ["small (100g)", "piece (150g)", "large (200g)"],
+        reasoning: "Sandwiches/wraps typically weigh 150g"
+      };
     }
     
-    // Default intelligent suggestion
+    // 12. CHIPS & PACKAGED SNACKS
+    if (name.match(/\b(chips|biscuit|cookie|wafer|namkeen)\b/)) {
+      return {
+        unit: "small pack (30g)",
+        quantity: 1,
+        unitOptions: ["small pack (30g)", "medium pack (50g)", "large pack (80g)", "piece"],
+        reasoning: "Packaged snacks come in standard pack sizes"
+      };
+    }
+    
+    // === DEFAULT ===
     return {
-      unit: "serving (100g)",
+      unit: "medium (100g)",
       quantity: 1,
-      unitOptions: ["serving (100g)", "gram", "piece"],
-      reasoning: "Standard serving size recommended"
+      unitOptions: ["small (80g)", "medium (100g)", "large (150g)", "grams", "pieces"],
+      reasoning: "Standard serving size for most foods"
     };
   };
 

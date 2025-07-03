@@ -709,86 +709,236 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
                    name.includes("milk") || name.includes("lassi") || name.includes("shake") ||
                    name.includes("beer") || name.includes("wine") || name.includes("alcohol");
 
-  // Water - should always be 0 calories
+  // === BEVERAGES ===
+  
+  // Water - zero calories, volume-based
   if (name.includes("water")) {
     return {
       unit: "glass (250ml)",
-      unitOptions: isBeverage ? ["glass (250ml)", "bottle/big can (500ml)", "liter", "ml"] : ["glass (250ml)", "bottle (500ml)", "liter", "ml"],
+      unitOptions: ["glass (250ml)", "bottle (500ml)", "bottle (1000ml)", "ml"],
     };
   }
   
-  // Beer and alcoholic beverages - realistic serving sizes
-  if (name.includes("beer") || name.includes("wine") || name.includes("alcohol")) {
-    // For Kingfisher beer specifically, default to 500ml can
-    if (name.toLowerCase().includes("kingfisher")) {
-      return {
-        unit: "can (500ml)", 
-        unitOptions: ["can (500ml)", "bottle/big can (330ml)", "bottle/big can (650ml)", "pint (568ml)", "glass (250ml)"],
-      };
-    }
-    // For other beers, check if can is mentioned
-    if (name.includes("can")) {
-      return {
-        unit: "can (500ml)",
-        unitOptions: ["can (500ml)", "bottle/big can (330ml)", "bottle/big can (650ml)", "pint (568ml)", "glass (250ml)"],
-      };
-    }
+  // Hot beverages - smaller serving sizes
+  if (name.includes("tea") || name.includes("coffee") || name.includes("chai") || name.includes("espresso")) {
     return {
-      unit: "bottle/big can (650ml)",
-      unitOptions: ["glass (250ml)", "bottle/big can (330ml)", "bottle/big can (500ml)", "bottle/big can (650ml)", "can (500ml)"],
+      unit: "cup (240ml)",
+      unitOptions: ["small cup (150ml)", "cup (240ml)", "large cup (350ml)", "mug (400ml)", "ml"],
+    };
+  }
+  
+  // Cold beverages and soft drinks
+  if (name.includes("juice") || name.includes("cola") || name.includes("soda") || name.includes("soft drink")) {
+    return {
+      unit: "glass (250ml)",
+      unitOptions: ["glass (250ml)", "can (330ml)", "bottle (500ml)", "bottle (600ml)", "ml"],
+    };
+  }
+  
+  // Dairy beverages (milk, lassi, milkshakes)
+  if (name.includes("milk") || name.includes("lassi") || name.includes("shake") || name.includes("smoothie")) {
+    return {
+      unit: "glass (250ml)",
+      unitOptions: ["glass (200ml)", "glass (250ml)", "cup (300ml)", "large glass (400ml)", "ml"],
+    };
+  }
+  
+  // Alcoholic beverages - realistic serving sizes
+  if (name.includes("beer")) {
+    return {
+      unit: "bottle (650ml)",
+      unitOptions: ["glass (250ml)", "can (330ml)", "bottle (500ml)", "bottle (650ml)", "pint (568ml)"],
+    };
+  }
+  
+  if (name.includes("wine")) {
+    return {
+      unit: "glass (150ml)",
+      unitOptions: ["glass (150ml)", "glass (200ml)", "bottle (750ml)", "ml"],
+    };
+  }
+  
+  if (name.includes("whiskey") || name.includes("vodka") || name.includes("rum") || name.includes("gin") || name.includes("spirit")) {
+    return {
+      unit: "shot (30ml)",
+      unitOptions: ["shot (30ml)", "double (60ml)", "ml"],
     };
   }
 
-  // Beverages and liquids
-  if (
-    name.includes("juice") ||
-    name.includes("water") ||
-    name.includes("tea") ||
-    name.includes("coffee") ||
-    name.includes("milk") ||
-    name.includes("lassi") ||
-    name.includes("shake")
-  ) {
-    return { 
-      unit: "cup (250ml)", 
-      unitOptions: isBeverage ? ["cup (250ml)", "glass (200ml)", "bottle/big can (500ml)", "small cup (150ml)", "large cup (350ml)"] : ["cup (250ml)", "glass (200ml)", "bottle (500ml)", "small cup (150ml)", "large cup (350ml)"]
+  // === MAIN DISHES ===
+  
+  // Rice dishes - portion-based with weight
+  if (name.includes("rice") || name.includes("biryani") || name.includes("pulao") || name.includes("fried rice")) {
+    const isSpecialRice = name.includes("biryani") || name.includes("pulao") || name.includes("fried");
+    return {
+      unit: isSpecialRice ? "medium portion (200g)" : "medium portion (150g)",
+      unitOptions: ["small portion (100g)", "medium portion (150g)", "large portion (200g)", "extra large (250g)", "bowl", "grams"],
     };
   }
-
-  // Rice and curry dishes
-  if (
-    name.includes("rice") ||
-    name.includes("curry") ||
-    name.includes("dal") ||
-    name.includes("biryani")
-  ) {
+  
+  // Curry and liquid dishes
+  if (name.includes("curry") || name.includes("dal") || name.includes("soup") || name.includes("stew")) {
+    const isDal = name.includes("dal");
+    return {
+      unit: isDal ? "bowl (200g)" : "serving (150g)",
+      unitOptions: ["small bowl (100g)", "medium bowl (150g)", "large bowl (200g)", "serving (150g)", "grams"],
+    };
+  }
+  
+  // Pasta and noodles
+  if (name.includes("pasta") || name.includes("noodles") || name.includes("spaghetti") || name.includes("maggi")) {
     return {
       unit: "medium portion (150g)",
-      unitOptions: ["grams", "small portion (75g)", "medium portion (150g)", "large portion (200g)", "bowl"],
+      unitOptions: ["small portion (100g)", "medium portion (150g)", "large portion (200g)", "bowl", "grams"],
     };
   }
 
-  // Countable items
-  if (
-    name.includes("roti") ||
-    name.includes("chapati") ||
-    name.includes("slice") ||
-    name.includes("piece") ||
-    name.includes("samosa") ||
-    name.includes("pakora") ||
-    name.includes("apple") ||
-    name.includes("banana")
-  ) {
+  // === PROTEIN FOODS ===
+  
+  // Meat dishes - realistic serving sizes
+  if (name.includes("chicken") || name.includes("mutton") || name.includes("beef") || name.includes("pork") || name.includes("fish")) {
+    return {
+      unit: "medium portion (120g)",
+      unitOptions: ["small portion (80g)", "medium portion (120g)", "large portion (180g)", "piece", "grams"],
+    };
+  }
+  
+  // Eggs - piece-based
+  if (name.includes("egg") || name.includes("omelette")) {
     return {
       unit: "pieces",
-      unitOptions: ["pieces", "small (80g)", "medium (120g)", "large (180g)", "grams"],
+      unitOptions: ["1 piece (50g)", "2 pieces (100g)", "3 pieces (150g)", "pieces", "grams"],
+    };
+  }
+  
+  // Paneer and tofu
+  if (name.includes("paneer") || name.includes("tofu")) {
+    return {
+      unit: "medium portion (100g)",
+      unitOptions: ["small portion (50g)", "medium portion (100g)", "large portion (150g)", "grams"],
     };
   }
 
-  // Default
+  // === BREAD AND GRAINS ===
+  
+  // Indian breads - piece-based with weight
+  if (name.includes("roti") || name.includes("chapati") || name.includes("naan") || name.includes("paratha")) {
+    const breadType = name.includes("naan") ? "80g" : "50g";
+    return {
+      unit: "pieces",
+      unitOptions: [`1 piece (${breadType})`, `2 pieces (${parseInt(breadType) * 2}g)`, `3 pieces (${parseInt(breadType) * 3}g)`, "pieces", "grams"],
+    };
+  }
+  
+  // Bread and toast
+  if (name.includes("bread") || name.includes("toast") || name.includes("sandwich")) {
+    return {
+      unit: "slices",
+      unitOptions: ["1 slice (25g)", "2 slices (50g)", "3 slices (75g)", "slices", "grams"],
+    };
+  }
+
+  // === SNACKS AND SWEETS ===
+  
+  // Traditional sweets - piece-based
+  if (name.includes("laddu") || name.includes("barfi") || name.includes("halwa") || name.includes("sweet")) {
+    return {
+      unit: "pieces",
+      unitOptions: ["1 piece (30g)", "2 pieces (60g)", "small portion (50g)", "medium portion (80g)", "grams"],
+    };
+  }
+  
+  // Fried snacks
+  if (name.includes("samosa") || name.includes("pakora") || name.includes("vada") || name.includes("bhaji")) {
+    return {
+      unit: "pieces",
+      unitOptions: ["1 piece (40g)", "2 pieces (80g)", "3 pieces (120g)", "pieces", "grams"],
+    };
+  }
+  
+  // Nuts and dry fruits
+  if (name.includes("almond") || name.includes("cashew") || name.includes("walnut") || name.includes("raisin") || name.includes("nuts")) {
+    return {
+      unit: "handful (30g)",
+      unitOptions: ["handful (30g)", "small handful (15g)", "large handful (45g)", "tablespoon (10g)", "grams"],
+    };
+  }
+  
+  // Chips and packaged snacks
+  if (name.includes("chips") || name.includes("biscuit") || name.includes("cookie") || name.includes("wafer")) {
+    return {
+      unit: "small pack (30g)",
+      unitOptions: ["small pack (30g)", "medium pack (50g)", "large pack (80g)", "piece", "grams"],
+    };
+  }
+
+  // === FRUITS ===
+  
+  // Large fruits - piece-based with realistic weights
+  if (name.includes("apple") || name.includes("orange") || name.includes("mango")) {
+    const fruitWeight = name.includes("mango") ? "200g" : "180g";
+    return {
+      unit: "pieces",
+      unitOptions: [`1 medium (${fruitWeight})`, "pieces", "small (120g)", "large (250g)", "grams"],
+    };
+  }
+  
+  // Small fruits
+  if (name.includes("banana") || name.includes("guava")) {
+    return {
+      unit: "pieces",
+      unitOptions: ["1 medium (120g)", "pieces", "small (80g)", "large (150g)", "grams"],
+    };
+  }
+  
+  // Berries and small fruits
+  if (name.includes("grape") || name.includes("berry") || name.includes("cherry")) {
+    return {
+      unit: "cup (150g)",
+      unitOptions: ["cup (150g)", "handful (50g)", "small bowl (100g)", "grams"],
+    };
+  }
+
+  // === VEGETABLES ===
+  
+  // Leafy vegetables
+  if (name.includes("spinach") || name.includes("cabbage") || name.includes("lettuce")) {
+    return {
+      unit: "cup (100g)",
+      unitOptions: ["cup (100g)", "handful (50g)", "large portion (150g)", "grams"],
+    };
+  }
+  
+  // Root vegetables
+  if (name.includes("potato") || name.includes("onion") || name.includes("carrot")) {
+    return {
+      unit: "medium (100g)",
+      unitOptions: ["small (50g)", "medium (100g)", "large (150g)", "pieces", "grams"],
+    };
+  }
+
+  // === FAST FOOD ===
+  
+  // Burgers and sandwiches
+  if (name.includes("burger") || name.includes("sandwich") || name.includes("wrap")) {
+    return {
+      unit: "medium (180g)",
+      unitOptions: ["small (120g)", "medium (180g)", "large (250g)", "pieces", "grams"],
+    };
+  }
+  
+  // Pizza
+  if (name.includes("pizza")) {
+    return {
+      unit: "slices",
+      unitOptions: ["1 slice (80g)", "2 slices (160g)", "3 slices (240g)", "slices", "grams"],
+    };
+  }
+
+  // === DEFAULT ===
   return {
     unit: "medium (100g)",
-    unitOptions: ["pieces", "grams", "small (80g)", "medium (100g)", "large (150g)"],
+    unitOptions: ["small (80g)", "medium (100g)", "large (150g)", "grams", "pieces"],
   };
 }
 
