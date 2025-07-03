@@ -1366,12 +1366,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use the same smart unit selection logic as in search results
       const smartUnits = await getSmartUnitSelection(foodName, category);
       
-      // Also return unit options including "grams" and "pieces"
+      // Also return unit options including "grams" and "pieces" (but not pieces for dairy)
       const unitOptions = [...smartUnits.unitOptions];
       if (!unitOptions.includes("grams")) {
         unitOptions.push("grams");
       }
-      if (!unitOptions.includes("pieces")) {
+      
+      // Don't add "pieces" for dairy category items
+      const isDairy = category.toLowerCase().includes("dairy") || 
+                     foodName.toLowerCase().includes("milk") ||
+                     foodName.toLowerCase().includes("yogurt") ||
+                     foodName.toLowerCase().includes("dahi") ||
+                     foodName.toLowerCase().includes("curd") ||
+                     foodName.toLowerCase().includes("lassi") ||
+                     foodName.toLowerCase().includes("cheese") ||
+                     foodName.toLowerCase().includes("paneer");
+      
+      
+      if (!isDairy && !unitOptions.includes("pieces")) {
         unitOptions.push("pieces");
       }
       
@@ -1387,7 +1399,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!unitOptions.includes("grams")) {
         unitOptions.push("grams");
       }
-      if (!unitOptions.includes("pieces")) {
+      
+      // Don't add "pieces" for dairy category items
+      const isDairy = category.toLowerCase().includes("dairy") || 
+                     foodName.toLowerCase().includes("milk") ||
+                     foodName.toLowerCase().includes("yogurt") ||
+                     foodName.toLowerCase().includes("dahi") ||
+                     foodName.toLowerCase().includes("curd") ||
+                     foodName.toLowerCase().includes("lassi") ||
+                     foodName.toLowerCase().includes("cheese") ||
+                     foodName.toLowerCase().includes("paneer");
+      
+      if (!isDairy && !unitOptions.includes("pieces")) {
         unitOptions.push("pieces");
       }
       

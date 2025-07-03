@@ -489,6 +489,15 @@ The application follows a client-server architecture with clear separation of co
 - TECHNICAL: Enhanced if-else chain in calculatePortionNutrition to properly handle 40g pattern matching
 - TESTED: All oats search results now show accurate calorie calculations for 40g, 50g, 80g portions
 
+**July 3, 2025 - FIXED Inappropriate "Pieces" Unit Option for Dairy Items:**
+- RESOLVED: Critical UX bug where dairy items (milk, yogurt, dahi, curd, etc.) inappropriately showed "pieces" as measurement option
+- FIXED: Unit selection endpoint logic to exclude "pieces" unit for dairy category foods using comprehensive dairy detection
+- ENHANCED: Intelligent food categorization that recognizes dairy items by category parameter and food name patterns
+- IMPLEMENTED: Dairy detection for milk, yogurt, dahi, curd, lassi, cheese, paneer to exclude inappropriate unit options
+- VERIFIED: Dairy items now only show appropriate volume/weight units (cups, ml, grams) without confusing "pieces" option
+- MAINTAINED: "Pieces" unit still properly appears for appropriate foods like fruits, nuts, and countable items
+- IMPROVED: Better user experience with contextually appropriate measurement units for different food categories
+
 **July 3, 2025 - Complete EAS Configuration & iOS Build Setup:**
 - CONFIGURED: Complete EAS (Expo Application Services) setup for iOS app building and deployment
 - CREATED: Production-ready eas.json with development, preview, and production build profiles
