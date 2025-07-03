@@ -46,6 +46,46 @@ if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
 }
 
 // Optimized AI-powered food search with intelligent categorization
+// Smart result limiting to show most relevant foods only
+function limitToMostRelevant(foods: any[], query: string, maxResults: number = 5): any[] {
+  if (foods.length <= maxResults) return foods;
+  
+  const queryLower = query.toLowerCase();
+  
+  // Score each food by relevance
+  const scoredFoods = foods.map(food => {
+    const nameLower = food.name.toLowerCase();
+    let score = 0;
+    
+    // Exact match gets highest score
+    if (nameLower === queryLower) score += 100;
+    
+    // Starts with query gets high score
+    else if (nameLower.startsWith(queryLower)) score += 80;
+    
+    // Contains query as whole word gets medium score
+    else if (nameLower.includes(` ${queryLower} `) || nameLower.includes(`${queryLower} `)) score += 60;
+    
+    // Contains query gets low score
+    else if (nameLower.includes(queryLower)) score += 40;
+    
+    // Shorter names are more relevant (less specific variants)
+    score += Math.max(0, 20 - nameLower.length);
+    
+    // Common/popular foods get slight boost
+    const popularFoods = ['tea', 'milk', 'coffee', 'rice', 'dal', 'chicken', 'paneer'];
+    if (popularFoods.some(popular => nameLower.includes(popular))) score += 10;
+    
+    return { food, score };
+  });
+  
+  // Sort by score (highest first) and return top results
+  return scoredFoods
+    .sort((a, b) => b.score - a.score)
+    .slice(0, maxResults)
+    .map(item => item.food);
+}
+
 async function searchFoodWithAI(query: string) {
   try {
     const normalizedQuery = query.toLowerCase().trim();
@@ -1164,10 +1204,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { query } = validation.data;
       let foods: any[] = [];
 
-      // PRIORITY 1: Search main database first
+      // PRIORITY 1: Search main database first (limit to most relevant results)
       try {
-        foods = await storage.searchFoods(query);
-        console.log(`Database search for "${query}": found ${foods.length} results`);
+        const allFoods = await storage.searchFoods(query);
+        console.log(`Database search for "${query}": found ${allFoods.length} results`);
+        
+        // Smart result limiting: Show most relevant results only
+        foods = limitToMostRelevant(allFoods, query, 5);
+        console.log(`Limited from ${allFoods.length} to ${foods.length} most relevant results for "${query}"`);
       } catch (error) {
         console.warn("Database search failed:", error);
       }
