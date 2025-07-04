@@ -28,8 +28,21 @@ iframe[src*="razorpay"] {
 [data-checkout],
 .razorpay-container {
   pointer-events: auto !important;
-  z-index: 9999 !important;
-  position: fixed !important;
+}
+
+/* Mobile calendar touch optimization */
+.calendar-button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Prevent mobile scroll bounce during calendar interactions */
+.calendar-container {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Fix modal interaction issues */

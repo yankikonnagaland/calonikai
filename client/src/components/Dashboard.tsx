@@ -991,12 +991,27 @@ Powered by Calonik.ai 🚀
     });
   };
   
-  // Handle date selection without any scroll adjustments
+  // Handle date selection with mobile-optimized scroll prevention
   const handleDateSelect = (dateStr: string) => {
+    // Store current scroll position before any state changes
+    const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
+    
     setSelectedDate(dateStr);
     
     // Invalidate queries to refresh data for the selected date
     queryClient.invalidateQueries({ queryKey: [`/api/daily-summary/${sessionId}/${dateStr}`] });
+    
+    // Use multiple methods to ensure scroll position stays stable on mobile
+    requestAnimationFrame(() => {
+      window.scrollTo(0, currentScrollY);
+      
+      // Additional mobile-specific scroll lock
+      setTimeout(() => {
+        if (window.pageYOffset !== currentScrollY) {
+          window.scrollTo(0, currentScrollY);
+        }
+      }, 50);
+    });
   };
 
   const getCalorieStatus = (summary: DailySummary | undefined) => {
@@ -1853,7 +1868,7 @@ Powered by Calonik.ai 🚀
       {/* Side Calendar */}
       <div className="lg:col-span-1 space-y-6">
         {/* Calendar View */}
-        <Card ref={calendarRef}>
+        <Card ref={calendarRef} className="calendar-container">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
@@ -1891,8 +1906,15 @@ Powered by Calonik.ai 🚀
                   <div key={index} className="aspect-square">
                     {dayData ? (
                       <button
-                        onClick={() => handleDateSelect(dayData.dateStr)}
-                        className={`w-full h-full rounded text-xs font-medium transition-all relative ${
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleDateSelect(dayData.dateStr);
+                        }}
+                        onTouchStart={(e) => {
+                          e.preventDefault();
+                        }}
+                        className={`calendar-button w-full h-full rounded text-xs font-medium transition-all relative ${
                           selectedDate === dayData.dateStr
                             ? 'bg-primary text-primary-foreground'
                             : dayData.dateStr === today
