@@ -18,8 +18,7 @@
     },
     "production": {
       "ios": {
-        "resourceClass": "m1-medium",
-        "bundleIdentifier": "ai.calonik.app"
+        "resourceClass": "m1-medium"
       },
       "android": {
         "buildType": "apk"
