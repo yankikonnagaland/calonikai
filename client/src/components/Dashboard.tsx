@@ -991,26 +991,12 @@ Powered by Calonik.ai 🚀
     });
   };
   
-  // Handle date selection with stable positioning  
+  // Handle date selection without any scroll adjustments
   const handleDateSelect = (dateStr: string) => {
     setSelectedDate(dateStr);
     
     // Invalidate queries to refresh data for the selected date
     queryClient.invalidateQueries({ queryKey: [`/api/daily-summary/${sessionId}/${dateStr}`] });
-    
-    // Simple, reliable scroll management - only adjust if calendar goes out of view
-    setTimeout(() => {
-      if (calendarRef.current) {
-        const rect = calendarRef.current.getBoundingClientRect();
-        // If calendar header is above viewport, scroll it back into view
-        if (rect.top < 0) {
-          calendarRef.current.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' 
-          });
-        }
-      }
-    }, 150);
   };
 
   const getCalorieStatus = (summary: DailySummary | undefined) => {

@@ -525,6 +525,15 @@ The application follows a client-server architecture with clear separation of co
 - OPTIMIZED: Calendar button aligned to right with clean styling and hover effects
 - ENHANCED: Overall navigation responsiveness across dashboard and exercise tracking interfaces
 
+**July 4, 2025 - Fixed Mobile Tooltip Interactions & Calendar Stability:**
+- RESOLVED: Mobile tooltip interaction issue - replaced hover tooltips with click-based MobileTooltip component
+- IMPLEMENTED: Custom MobileTooltip component supporting both click/tap interactions for mobile devices
+- FIXED: BMR, TDEE, and Daily Target Calories tooltips now work properly on touch devices
+- ENHANCED: Mobile user experience with accessible help information through tap interactions
+- FIXED: Calendar scroll jumping issue - removed all automatic scroll adjustments for stable date selection
+- SIMPLIFIED: Calendar date selection now maintains user's current scroll position without disruption
+- COMPLETED: Mobile-friendly tooltip system with proper touch support across all profile calculations
+
 **July 3, 2025 - Complete EAS Configuration & iOS Build Setup:**
 - CONFIGURED: Complete EAS (Expo Application Services) setup for iOS app building and deployment
 - CREATED: Production-ready eas.json with development, preview, and production build profiles
