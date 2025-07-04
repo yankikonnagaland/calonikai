@@ -552,6 +552,14 @@ The application follows a client-server architecture with clear separation of co
 - READY: App is now configured for immediate iOS build using `eas build --platform ios --profile production`
 - VERIFIED: All required dependencies installed and EAS CLI working properly in user's local environment
 
+**July 4, 2025 - Resolved EAS Team Ownership Configuration Issues:**
+- IDENTIFIED: "calonik-team" ownership conflict preventing builds from proceeding
+- CLEANED: Removed all .expo cache folders and .eas.json files to clear cached configurations
+- SIMPLIFIED: Updated eas.json with minimal configuration (CLI 3.0.0+, store distribution, yanpvuo owner)
+- UPDATED: app.json expo config with clean "Calonik" name, "calonik" slug, and "yanpvuo" owner
+- CONFIGURED: Both eas.json and app.json now explicitly specify yanpvuo as project owner
+- READY: Clean configuration should resolve team access errors and allow successful iOS builds
+
 **July 3, 2025 - Complete EAS Configuration & iOS Build Setup:**
 - CONFIGURED: Complete EAS (Expo Application Services) setup for iOS app building and deployment
 - CREATED: Production-ready eas.json with development, preview, and production build profiles
