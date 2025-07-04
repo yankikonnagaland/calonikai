@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { NumberInput } from "@/components/ui/number-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { calculateProfileSchema } from "@shared/schema";
@@ -20,6 +20,22 @@ import { z } from "zod";
 interface UserProfileProps {
   sessionId: string;
 }
+
+// Mobile-friendly tooltip component
+const MobileTooltip = ({ children, content }: { children: React.ReactNode; content: string }) => {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="inline-flex items-center justify-center p-1 rounded-full hover:bg-primary/10 focus:bg-primary/10 transition-colors">
+          {children}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 text-sm" side="top">
+        <p>{content}</p>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 export default function UserProfile({ sessionId }: UserProfileProps) {
   const [aiInsights, setAiInsights] = useState<string>("");
@@ -220,8 +236,7 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                         form.watch('weightGoal') && form.watch('weightTarget');
 
   return (
-    <TooltipProvider>
-      <div className="max-w-4xl mx-auto space-y-6 p-4">
+    <div className="max-w-4xl mx-auto space-y-6 p-4">
       {/* Header */}
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
@@ -263,36 +278,18 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                     <div className="text-2xl font-bold text-primary">{profileData.bmr}</div>
                     <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
                       BMR (cal/day)
-                      <Tooltip delayDuration={0}>
-                        <TooltipTrigger asChild>
-                          <button className="p-0.5 rounded-full hover:bg-primary/10 focus:bg-primary/10 transition-colors">
-                            <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/40 hover:text-primary transition-colors duration-200 ease-in-out" />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs bg-popover border shadow-lg" side="top">
-                          <p className="text-sm">
-                            Basal Metabolic Rate (BMR)- The minimum calories your body needs to function at rest (breathing, blood circulation, brain function). Even if you do not exercise, your body will still burn calories to perform these functions
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
+                      <MobileTooltip content="Basal Metabolic Rate (BMR)- The minimum calories your body needs to function at rest (breathing, blood circulation, brain function). Even if you do not exercise, your body will still burn calories to perform these functions">
+                        <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/40 hover:text-primary transition-colors duration-200 ease-in-out" />
+                      </MobileTooltip>
                     </div>
                   </div>
                   <div className="text-center p-3 bg-white/50 dark:bg-black/20 rounded-lg">
                     <div className="text-2xl font-bold text-primary">{profileData.tdee}</div>
                     <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
                       TDEE (cal/day)
-                      <Tooltip delayDuration={0}>
-                        <TooltipTrigger asChild>
-                          <button className="p-0.5 rounded-full hover:bg-primary/10 focus:bg-primary/10 transition-colors">
-                            <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/40 hover:text-primary transition-colors duration-200 ease-in-out" />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs bg-popover border shadow-lg" side="top">
-                          <p className="text-sm">
-                            Total Daily Energy Expenditure - Amount of energy spent by your body which is your BMR plus calories burned through daily activities and exercise
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
+                      <MobileTooltip content="Total Daily Energy Expenditure - Amount of energy spent by your body which is your BMR plus calories burned through daily activities and exercise">
+                        <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/40 hover:text-primary transition-colors duration-200 ease-in-out" />
+                      </MobileTooltip>
                     </div>
                   </div>
                   {profileData.weightGoal === 'muscle' && profileData.targetProtein && (
@@ -307,18 +304,9 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                   <div className="text-3xl font-bold text-primary">{profileData.targetCalories}</div>
                   <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
                     Daily Target Calories
-                    <Tooltip delayDuration={0}>
-                      <TooltipTrigger asChild>
-                        <button className="p-0.5 rounded-full hover:bg-primary/10 focus:bg-primary/10 transition-colors">
-                          <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/40 hover:text-primary transition-colors duration-200 ease-in-out" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs bg-popover border shadow-lg" side="top">
-                        <p className="text-sm">
-                          This is the number of calories you should eat each day based on your goal
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
+                    <MobileTooltip content="This is the number of calories you should eat each day based on your goal">
+                      <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/40 hover:text-primary transition-colors duration-200 ease-in-out" />
+                    </MobileTooltip>
                   </div>
                   <Badge variant={
                     profileData.weightGoal === 'lose' ? 'destructive' : 
@@ -690,6 +678,5 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
         </div>
       </div>
     </div>
-    </TooltipProvider>
   );
 }

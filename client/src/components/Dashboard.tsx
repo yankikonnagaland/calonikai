@@ -991,35 +991,26 @@ Powered by Calonik.ai 🚀
     });
   };
   
-  // Handle date selection and load data for selected date while preserving calendar scroll position
+  // Handle date selection with stable positioning  
   const handleDateSelect = (dateStr: string) => {
-    // Store current scroll positions - both window and calendar container
-    const scrollY = window.scrollY;
-    const calendarRect = calendarRef.current?.getBoundingClientRect();
-    const calendarOffset = calendarRect ? scrollY + calendarRect.top : scrollY;
-    
     setSelectedDate(dateStr);
+    
+    // Invalidate queries to refresh data for the selected date
     queryClient.invalidateQueries({ queryKey: [`/api/daily-summary/${sessionId}/${dateStr}`] });
     
-    // Use requestAnimationFrame for more precise timing and better performance
-    requestAnimationFrame(() => {
-      // If calendar is still in view, maintain its position precisely
-      if (calendarRef.current && calendarRect) {
-        const newCalendarRect = calendarRef.current.getBoundingClientRect();
-        const currentCalendarTop = scrollY + newCalendarRect.top;
-        const scrollAdjustment = calendarOffset - currentCalendarTop;
-        
-        if (Math.abs(scrollAdjustment) > 5) { // Only adjust if significant change
-          window.scrollTo({ 
-            top: scrollY + scrollAdjustment, 
-            behavior: 'instant' 
+    // Simple, reliable scroll management - only adjust if calendar goes out of view
+    setTimeout(() => {
+      if (calendarRef.current) {
+        const rect = calendarRef.current.getBoundingClientRect();
+        // If calendar header is above viewport, scroll it back into view
+        if (rect.top < 0) {
+          calendarRef.current.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
           });
         }
-      } else {
-        // Fallback to simple scroll restoration
-        window.scrollTo({ top: scrollY, behavior: 'instant' });
       }
-    });
+    }, 150);
   };
 
   const getCalorieStatus = (summary: DailySummary | undefined) => {
