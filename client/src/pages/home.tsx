@@ -325,44 +325,34 @@ export default function Home() {
         {/* Exercise Tab */}
         {activeTab === "exercise" && (
           <div className="animate-fade-in">
-            {/* Calendar Date Picker for Exercise */}
-            <Card className="mb-6 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border-blue-200 dark:border-blue-800">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center text-lg">
-                  <CalendarDays className="w-5 h-5 mr-2 text-blue-600" />
-                  Select Exercise Date
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Choose the date for your exercise tracking
-                </p>
-              </CardHeader>
-              <CardContent>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal h-12"
-                    >
-                      <CalendarDays className="mr-3 h-4 w-4" />
-                      {format(selectedDate, 'EEEE, MMMM do, yyyy')}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={(date) => {
-                        if (date) {
-                          setSelectedDate(date);
-                        }
-                      }}
-                      disabled={(date) => date > new Date()}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </CardContent>
-            </Card>
+            {/* Date Picker Button - Top Right */}
+            <div className="flex justify-end mb-4">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750"
+                  >
+                    <CalendarDays className="h-4 w-4" />
+                    {format(selectedDate, 'MMM d, yyyy')}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => {
+                      if (date) {
+                        setSelectedDate(date);
+                      }
+                    }}
+                    disabled={(date) => date > new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
             
             <ExerciseTracker sessionId={sessionId} selectedDate={selectedDateString} />
           </div>

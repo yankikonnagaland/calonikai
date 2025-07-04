@@ -515,6 +515,16 @@ The application follows a client-server architecture with clear separation of co
 - MAINTAINED: "Pieces" unit still properly appears for appropriate foods like fruits, nuts, and countable items
 - IMPROVED: Better user experience with contextually appropriate measurement units for different food categories
 
+**July 4, 2025 - Enhanced Calendar UX & Compact Date Selection:**
+- ENHANCED: Dashboard calendar date selection with intelligent scroll position preservation
+- IMPLEMENTED: Smart calendar position tracking using React useRef and getBoundingClientRect for stable view focus
+- ADDED: RequestAnimationFrame optimization for smooth calendar interaction without scroll disruption
+- REPLACED: Large exercise calendar card with compact top-right calendar button for better space utilization
+- IMPROVED: Exercise tab UX by removing bulky date picker card and implementing minimalist date selection
+- STREAMLINED: Date picker now shows "MMM d, yyyy" format in small button with popover calendar
+- OPTIMIZED: Calendar button aligned to right with clean styling and hover effects
+- ENHANCED: Overall navigation responsiveness across dashboard and exercise tracking interfaces
+
 **July 3, 2025 - Complete EAS Configuration & iOS Build Setup:**
 - CONFIGURED: Complete EAS (Expo Application Services) setup for iOS app building and deployment
 - CREATED: Production-ready eas.json with development, preview, and production build profiles
