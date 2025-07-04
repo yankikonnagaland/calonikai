@@ -38,6 +38,10 @@ eas project:info
 eas build --platform ios --profile production
 ```
 
+**Important Prompts During Build:**
+- **Create EAS project?** → Answer: `y`
+- **iOS Bundle Identifier?** → Answer: `ai.calonik.app`
+
 ### 7. Download Build Artifact
 After successful build, download the .ipa file from the Expo dashboard.
 
