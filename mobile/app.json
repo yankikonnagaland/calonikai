@@ -46,9 +46,7 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "eas": {
-        "projectId": "placeholder-project-id"
-      }
+      "eas": {}
     },
     "owner": "calonik-team",
     "plugins": [
