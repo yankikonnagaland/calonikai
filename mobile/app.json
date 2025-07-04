@@ -20,6 +20,11 @@
       },
       "package": "ai.calonik.app",
       "versionCode": 1
+    },
+    "extra": {
+      "eas": {
+        "projectId": "69fbe8d9-3226-4916-a01c-3ac66b4e8da7"
+      }
     }
   }
 }
