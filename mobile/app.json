@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Calonik - AI Calorie Tracker",
-    "slug": "calonik-personal-app",
+    "slug": "calonik-mobile-app-2025",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
@@ -19,11 +19,6 @@
       },
       "package": "ai.calonik.app",
       "versionCode": 1
-    },
-    "extra": {
-      "eas": {
-        "projectId": "69fbe8d9-3226-4916-a01c-3ac66b4e8da7"
-      }
     }
   }
 }
