@@ -2,6 +2,7 @@
   "expo": {
     "name": "Calonik - AI Calorie Tracker",
     "slug": "calonik-mobile-app-2025",
+    "owner": "yanpvuo",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
