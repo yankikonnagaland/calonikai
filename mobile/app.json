@@ -1,68 +1,24 @@
 {
   "expo": {
     "name": "Calonik - AI Calorie Tracker",
-    "slug": "calonik-calorie-tracker", 
+    "slug": "calonik-calorie-tracker",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0F172A"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "ai.calonik.app",
-      "buildNumber": "1",
-      "infoPlist": {
-        "NSCameraUsageDescription": "Calonik uses camera to analyze food images for accurate nutrition tracking and calorie estimation",
-        "NSPhotoLibraryUsageDescription": "Calonik accesses photo library to analyze food images and provide nutritional information",
-        "NSHealthShareUsageDescription": "Calonik can sync with Health app to share your nutrition and calorie data for comprehensive health tracking",
-        "NSHealthUpdateUsageDescription": "Calonik can update Health app with your nutrition progress and daily calorie intake",
-        "NSMicrophoneUsageDescription": "Microphone access is not used by this app"
-      },
-      "config": {
-        "usesNonExemptEncryption": false
-      }
+      "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0F172A"
+        "backgroundColor": "#FFFFFF"
       },
       "package": "ai.calonik.app",
-      "versionCode": 1,
-      "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
-      ]
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "extra": {
-      "eas": {}
-    },
-    "owner": "calonik-team",
-    "plugins": [
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "Allow Calonik to access your camera to scan and analyze food for nutrition tracking."
-        }
-      ],
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "Allow Calonik to access your photo library to analyze food images."
-        }
-      ]
-    ],
-    "scheme": "calonik"
+      "versionCode": 1
+    }
   }
 }
