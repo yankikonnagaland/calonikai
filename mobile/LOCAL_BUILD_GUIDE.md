@@ -42,6 +42,49 @@ eas build --platform ios --profile production
 - **Create EAS project?** → Answer: `y`
 - **iOS Bundle Identifier?** → Answer: `ai.calonik.app`
 
+## Troubleshooting React Native Crashes
+
+If you encounter React Native crashes like "RCTFatal" or "non-std C++ exception", try these fixes:
+
+### 1. Clear Cache
+```bash
+# Clear Expo cache
+expo r -c
+
+# Clear npm cache
+npm cache clean --force
+```
+
+### 2. Reset Dependencies
+```bash
+# Delete node_modules and reinstall
+rm -rf node_modules
+npm install
+```
+
+### 3. Check Expo SDK Version
+```bash
+# Ensure you're using compatible Expo SDK
+expo install --fix
+```
+
+### 4. Reset Development Server
+```bash
+# Kill any running Metro bundlers
+pkill -f "expo start"
+
+# Restart with clean cache
+expo start -c
+```
+
+### 5. If Building for iOS
+```bash
+# Clear iOS simulator
+xcrun simctl erase all
+```
+
+The current configuration disables the new React Native architecture which should prevent most crashes.
+
 ### 7. Download Build Artifact
 After successful build, download the .ipa file from the Expo dashboard.
 
