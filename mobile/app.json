@@ -2,7 +2,6 @@
   "expo": {
     "name": "Calonik",
     "slug": "calonik",
-    "owner": "yanpvuo",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",

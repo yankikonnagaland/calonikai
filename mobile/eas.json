@@ -4,11 +4,7 @@
   },
   "build": {
     "production": {
-      "developmentClient": false,
       "distribution": "store"
     }
-  },
-  "submit": {
-    "production": {}
   }
 }
