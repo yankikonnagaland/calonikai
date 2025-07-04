@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
+
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useMemo, useRef } from "react";
 import type { DailySummary, UserProfile, Exercise } from "@shared/schema";
@@ -953,67 +954,6 @@ Powered by Calonik.ai 🚀
   const selectedMealItems = selectedSummary?.mealData ? JSON.parse(selectedSummary.mealData) : [];
   const todayMealItems = todaySummary?.mealData ? JSON.parse(todaySummary.mealData) : [];
 
-  // Generate calendar days for current month
-  const generateCalendarDays = () => {
-    const year = currentMonth.getFullYear();
-    const month = currentMonth.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
-
-    const days = [];
-    
-    // Add empty cells for days before the first day of the month
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(null);
-    }
-    
-    // Add days of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const summary = dailySummaries.find(s => s.date === dateStr);
-      days.push({ day, dateStr, summary });
-    }
-    
-    return days;
-  };
-
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    setCurrentMonth(prev => {
-      const newMonth = new Date(prev);
-      if (direction === 'prev') {
-        newMonth.setMonth(prev.getMonth() - 1);
-      } else {
-        newMonth.setMonth(prev.getMonth() + 1);
-      }
-      return newMonth;
-    });
-  };
-  
-  // Handle date selection with mobile-optimized scroll prevention
-  const handleDateSelect = (dateStr: string) => {
-    // Store current scroll position before any state changes
-    const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
-    
-    setSelectedDate(dateStr);
-    
-    // Invalidate queries to refresh data for the selected date
-    queryClient.invalidateQueries({ queryKey: [`/api/daily-summary/${sessionId}/${dateStr}`] });
-    
-    // Use multiple methods to ensure scroll position stays stable on mobile
-    requestAnimationFrame(() => {
-      window.scrollTo(0, currentScrollY);
-      
-      // Additional mobile-specific scroll lock
-      setTimeout(() => {
-        if (window.pageYOffset !== currentScrollY) {
-          window.scrollTo(0, currentScrollY);
-        }
-      }, 50);
-    });
-  };
-
   const getCalorieStatus = (summary: DailySummary | undefined) => {
     if (!summary || !userProfile) return null;
     
@@ -1037,9 +977,47 @@ Powered by Calonik.ai 🚀
     
     return { 
       color: achieved ? 'bg-green-500' : 'bg-red-500', 
-      status: achieved ? 'achieved' : 'missed' 
+      status: achieved ? 'achieved' : 'missed',
+      achieved 
     };
   };
+
+  // Generate calendar days for current month
+  const generateSimpleCalendarDays = () => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    const days = [];
+    
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
+    }
+    
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const summary = dailySummaries.find(s => s.date === dateStr);
+      days.push({ day, dateStr, summary });
+    }
+    
+    return days;
+  };
+  
+  // Handle date selection from React Native Calendar
+  const handleDateSelect = (day: any) => {
+    const dateStr = day.dateString;
+    setSelectedDate(dateStr);
+    
+    // Invalidate queries to refresh data for the selected date
+    queryClient.invalidateQueries({ queryKey: [`/api/daily-summary/${sessionId}/${dateStr}`] });
+  };
+
+
 
   // Helper function to calculate calories burned from exercises for the selected date only
   const getCaloriesOutForDate = (dateStr: string) => {
@@ -1875,22 +1853,40 @@ Powered by Calonik.ai 🚀
                 <Calendar className="w-4 h-4" />
                 Calendar
               </CardTitle>
-              <div className="flex items-center gap-1">
-                <Button variant="outline" size="sm" onClick={() => navigateMonth('prev')}>
-                  <ChevronLeft className="w-3 h-3" />
-                </Button>
-                <span className="font-medium text-xs min-w-[80px] text-center">
-                  {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-                </span>
-                <Button variant="outline" size="sm" onClick={() => navigateMonth('next')}>
-                  <ChevronRight className="w-3 h-3" />
-                </Button>
-              </div>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {/* Calendar Grid */}
+              {/* Simple month navigation */}
+              <div className="flex items-center justify-between mb-4">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    const newDate = new Date(currentMonth);
+                    newDate.setMonth(newDate.getMonth() - 1);
+                    setCurrentMonth(newDate);
+                  }}
+                >
+                  <ChevronLeft className="w-3 h-3" />
+                </Button>
+                <span className="font-medium text-sm">
+                  {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                </span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    const newDate = new Date(currentMonth);
+                    newDate.setMonth(newDate.getMonth() + 1);
+                    setCurrentMonth(newDate);
+                  }}
+                >
+                  <ChevronRight className="w-3 h-3" />
+                </Button>
+              </div>
+
+              {/* Day headers */}
               <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground mb-2">
                 <div>S</div>
                 <div>M</div>
@@ -1901,35 +1897,26 @@ Powered by Calonik.ai 🚀
                 <div>S</div>
               </div>
               
+              {/* Calendar grid with simplified implementation */}
               <div className="grid grid-cols-7 gap-1">
-                {generateCalendarDays().map((dayData, index) => (
+                {generateSimpleCalendarDays().map((dayData, index) => (
                   <div key={index} className="aspect-square">
                     {dayData ? (
                       <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleDateSelect(dayData.dateStr);
-                        }}
-                        onTouchStart={(e) => {
-                          e.preventDefault();
-                        }}
-                        className={`calendar-button w-full h-full rounded text-xs font-medium transition-all relative ${
+                        onClick={() => handleDateSelect({ dateString: dayData.dateStr })}
+                        className={`w-full h-full rounded text-xs font-medium transition-all relative ${
                           selectedDate === dayData.dateStr
-                            ? 'bg-primary text-primary-foreground'
+                            ? 'bg-purple-500 text-white'
                             : dayData.dateStr === today
-                            ? 'bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 ring-2 ring-blue-500'
+                            ? 'bg-blue-500 text-white border-2 border-blue-600'
                             : dayData.summary
-                            ? 'bg-muted hover:bg-muted/80 text-foreground'
+                            ? getCalorieStatus(dayData.summary)?.achieved 
+                              ? 'bg-green-100 hover:bg-green-200 text-green-800'
+                              : 'bg-red-100 hover:bg-red-200 text-red-800'
                             : 'hover:bg-muted/50 text-muted-foreground'
                         }`}
                       >
                         <span className="relative z-10">{dayData.day}</span>
-                        {dayData.summary && (
-                          <div className={`absolute bottom-0.5 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full ${
-                            getCalorieStatus(dayData.summary)?.color || 'bg-gray-400'
-                          }`}></div>
-                        )}
                       </button>
                     ) : (
                       <div className="w-full h-full"></div>
