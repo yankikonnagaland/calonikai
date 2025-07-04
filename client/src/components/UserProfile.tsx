@@ -263,11 +263,13 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                     <div className="text-2xl font-bold text-primary">{profileData.bmr}</div>
                     <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
                       BMR (cal/day)
-                      <Tooltip delayDuration={200}>
+                      <Tooltip delayDuration={0}>
                         <TooltipTrigger asChild>
-                          <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/40 hover:text-primary transition-colors duration-200 ease-in-out" />
+                          <button className="p-0.5 rounded-full hover:bg-primary/10 focus:bg-primary/10 transition-colors">
+                            <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/40 hover:text-primary transition-colors duration-200 ease-in-out" />
+                          </button>
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-xs bg-popover border shadow-lg">
+                        <TooltipContent className="max-w-xs bg-popover border shadow-lg" side="top">
                           <p className="text-sm">
                             Basal Metabolic Rate (BMR)- The minimum calories your body needs to function at rest (breathing, blood circulation, brain function). Even if you do not exercise, your body will still burn calories to perform these functions
                           </p>
@@ -279,11 +281,13 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                     <div className="text-2xl font-bold text-primary">{profileData.tdee}</div>
                     <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
                       TDEE (cal/day)
-                      <Tooltip delayDuration={200}>
+                      <Tooltip delayDuration={0}>
                         <TooltipTrigger asChild>
-                          <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/40 hover:text-primary transition-colors duration-200 ease-in-out" />
+                          <button className="p-0.5 rounded-full hover:bg-primary/10 focus:bg-primary/10 transition-colors">
+                            <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/40 hover:text-primary transition-colors duration-200 ease-in-out" />
+                          </button>
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-xs bg-popover border shadow-lg">
+                        <TooltipContent className="max-w-xs bg-popover border shadow-lg" side="top">
                           <p className="text-sm">
                             Total Daily Energy Expenditure - Amount of energy spent by your body which is your BMR plus calories burned through daily activities and exercise
                           </p>
@@ -303,11 +307,13 @@ export default function UserProfile({ sessionId }: UserProfileProps) {
                   <div className="text-3xl font-bold text-primary">{profileData.targetCalories}</div>
                   <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
                     Daily Target Calories
-                    <Tooltip delayDuration={200}>
+                    <Tooltip delayDuration={0}>
                       <TooltipTrigger asChild>
-                        <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/40 hover:text-primary transition-colors duration-200 ease-in-out" />
+                        <button className="p-0.5 rounded-full hover:bg-primary/10 focus:bg-primary/10 transition-colors">
+                          <HelpCircle className="w-3 h-3 cursor-help text-muted-foreground/40 hover:text-primary transition-colors duration-200 ease-in-out" />
+                        </button>
                       </TooltipTrigger>
-                      <TooltipContent className="max-w-xs bg-popover border shadow-lg">
+                      <TooltipContent className="max-w-xs bg-popover border shadow-lg" side="top">
                         <p className="text-sm">
                           This is the number of calories you should eat each day based on your goal
                         </p>
