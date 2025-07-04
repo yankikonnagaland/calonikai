@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 
 import { useToast } from "@/hooks/use-toast";
@@ -1065,7 +1066,132 @@ Powered by Calonik.ai 🚀
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Header with Calendar Button */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Health Dashboard
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              {selectedDate === today 
+                ? "Today's progress and insights"
+                : `Progress for ${new Date(selectedDate).toLocaleDateString('en-US', { 
+                    weekday: 'long',
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}`
+              }
+            </p>
+          </div>
+          
+          {/* Calendar Button */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                {selectedDate === today 
+                  ? "Today" 
+                  : new Date(selectedDate).toLocaleDateString('en-US', { 
+                      month: 'short', 
+                      day: 'numeric' 
+                    })
+                }
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80" align="end">
+              <div className="space-y-4">
+                {/* Month navigation */}
+                <div className="flex items-center justify-between">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      const newDate = new Date(currentMonth);
+                      newDate.setMonth(newDate.getMonth() - 1);
+                      setCurrentMonth(newDate);
+                    }}
+                  >
+                    <ChevronLeft className="w-3 h-3" />
+                  </Button>
+                  <span className="font-medium text-sm">
+                    {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                  </span>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      const newDate = new Date(currentMonth);
+                      newDate.setMonth(newDate.getMonth() + 1);
+                      setCurrentMonth(newDate);
+                    }}
+                  >
+                    <ChevronRight className="w-3 h-3" />
+                  </Button>
+                </div>
+
+                {/* Day headers */}
+                <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
+                  <div>S</div>
+                  <div>M</div>
+                  <div>T</div>
+                  <div>W</div>
+                  <div>T</div>
+                  <div>F</div>
+                  <div>S</div>
+                </div>
+                
+                {/* Calendar grid */}
+                <div className="grid grid-cols-7 gap-1">
+                  {generateSimpleCalendarDays().map((dayData, index) => (
+                    <div key={index} className="aspect-square">
+                      {dayData ? (
+                        <button
+                          onClick={() => handleDateSelect({ dateString: dayData.dateStr })}
+                          className={`w-full h-full rounded text-xs font-medium transition-all relative ${
+                            selectedDate === dayData.dateStr
+                              ? 'bg-purple-500 text-white'
+                              : dayData.dateStr === today
+                              ? 'bg-blue-500 text-white'
+                              : dayData.summary
+                              ? getCalorieStatus(dayData.summary)?.achieved 
+                                ? 'bg-green-100 hover:bg-green-200 text-green-800'
+                                : 'bg-red-100 hover:bg-red-200 text-red-800'
+                              : 'hover:bg-muted/50 text-muted-foreground'
+                          }`}
+                        >
+                          <span className="relative z-10">{dayData.day}</span>
+                        </button>
+                      ) : (
+                        <div className="w-full h-full"></div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Legend */}
+                <div className="flex justify-center gap-4 text-xs border-t pt-2">
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-blue-500 rounded"></div>
+                    <span>Today</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-green-500 rounded"></div>
+                    <span>Goal Met</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-red-500 rounded"></div>
+                    <span>Missed</span>
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6">
       {/* Main Content - Daily Summary */}
       <div className="lg:col-span-3 space-y-6">
         {/* Calorie Goal Progress - Moved to Top */}
@@ -1842,109 +1968,7 @@ Powered by Calonik.ai 🚀
             </CardContent>
           </Card>
         )}
-      </div>
-      {/* Side Calendar */}
-      <div className="lg:col-span-1 space-y-6">
-        {/* Calendar View */}
-        <Card ref={calendarRef} className="calendar-container">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                Calendar
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {/* Simple month navigation */}
-              <div className="flex items-center justify-between mb-4">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => {
-                    const newDate = new Date(currentMonth);
-                    newDate.setMonth(newDate.getMonth() - 1);
-                    setCurrentMonth(newDate);
-                  }}
-                >
-                  <ChevronLeft className="w-3 h-3" />
-                </Button>
-                <span className="font-medium text-sm">
-                  {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-                </span>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => {
-                    const newDate = new Date(currentMonth);
-                    newDate.setMonth(newDate.getMonth() + 1);
-                    setCurrentMonth(newDate);
-                  }}
-                >
-                  <ChevronRight className="w-3 h-3" />
-                </Button>
-              </div>
-
-              {/* Day headers */}
-              <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground mb-2">
-                <div>S</div>
-                <div>M</div>
-                <div>T</div>
-                <div>W</div>
-                <div>T</div>
-                <div>F</div>
-                <div>S</div>
-              </div>
-              
-              {/* Calendar grid with simplified implementation */}
-              <div className="grid grid-cols-7 gap-1">
-                {generateSimpleCalendarDays().map((dayData, index) => (
-                  <div key={index} className="aspect-square">
-                    {dayData ? (
-                      <button
-                        onClick={() => handleDateSelect({ dateString: dayData.dateStr })}
-                        className={`w-full h-full rounded text-xs font-medium transition-all relative ${
-                          selectedDate === dayData.dateStr
-                            ? 'bg-purple-500 text-white'
-                            : dayData.dateStr === today
-                            ? 'bg-blue-500 text-white border-2 border-blue-600'
-                            : dayData.summary
-                            ? getCalorieStatus(dayData.summary)?.achieved 
-                              ? 'bg-green-100 hover:bg-green-200 text-green-800'
-                              : 'bg-red-100 hover:bg-red-200 text-red-800'
-                            : 'hover:bg-muted/50 text-muted-foreground'
-                        }`}
-                      >
-                        <span className="relative z-10">{dayData.day}</span>
-                      </button>
-                    ) : (
-                      <div className="w-full h-full"></div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Legend */}
-              <div className="space-y-1 text-xs text-muted-foreground pt-2 border-t">
-                <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                  <span>Goal Achieved</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-                  <span>Goal Missed</span>
-                </div>
-                {userProfile && (
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Target: {userProfile.targetCalories} cal ({userProfile.weightGoal || 'maintain'})
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
+        
         {/* Quick Stats */}
         <Card>
           <CardHeader>
@@ -2025,6 +2049,8 @@ Powered by Calonik.ai 🚀
             </div>
           </CardContent>
         </Card>
+      </div>
+      </div>
       </div>
     </div>
   );
