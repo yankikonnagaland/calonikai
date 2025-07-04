@@ -2,7 +2,6 @@ import { Utensils, User, Activity, Calendar, LogOut, Crown } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import calonikLogo from "../assets/calonik-logo.png";
 
 interface NavigationProps {
   activeTab: string;
@@ -19,11 +18,6 @@ export default function Navigation({ activeTab, onTabChange }: NavigationProps) 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3">
-              <img 
-                src={calonikLogo}
-                alt="Calonik Logo" 
-                className="w-8 h-8 object-contain"
-              />
               <div className="flex items-center gap-3">
                 <div>
                   <h1 className="text-xl font-semibold">Calonik.ai</h1>
