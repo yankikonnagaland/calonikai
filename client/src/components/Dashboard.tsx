@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import type { DailySummary, UserProfile, Exercise } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
@@ -20,6 +20,7 @@ export default function Dashboard({ sessionId }: DashboardProps) {
   const today = useMemo(() => new Date().toISOString().split('T')[0], []);
   const [selectedDate, setSelectedDate] = useState<string>(today);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const calendarRef = useRef<HTMLDivElement>(null);
 
   // Reset selected date to today on component mount
   useEffect(() => {
@@ -990,10 +991,35 @@ Powered by Calonik.ai 🚀
     });
   };
   
-  // Handle date selection and load data for selected date
+  // Handle date selection and load data for selected date while preserving calendar scroll position
   const handleDateSelect = (dateStr: string) => {
+    // Store current scroll positions - both window and calendar container
+    const scrollY = window.scrollY;
+    const calendarRect = calendarRef.current?.getBoundingClientRect();
+    const calendarOffset = calendarRect ? scrollY + calendarRect.top : scrollY;
+    
     setSelectedDate(dateStr);
     queryClient.invalidateQueries({ queryKey: [`/api/daily-summary/${sessionId}/${dateStr}`] });
+    
+    // Use requestAnimationFrame for more precise timing and better performance
+    requestAnimationFrame(() => {
+      // If calendar is still in view, maintain its position precisely
+      if (calendarRef.current && calendarRect) {
+        const newCalendarRect = calendarRef.current.getBoundingClientRect();
+        const currentCalendarTop = scrollY + newCalendarRect.top;
+        const scrollAdjustment = calendarOffset - currentCalendarTop;
+        
+        if (Math.abs(scrollAdjustment) > 5) { // Only adjust if significant change
+          window.scrollTo({ 
+            top: scrollY + scrollAdjustment, 
+            behavior: 'instant' 
+          });
+        }
+      } else {
+        // Fallback to simple scroll restoration
+        window.scrollTo({ top: scrollY, behavior: 'instant' });
+      }
+    });
   };
 
   const getCalorieStatus = (summary: DailySummary | undefined) => {
@@ -1850,7 +1876,7 @@ Powered by Calonik.ai 🚀
       {/* Side Calendar */}
       <div className="lg:col-span-1 space-y-6">
         {/* Calendar View */}
-        <Card>
+        <Card ref={calendarRef}>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
