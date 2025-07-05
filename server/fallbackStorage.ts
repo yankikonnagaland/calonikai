@@ -424,19 +424,19 @@ export class FallbackStorage {
   }
 
   // Usage tracking operations
-  async trackUsage(userId: string, actionType: "meal_add" | "photo_analyze"): Promise<void> {
+  async trackUsage(userId: string, actionType: "meal_add" | "photo_analyze" | "food_search"): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
     const key = `${userId}-${actionType}-${today}`;
     const currentCount = memoryUsage.get(key) || 0;
     memoryUsage.set(key, currentCount + 1);
   }
 
-  async getUserUsage(userId: string, actionType: "meal_add" | "photo_analyze", date: string): Promise<number> {
+  async getUserUsage(userId: string, actionType: "meal_add" | "photo_analyze" | "food_search", date: string): Promise<number> {
     const key = `${userId}-${actionType}-${date}`;
     return memoryUsage.get(key) || 0;
   }
 
-  async canUserPerformAction(userId: string, actionType: "meal_add" | "photo_analyze"): Promise<boolean> {
+  async canUserPerformAction(userId: string, actionType: "meal_add" | "photo_analyze" | "food_search"): Promise<boolean> {
     // Admin users have unlimited access
     if (userId === "admin_testing_user") {
       return true;
@@ -450,7 +450,8 @@ export class FallbackStorage {
     if (user?.subscriptionStatus === 'premium') {
       const premiumLimits = {
         meal_add: 20,
-        photo_analyze: 5
+        photo_analyze: 5,
+        food_search: 10  // 10 food searches per day for premium
       };
       return usage < premiumLimits[actionType];
     }
@@ -458,8 +459,9 @@ export class FallbackStorage {
     // Basic users have moderate limits
     if (user?.subscriptionStatus === 'basic') {
       const basicLimits = {
-        meal_add: 5,  // 5 food searches per day
-        photo_analyze: 2  // 2 photo scans per day
+        meal_add: 5,
+        photo_analyze: 2,
+        food_search: 10  // 10 food searches per day for basic
       };
       return usage < basicLimits[actionType];
     }
@@ -467,7 +469,8 @@ export class FallbackStorage {
     // Free limits
     const freeLimits = {
       meal_add: 1,
-      photo_analyze: 2
+      photo_analyze: 2,
+      food_search: 2  // 2 food searches per day for free users
     };
     
     return usage < freeLimits[actionType];

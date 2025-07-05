@@ -81,9 +81,9 @@ export interface IStorage {
   updateUserStripeInfo(userId: string, customerId: string, subscriptionId?: string): Promise<User>;
   
   // Usage tracking operations
-  trackUsage(userId: string, actionType: "meal_add" | "photo_analyze"): Promise<void>;
-  getUserUsage(userId: string, actionType: "meal_add" | "photo_analyze", date: string): Promise<number>;
-  canUserPerformAction(userId: string, actionType: "meal_add" | "photo_analyze"): Promise<boolean>;
+  trackUsage(userId: string, actionType: "meal_add" | "photo_analyze" | "food_search"): Promise<void>;
+  getUserUsage(userId: string, actionType: "meal_add" | "photo_analyze" | "food_search", date: string): Promise<number>;
+  canUserPerformAction(userId: string, actionType: "meal_add" | "photo_analyze" | "food_search"): Promise<boolean>;
   activatePremiumSubscription(userId: string, razorpayData: { customerId?: string; subscriptionId?: string }): Promise<User>;
   activateBasicSubscription(userId: string, razorpayData: { customerId?: string; subscriptionId?: string }): Promise<User>;
   
@@ -389,7 +389,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Usage tracking operations
-  async trackUsage(userId: string, actionType: "meal_add" | "photo_analyze"): Promise<void> {
+  async trackUsage(userId: string, actionType: "meal_add" | "photo_analyze" | "food_search"): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
     
     // Check if usage record exists for today
@@ -423,7 +423,7 @@ export class DatabaseStorage implements IStorage {
     // Daily tracking only - no need to update total counters since limits reset daily
   }
 
-  async getUserUsage(userId: string, actionType: "meal_add" | "photo_analyze", date: string): Promise<number> {
+  async getUserUsage(userId: string, actionType: "meal_add" | "photo_analyze" | "food_search", date: string): Promise<number> {
     const [usage] = await db
       .select()
       .from(usageTracking)
@@ -437,7 +437,7 @@ export class DatabaseStorage implements IStorage {
     return usage?.count || 0;
   }
 
-  async canUserPerformAction(userId: string, actionType: "meal_add" | "photo_analyze"): Promise<boolean> {
+  async canUserPerformAction(userId: string, actionType: "meal_add" | "photo_analyze" | "food_search"): Promise<boolean> {
     // Admin testing user has unlimited access
     if (userId === "admin_testing_user") {
       return true;
@@ -453,7 +453,8 @@ export class DatabaseStorage implements IStorage {
     if (user.subscriptionStatus === 'premium') {
       const premiumLimits = {
         meal_add: 20,
-        photo_analyze: 5
+        photo_analyze: 5,
+        food_search: 10  // 10 food searches per day for premium
       };
       
       return usage < premiumLimits[actionType];
@@ -462,8 +463,9 @@ export class DatabaseStorage implements IStorage {
     // Basic users have moderate daily limits
     if (user.subscriptionStatus === 'basic') {
       const basicLimits = {
-        meal_add: 5,  // 5 food searches per day
-        photo_analyze: 2  // 2 photo scans per day
+        meal_add: 5,
+        photo_analyze: 2,
+        food_search: 10  // 10 food searches per day for basic
       };
       
       return usage < basicLimits[actionType];
@@ -472,7 +474,8 @@ export class DatabaseStorage implements IStorage {
     // For free users, check basic limits
     const freeLimits = {
       meal_add: 1,
-      photo_analyze: 2  // Allow 2 free photos before showing subscription
+      photo_analyze: 2,
+      food_search: 2  // 2 food searches per day for free users
     };
 
     return usage < freeLimits[actionType];
