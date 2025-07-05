@@ -1,6 +1,6 @@
-# Calonik Mobile App - Local Setup Guide
+# Calonik Mobile App - Local Setup Guide (Expo SDK 53)
 
-This guide will help you run the Calonik mobile app locally using Expo.
+This guide will help you run the Calonik mobile app locally using Expo SDK 53.
 
 ## Prerequisites
 
@@ -8,14 +8,21 @@ This guide will help you run the Calonik mobile app locally using Expo.
    - Download from: https://nodejs.org/
    - Verify installation: `node --version`
 
-2. **Expo CLI**
+2. **Latest Expo CLI**
    ```bash
-   npm install -g @expo/cli
+   npm install -g @expo/cli@latest
    ```
 
 3. **Expo Go App** on your phone
-   - iOS: Download from App Store
+   - iOS: Download from App Store  
    - Android: Download from Google Play Store
+
+## Quick Fix for Metro Errors
+
+If you're getting Metro bundler errors, run the upgrade script:
+```bash
+fix-metro-error.bat
+```
 
 ## Setup Steps
 

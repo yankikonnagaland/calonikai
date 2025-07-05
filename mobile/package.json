@@ -10,14 +10,14 @@
     "clear": "expo start --clear"
   },
   "dependencies": {
-    "expo": "~51.0.28",
-    "expo-build-properties": "~0.12.1",
-    "expo-status-bar": "~1.12.1",
-    "react": "18.2.0",
-    "react-native": "0.74.5"
+    "expo": "~53.0.0",
+    "expo-build-properties": "~0.12.5",
+    "expo-status-bar": "~2.0.0",
+    "react": "18.3.1",
+    "react-native": "0.76.3"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0"
+    "@babel/core": "^7.25.0"
   },
   "private": true
 }
