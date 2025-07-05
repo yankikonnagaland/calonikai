@@ -1474,17 +1474,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Searching AI for additional "${query}" options (only ${foods.length} database results found)...`);
           const aiFood = await searchFoodDirectly(query);
           
-          // Enhanced duplicate detection - check for very similar names
+          // Smart duplicate detection - avoid filtering out meaningful variations
           const isUnique = !foods.some(existingFood => {
             const existingName = existingFood.name.toLowerCase().trim();
             const aiName = aiFood.name.toLowerCase().trim();
             
-            // Check for exact matches or very similar names
-            return existingName === aiName ||
-                   existingName.includes(aiName) ||
-                   aiName.includes(existingName) ||
-                   // Check if core food name is the same (e.g., "rice" vs "white rice")
-                   existingName.split(' ').some(word => aiName.split(' ').includes(word) && word.length > 3);
+            // Only consider exact matches or very close variations as duplicates
+            if (existingName === aiName) return true; // Exact match
+            
+            // Special case: Don't treat compound foods as duplicates of base ingredients
+            // e.g., "Milk Tea" vs "Tea", "Chicken Rice" vs "Rice", "Fruit Juice" vs "Juice"
+            const existingWords = existingName.split(' ');
+            const aiWords = aiName.split(' ');
+            
+            // If one name is a single word and the other contains that word plus modifiers, allow both
+            if (existingWords.length === 1 && aiWords.length > 1 && aiWords.includes(existingWords[0])) {
+              return false; // Allow "Milk Tea" when "Tea" exists
+            }
+            if (aiWords.length === 1 && existingWords.length > 1 && existingWords.includes(aiWords[0])) {
+              return false; // Allow "Tea" when "Milk Tea" exists
+            }
+            
+            // Only filter if names are very similar (90%+ character overlap)
+            const longerName = existingName.length > aiName.length ? existingName : aiName;
+            const shorterName = existingName.length <= aiName.length ? existingName : aiName;
+            const overlapRatio = shorterName.length / longerName.length;
+            
+            return overlapRatio > 0.9 && (existingName.includes(aiName) || aiName.includes(existingName));
           });
           
           if (isUnique) {
