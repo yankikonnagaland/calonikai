@@ -25,25 +25,48 @@ const loginSchema = z.object({
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  const pgStore = connectPg(session);
-  const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: true,
-    ttl: sessionTtl,
-    tableName: "sessions",
-  });
-  return session({
-    secret: process.env.SESSION_SECRET!,
-    store: sessionStore,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // Enable secure cookies in production
-      maxAge: sessionTtl,
-      sameSite: 'lax', // Required for OAuth flows
-    },
-  });
+  
+  try {
+    const pgStore = connectPg(session);
+    const sessionStore = new pgStore({
+      conString: process.env.DATABASE_URL,
+      createTableIfMissing: true,
+      ttl: sessionTtl,
+      tableName: "sessions",
+    });
+    
+    // Add error handling for the session store
+    sessionStore.on('error', (error) => {
+      console.error('Session store error:', error);
+    });
+    
+    return session({
+      secret: process.env.SESSION_SECRET!,
+      store: sessionStore,
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // Enable secure cookies in production
+        maxAge: sessionTtl,
+        sameSite: 'lax', // Required for OAuth flows
+      },
+    });
+  } catch (error) {
+    console.error('Failed to initialize session store, using memory store:', error);
+    // Fallback to memory store if database is unavailable
+    return session({
+      secret: process.env.SESSION_SECRET!,
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: sessionTtl,
+        sameSite: 'lax',
+      },
+    });
+  }
 }
 
 // Hash password helper
@@ -165,19 +188,36 @@ export async function setupAuth(app: Express) {
     ));
   }
 
-  passport.serializeUser((user: any, cb) => cb(null, user.id));
+  passport.serializeUser((user: any, cb) => {
+    try {
+      cb(null, user.id);
+    } catch (error) {
+      console.error("Failed to serialize user:", error);
+      cb(error, null);
+    }
+  });
+  
   passport.deserializeUser(async (id: string, cb) => {
     try {
-      const user = await storage.getUser(id);
+      // Add timeout protection for database calls
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('User lookup timeout')), 5000);
+      });
+      
+      const userPromise = storage.getUser(id);
+      const user = await Promise.race([userPromise, timeoutPromise]) as any;
+      
       if (!user) {
-        // If user doesn't exist in storage, clear the session
+        // If user doesn't exist in storage, clear the session gracefully
+        console.log(`User ${id} not found during session deserialization`);
         cb(null, false);
         return;
       }
       cb(null, user);
     } catch (error) {
       console.error("Failed to deserialize user:", error);
-      cb(null, false); // Don't throw error, just clear session
+      // Don't throw error, just clear session to prevent app crash
+      cb(null, false);
     }
   });
 
@@ -305,24 +345,29 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req: any, res, next) => {
-  // Check for admin session first
-  if (req.session && req.session.userId === "admin_testing_user" && req.session.isAdmin) {
-    // Get admin user from storage and set on request
-    try {
-      const adminUser = await storage.getUser("admin_testing_user");
-      if (adminUser) {
-        req.user = adminUser;
-        return next();
+  try {
+    // Check for admin session first
+    if (req.session && req.session.userId === "admin_testing_user" && req.session.isAdmin) {
+      // Get admin user from storage and set on request
+      try {
+        const adminUser = await storage.getUser("admin_testing_user");
+        if (adminUser) {
+          req.user = adminUser;
+          return next();
+        }
+      } catch (error) {
+        console.error("Error fetching admin user:", error);
       }
-    } catch (error) {
-      console.error("Error fetching admin user:", error);
     }
+    
+    // Fall back to standard Passport.js authentication
+    if (req.isAuthenticated && req.isAuthenticated()) {
+      return next();
+    }
+    
+    res.status(401).json({ message: "Unauthorized" });
+  } catch (error) {
+    console.error("Authentication middleware error:", error);
+    res.status(401).json({ message: "Authentication error" });
   }
-  
-  // Fall back to standard Passport.js authentication
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  
-  res.status(401).json({ message: "Unauthorized" });
 };
