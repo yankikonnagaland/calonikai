@@ -112,20 +112,21 @@ export async function setupAuth(app: Express) {
 
   // Configure Google OAuth strategy
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-    // Auto-detect domain from request or environment
-    const customDomain = 'calonik.ai';
-    const replitDomain = process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000';
+    // For development, use the exact Replit domain from environment
+    // For production, use calonik.ai
+    let domain;
+    let isProduction = false;
     
-    // Priority: 1) CUSTOM_DOMAIN env var, 2) Detect if running on calonik.ai, 3) Replit domain
-    let domain = replitDomain;
-    
-    if (process.env.CUSTOM_DOMAIN === customDomain) {
-      domain = customDomain;
-    } else if (process.env.REPLIT_DOMAINS && process.env.REPLIT_DOMAINS.includes('calonik.ai')) {
-      domain = customDomain;
-    } else if (process.env.NODE_ENV === 'production' && process.env.REPLIT_DEPLOYMENT === 'true') {
-      // Assume custom domain in production deployment
-      domain = customDomain;
+    // Check if we're on calonik.ai custom domain
+    if (process.env.REPLIT_DOMAINS && process.env.REPLIT_DOMAINS.includes('calonik.ai')) {
+      domain = 'calonik.ai';
+      isProduction = true;
+    } else if (process.env.CUSTOM_DOMAIN === 'calonik.ai') {
+      domain = 'calonik.ai';
+      isProduction = true;
+    } else {
+      // Use the first Replit domain for development
+      domain = process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000';
     }
     
     const callbackURL = domain.includes('localhost') 
@@ -133,7 +134,7 @@ export async function setupAuth(app: Express) {
       : `https://${domain}/api/auth/google/callback`;
     
     console.log(`Google OAuth configured with callback URL: ${callbackURL}`);
-    console.log(`Using domain: ${domain} (auto-detected for production: ${domain === customDomain})`);
+    console.log(`Using domain: ${domain} (auto-detected for production: ${isProduction})`);
     console.log(`Client ID configured: ${process.env.GOOGLE_CLIENT_ID ? 'Yes' : 'No'}`);
     
     passport.use(new GoogleStrategy(
