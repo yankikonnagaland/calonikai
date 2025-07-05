@@ -1,0 +1,50 @@
+Error: Cannot find module 'metro/src/ModuleGraph/worker/importLocationsPlugin'
+Require stack:
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\@expo\metro-config\build\serializer\reconcileTransformSerializerPlugin.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\@expo\metro-config\build\serializer\withExpoSerializers.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\@expo\metro-config\build\ExpoMetroConfig.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\expo\metro-config.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\metro.config.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\import-fresh\index.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\cosmiconfig\dist\loaders.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\cosmiconfig\dist\createExplorer.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\cosmiconfig\dist\index.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\metro-config\src\loadConfig.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\metro-config\src\index.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\@expo\cli\build\src\start\server\metro\instantiateMetro.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\@expo\cli\build\src\start\server\metro\MetroBundlerDevServer.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\@expo\cli\build\src\start\server\DevServerManager.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\@expo\cli\build\src\start\startAsync.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\@expo\cli\build\src\start\index.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\@expo\cli\build\bin\cli
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\expo\bin\cli
+Error: Cannot find module 'metro/src/ModuleGraph/worker/importLocationsPlugin'
+Require stack:
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\@expo\metro-config\build\serializer\reconcileTransformSerializerPlugin.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\@expo\metro-config\build\serializer\withExpoSerializers.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\@expo\metro-config\build\ExpoMetroConfig.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\expo\metro-config.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\metro.config.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\import-fresh\index.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\cosmiconfig\dist\loaders.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\cosmiconfig\dist\createExplorer.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\cosmiconfig\dist\index.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\metro-config\src\loadConfig.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\metro-config\src\index.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\@expo\cli\build\src\start\server\metro\instantiateMetro.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\@expo\cli\build\src\start\server\metro\MetroBundlerDevServer.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\@expo\cli\build\src\start\server\DevServerManager.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\@expo\cli\build\src\start\startAsync.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\@expo\cli\build\src\start\index.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\@expo\cli\build\bin\cli
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\expo\bin\cli
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1401:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1057:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1062:22)
+    at Function._load (node:internal/modules/cjs/loader:1211:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at Object.<anonymous> (C:\Users\Lenovo\Documents\CALONIK\APP\calonikai (6)\calonikai\mobile\node_modules\@expo\metro-config\src\serializer\reconcileTransformSerializerPlugin.ts:12:1)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
