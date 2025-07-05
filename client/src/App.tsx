@@ -17,6 +17,7 @@ import NotFound from "@/pages/not-found";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsConditions from "@/pages/TermsConditions";
 import RefundPolicy from "@/pages/RefundPolicy";
+import ExpoPage from "@/pages/expo";
 import Footer from "@/components/Footer";
 import DailyMotivationNotifications from "@/components/DailyMotivationNotifications";
 import TestNotification from "@/components/TestNotification";
@@ -54,6 +55,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/admin" component={AdminLogin} />
+      <Route path="/expo" component={ExpoPage} />
       <Route path="/oauth/google" component={OAuthRedirect} />
       <Route path="/oauth-callback" component={OAuthCallback} />
       <Route path="/payment-success" component={PaymentSuccess} />
