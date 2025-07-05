@@ -91,10 +91,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
   const { data: searchResults = [], isLoading: isSearching } = useQuery<Food[]>({
     queryKey: [`/api/foods/search`, debouncedQuery],
     queryFn: async () => {
-      const response = await fetch(`/api/foods/search?query=${encodeURIComponent(debouncedQuery)}`);
-      if (!response.ok) {
-        throw new Error('Failed to search foods');
-      }
+      const response = await apiRequest("GET", `/api/foods/search?query=${encodeURIComponent(debouncedQuery)}`);
       return response.json();
     },
     enabled: debouncedQuery.length > 0,

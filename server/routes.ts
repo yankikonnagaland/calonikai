@@ -1447,30 +1447,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { query } = validation.data;
       
       // Check user authentication and search limits
-      const sessionId = req.session?.user?.id || req.headers['x-session-id'] as string;
-      if (!sessionId) {
+      const adminKey = req.headers['x-admin-key'] as string;
+      const sessionId = req.session?.userId || req.session?.user?.id || req.headers['x-session-id'] as string;
+      
+      // Allow admin access with admin key
+      const isAdmin = adminKey === (process.env.ADMIN_SECRET || "calonik_admin_2025");
+      
+      if (!isAdmin && !sessionId) {
         return res.status(401).json({ message: "Authentication required" });
       }
 
-      // Check if user can perform food search (daily limits)
-      const canSearch = await storage.canUserPerformAction(sessionId, "food_search");
-      if (!canSearch) {
-        const user = await storage.getUser(sessionId);
-        const isBasicOrPremium = user?.subscriptionStatus === 'basic' || user?.subscriptionStatus === 'premium';
-        
-        return res.status(429).json({ 
-          message: "Daily search limit reached",
-          limits: {
-            free: "2 searches per day",
-            basic: "10 searches per day", 
-            premium: "10 searches per day"
-          },
-          upgrade: !isBasicOrPremium ? "Upgrade to Basic or Premium for more searches" : null
-        });
-      }
+      // Check if user can perform food search (daily limits) - skip for admin
+      if (!isAdmin) {
+        const canSearch = await storage.canUserPerformAction(sessionId, "food_search");
+        if (!canSearch) {
+          const user = await storage.getUser(sessionId);
+          const isBasicOrPremium = user?.subscriptionStatus === 'basic' || user?.subscriptionStatus === 'premium';
+          
+          return res.status(429).json({ 
+            message: "Daily search limit reached",
+            limits: {
+              free: "2 searches per day",
+              basic: "10 searches per day", 
+              premium: "10 searches per day"
+            },
+            upgrade: !isBasicOrPremium ? "Upgrade to Basic or Premium for more searches" : null
+          });
+        }
 
-      // Track the search usage
-      await storage.trackUsage(sessionId, "food_search");
+        // Track the search usage (skip for admin)
+        await storage.trackUsage(sessionId, "food_search");
+      }
 
       let foods: any[] = [];
 
