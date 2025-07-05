@@ -6,9 +6,7 @@ const app = express();
 const PORT = 19000; // Standard Expo port
 
 // Get the Replit URL
-const REPLIT_URL = process.env.REPL_SLUG 
-  ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
-  : 'https://951c9b0b-a7e6-4243-ad92-b80de619ea52-00-2w9g548p0tyi.worf.replit.dev';
+const REPLIT_URL = 'https://951c9b0b-a7e6-4243-ad92-b80de619ea52-00-2w9g548p0tyi.worf.repl.co';
 
 const EXPO_URL = `exp://${REPLIT_URL.replace('https://', '').replace('http://', '')}:${PORT}`;
 
