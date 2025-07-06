@@ -396,7 +396,7 @@ Example for "rice": [{"name":"Basmati Rice (Cooked)","calories":121,"protein":2.
           portionSize: `${enhancedResult.defaultUnit} (100g)`, // AI foods are per 100g
           category: enhancedResult.category,
           defaultUnit: enhancedResult.defaultUnit,
-          smartPortionGrams: portionGrams,
+          smartPortionGrams: enhancedResult.gramEquivalent ? extractGramFromSmartPortion(enhancedResult.gramEquivalent) : 100,
           smartCalories: enhancedResult.realisticCalories || enhancedResult.calories,
           smartProtein: enhancedResult.protein,
           smartCarbs: enhancedResult.carbs,

@@ -11,6 +11,7 @@ import { apiRequest } from "@/lib/queryClient";
 import type { Food } from "@shared/schema";
 import { calculateNutritionFromUnit, formatNutritionDisplay, validateCalorieCalculation, extractGramFromUnit } from "@shared/unitCalculations";
 import SubscriptionModal from "./SubscriptionModal";
+import { DailyLimitNotification } from "./DailyLimitNotification";
 import calonikLogo from "@assets/CALONIK LOGO TRANSPARENT_1751559015747.png";
 
 // AI Food Analysis Hook
@@ -78,6 +79,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     reasoning: string;
   } | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showDailyLimitNotification, setShowDailyLimitNotification] = useState(false);
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -140,22 +142,36 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     queryKey: [`/api/foods/enhanced-search`, debouncedQuery],
     queryFn: async () => {
       console.log("Making enhanced search request for:", debouncedQuery);
-      const response = await apiRequest("GET", `/api/foods/enhanced-search?query=${encodeURIComponent(debouncedQuery)}`);
-      const results = await response.json();
-      
-      console.log("Enhanced search results:", results);
-      
-      // Frontend deduplication as extra safety
-      const uniqueResults = results.filter((food: Food, index: number, self: Food[]) =>
-        index === self.findIndex((f: Food) => 
-          f.name.toLowerCase() === food.name.toLowerCase() && 
-          f.category === food.category
-        )
-      );
-      
-      return uniqueResults;
+      try {
+        const response = await apiRequest("GET", `/api/foods/enhanced-search?query=${encodeURIComponent(debouncedQuery)}`);
+        
+        // Check if response indicates daily limit reached
+        if (response.status === 429) {
+          setShowDailyLimitNotification(true);
+          throw new Error("Daily food search limit reached");
+        }
+        
+        const results = await response.json();
+        console.log("Enhanced search results:", results);
+        
+        // Frontend deduplication as extra safety
+        const uniqueResults = results.filter((food: Food, index: number, self: Food[]) =>
+          index === self.findIndex((f: Food) => 
+            f.name.toLowerCase() === food.name.toLowerCase() && 
+            f.category === food.category
+          )
+        );
+        
+        return uniqueResults;
+      } catch (error: any) {
+        if (error.message.includes("429") || error.message.includes("limit")) {
+          setShowDailyLimitNotification(true);
+        }
+        throw error;
+      }
     },
     enabled: debouncedQuery.length > 0,
+    retry: false, // Don't retry on limit errors
   });
 
   // Use deduplicated results
@@ -1246,6 +1262,19 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
           </div>
         )}
       </CardContent>
+      
+      {/* Daily Limit Notification */}
+      <DailyLimitNotification
+        show={showDailyLimitNotification}
+        message="Daily food search limit reached."
+        onDismiss={() => setShowDailyLimitNotification(false)}
+      />
+      
+      {/* Subscription Modal */}
+      <SubscriptionModal
+        isOpen={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+      />
     </Card>
   );
 }
