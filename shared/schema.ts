@@ -30,6 +30,12 @@ export const mealItems = pgTable("meal_items", {
   unit: text("unit").notNull(),
   date: text("date").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+  // Frontend-calculated nutrition values (exact values shown in search)
+  frontendCalories: real("frontend_calories"),
+  frontendProtein: real("frontend_protein"),
+  frontendCarbs: real("frontend_carbs"),
+  frontendFat: real("frontend_fat"),
+  frontendTotalGrams: real("frontend_total_grams"),
 });
 
 export const userProfiles = pgTable("user_profiles", {

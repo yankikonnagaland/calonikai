@@ -185,6 +185,17 @@ export default function MealSummary({
   // Calculate nutrition totals using accurate unit-to-gram system
   const totals = mealItems.reduce(
     (acc, item) => {
+      // PRIORITY 1: Use frontend-calculated nutrition values if stored
+      if (item.frontendCalories && item.frontendProtein && item.frontendCarbs && item.frontendFat) {
+        console.log(`Using stored frontend nutrition for ${item.food.name}: ${item.frontendCalories} cal`);
+        acc.calories += item.frontendCalories;
+        acc.protein += item.frontendProtein;
+        acc.carbs += item.frontendCarbs;
+        acc.fat += item.frontendFat;
+        return acc;
+      }
+      
+      // PRIORITY 2: Calculate nutrition if frontend values not stored
       const basePer100g = {
         calories: item.food.calories,
         protein: item.food.protein,
@@ -210,22 +221,6 @@ export default function MealSummary({
         // @ts-ignore - Type mismatch between database null and interface undefined
         smartPortion
       );
-      
-      // Debug: Log nutrition calculation for AI foods
-      if (item.food.id >= 2100000000) {
-        console.log(`MealSummary - AI Food calculation:`, {
-          name: item.food.name,
-          unit: item.unit,
-          quantity: item.quantity,
-          smartPortionGrams: item.food.smartPortionGrams,
-          smartCalories: item.food.smartCalories,
-          aiConfidence: item.food.aiConfidence,
-          smartPortionData: smartPortion,
-          calculatedCalories: calculatedNutrition.calories,
-          totalGrams: calculatedNutrition.totalGrams,
-          usedSmartPortion: calculatedNutrition.usedSmartPortion
-        });
-      }
       
       // Use smart calories if available, otherwise use calculated nutrition
       const finalCalories = item.food.smartPortionGrams && item.food.smartCalories ? 
@@ -430,6 +425,24 @@ export default function MealSummary({
                   <div className="flex-1">
                     <div className="font-medium text-sm">{item.food.name}</div>
                     {(() => {
+                      // PRIORITY 1: Use stored frontend-calculated nutrition values if available
+                      if (item.frontendCalories && item.frontendTotalGrams) {
+                        return (
+                          <>
+                            <div className="text-xs text-muted-foreground">
+                              {item.quantity} {item.unit} ({item.frontendTotalGrams}g total)
+                            </div>
+                            <div className="text-xs text-primary mt-1 font-semibold">
+                              {item.frontendCalories} cal
+                              <span className="text-green-600 ml-1 text-[10px]">
+                                (✓ exact from search)
+                              </span>
+                            </div>
+                          </>
+                        );
+                      }
+                      
+                      // PRIORITY 2: Calculate nutrition if frontend values not stored
                       const basePer100g = {
                         calories: item.food.calories,
                         protein: item.food.protein,
