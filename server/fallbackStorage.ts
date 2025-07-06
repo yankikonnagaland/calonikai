@@ -18,7 +18,9 @@ import type {
   Influencer,
   InfluencerReferral,
   InsertInfluencer,
-  InsertInfluencerReferral
+  InsertInfluencerReferral,
+  AiUsageStats,
+  InsertAiUsageStats
 } from "@shared/schema";
 
 // In-memory storage maps
@@ -33,6 +35,7 @@ const memoryDailyWeights = new Map<string, DailyWeight>();
 const memorySubscriptionPlans = new Map<string, SubscriptionPlan>();
 const memoryInfluencers = new Map<number, Influencer>();
 const memoryInfluencerReferrals = new Map<number, InfluencerReferral>();
+const memoryAiUsageStats = new Map<number, AiUsageStats>();
 
 // Initialize with some basic Indian foods
 const initializeFoods = () => {
@@ -665,6 +668,42 @@ export class FallbackStorage {
     return Array.from(memoryInfluencerReferrals.values())
       .filter(referral => referral.influencerId === influencerId)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  // AI usage tracking operations
+  async trackAiUsage(aiUsage: InsertAiUsageStats): Promise<void> {
+    try {
+      const id = Math.max(0, ...Array.from(memoryAiUsageStats.keys())) + 1;
+      
+      const newAiUsage: AiUsageStats = {
+        id,
+        ...aiUsage,
+        createdAt: new Date(),
+      };
+      
+      memoryAiUsageStats.set(id, newAiUsage);
+    } catch (error) {
+      console.error("Error tracking AI usage:", error);
+      throw error;
+    }
+  }
+
+  async getAiUsageStats(userId?: string, startDate?: string, endDate?: string): Promise<AiUsageStats[]> {
+    let results = Array.from(memoryAiUsageStats.values());
+    
+    if (userId) {
+      results = results.filter(stat => stat.userId === userId);
+    }
+    
+    if (startDate) {
+      results = results.filter(stat => stat.date >= startDate);
+    }
+    
+    if (endDate) {
+      results = results.filter(stat => stat.date <= endDate);
+    }
+    
+    return results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
   private generateReferralCode(): string {

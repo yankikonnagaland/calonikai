@@ -1972,7 +1972,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Using food name: ${extractedFoodName} for AI food regeneration`);
           
           // Generate new AI food data
-          const aiAnalysisResult = await getCachedOrAnalyze(extractedFoodName);
+          const aiAnalysisResult = await getCachedOrAnalyze(extractedFoodName, mealData.sessionId);
           
           // Create a proper AI food record with deterministic ID
           const foodHash = extractedFoodName.toLowerCase().replace(/\s+/g, '');
@@ -4097,7 +4097,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Enhanced AI analysis using Gemini
       try {
-        const aiAnalysis = await getCachedOrAnalyze(foodName);
+        const aiAnalysis = await getCachedOrAnalyze(foodName, sessionId);
         
         // Format response to match expected structure
         const formattedAnalysis = {
@@ -4188,7 +4188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const enhancedResults = await Promise.all(
           uniqueDbResults.slice(0, 5).map(async (food) => {
             try {
-              const aiData = await getCachedOrAnalyze(food.name);
+              const aiData = await getCachedOrAnalyze(food.name, sessionId);
               return {
                 ...food,
                 smartUnit: aiData.smartUnit,
@@ -4209,7 +4209,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // No database results - use AI to generate food data
       try {
-        const aiFood = await getCachedOrAnalyze(query);
+        const aiFood = await getCachedOrAnalyze(query, sessionId);
         
         // Format AI result to match Food schema
         const formattedFood = {
@@ -4260,7 +4260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Enhanced AI analysis using Gemini
       try {
-        const aiAnalysis = await getCachedOrAnalyze(foodName);
+        const aiAnalysis = await getCachedOrAnalyze(foodName, sessionId);
         
         // Format response to match expected structure
         const formattedAnalysis = {
@@ -4302,6 +4302,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         reasoning: "Local fallback analysis due to error"
       };
       return res.json(fallbackAnalysis);
+    }
+  });
+
+  // AI usage tracking endpoints
+  app.post("/api/ai-usage", async (req, res) => {
+    try {
+      const aiUsageData = req.body;
+      
+      // Validate required fields
+      if (!aiUsageData.serviceType || !aiUsageData.endpoint || !aiUsageData.date) {
+        return res.status(400).json({ error: "serviceType, endpoint, and date are required" });
+      }
+
+      await storage.trackAiUsage(aiUsageData);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error tracking AI usage:", error);
+      res.status(500).json({ error: "Failed to track AI usage" });
+    }
+  });
+
+  app.get("/api/ai-usage-stats", async (req, res) => {
+    try {
+      const { userId, startDate, endDate } = req.query;
+      
+      const stats = await storage.getAiUsageStats(
+        userId as string,
+        startDate as string,
+        endDate as string
+      );
+      
+      res.json(stats);
+    } catch (error) {
+      console.error("Error getting AI usage stats:", error);
+      res.status(500).json({ error: "Failed to get AI usage stats" });
     }
   });
 

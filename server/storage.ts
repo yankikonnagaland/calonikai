@@ -10,6 +10,7 @@ import {
   SubscriptionPlan,
   Influencer,
   InfluencerReferral,
+  AiUsageStats,
   InsertFood, 
   InsertMealItem, 
   InsertUserProfile, 
@@ -20,6 +21,7 @@ import {
   InsertUsageTracking,
   InsertInfluencer,
   InsertInfluencerReferral,
+  InsertAiUsageStats,
   MealItemWithFood 
 } from "@shared/schema";
 import { db } from "./db";
@@ -35,7 +37,8 @@ import {
   usageTracking,
   subscriptionPlans,
   influencers,
-  influencerReferrals
+  influencerReferrals,
+  aiUsageStats
 } from "@shared/schema";
 
 export interface IStorage {
@@ -87,6 +90,10 @@ export interface IStorage {
   canUserPerformAction(userId: string, actionType: "meal_add" | "photo_analyze" | "food_search"): Promise<boolean>;
   activatePremiumSubscription(userId: string, razorpayData: { customerId?: string; subscriptionId?: string }): Promise<User>;
   activateBasicSubscription(userId: string, razorpayData: { customerId?: string; subscriptionId?: string }): Promise<User>;
+  
+  // AI usage tracking operations
+  trackAiUsage(aiUsage: InsertAiUsageStats): Promise<void>;
+  getAiUsageStats(userId?: string, startDate?: string, endDate?: string): Promise<AiUsageStats[]>;
   
   // Nudge system operations
   getAllUsers(): Promise<User[]>;
@@ -704,6 +711,37 @@ export class DatabaseStorage implements IStorage {
       .from(influencerReferrals)
       .where(eq(influencerReferrals.influencerId, influencerId))
       .orderBy(desc(influencerReferrals.createdAt));
+  }
+
+  // AI usage tracking operations
+  async trackAiUsage(aiUsage: InsertAiUsageStats): Promise<void> {
+    try {
+      await db.insert(aiUsageStats).values(aiUsage);
+    } catch (error) {
+      console.error("Error tracking AI usage:", error);
+      throw error;
+    }
+  }
+
+  async getAiUsageStats(userId?: string, startDate?: string, endDate?: string): Promise<AiUsageStats[]> {
+    let query = db.select().from(aiUsageStats);
+    
+    const conditions = [];
+    if (userId) {
+      conditions.push(eq(aiUsageStats.userId, userId));
+    }
+    if (startDate) {
+      conditions.push(sql`${aiUsageStats.date} >= ${startDate}`);
+    }
+    if (endDate) {
+      conditions.push(sql`${aiUsageStats.date} <= ${endDate}`);
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(aiUsageStats.createdAt));
   }
 
   private generateReferralCode(): string {

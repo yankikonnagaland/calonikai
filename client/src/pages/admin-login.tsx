@@ -6,15 +6,16 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
-import { Shield, Key, Users, TrendingUp, Home, BarChart3 } from "lucide-react";
+import { Shield, Key, Users, TrendingUp, Home, BarChart3, Brain } from "lucide-react";
 import InfluencerDashboard from "./InfluencerDashboard";
 import UsageAnalyticsDashboard from "@/components/UsageAnalyticsDashboard";
+import AiUsageAnalyticsDashboard from "@/components/AiUsageAnalyticsDashboard";
 
 export default function AdminLogin() {
   const [adminKey, setAdminKey] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentView, setCurrentView] = useState<'login' | 'dashboard' | 'influencers' | 'analytics'>('login');
+  const [currentView, setCurrentView] = useState<'login' | 'dashboard' | 'influencers' | 'analytics' | 'ai-analytics'>('login');
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -180,6 +181,15 @@ export default function AdminLogin() {
                 <BarChart3 className="w-4 h-4" />
                 <span>Usage Analytics</span>
               </Button>
+
+              <Button
+                variant={currentView === 'ai-analytics' ? 'default' : 'ghost'}
+                onClick={() => setCurrentView('ai-analytics')}
+                className="flex items-center space-x-2"
+              >
+                <Brain className="w-4 h-4" />
+                <span>AI Analytics</span>
+              </Button>
               
               <Button
                 variant="outline"
@@ -254,6 +264,15 @@ export default function AdminLogin() {
                     <BarChart3 className="w-4 h-4" />
                     <span>Usage Analytics</span>
                   </Button>
+
+                  <Button 
+                    variant="outline"
+                    onClick={() => setCurrentView('ai-analytics')}
+                    className="flex items-center space-x-2"
+                  >
+                    <Brain className="w-4 h-4" />
+                    <span>AI Analytics</span>
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -266,6 +285,10 @@ export default function AdminLogin() {
 
         {currentView === 'analytics' && (
           <UsageAnalyticsDashboard />
+        )}
+
+        {currentView === 'ai-analytics' && (
+          <AiUsageAnalyticsDashboard />
         )}
       </div>
     </div>

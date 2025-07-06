@@ -156,6 +156,24 @@ export const influencerReferrals = pgTable("influencer_referrals", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const aiUsageStats = pgTable("ai_usage_stats", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id"), // null for anonymous users
+  sessionId: text("session_id").notNull(),
+  aiProvider: text("ai_provider").notNull(), // "gemini", "openai", etc.
+  aiModel: text("ai_model").notNull(), // "gemini-1.5-flash", "gpt-4", etc.
+  requestType: text("request_type").notNull(), // "food_search", "image_analysis", "smart_units", etc.
+  query: text("query"), // search query or request description
+  inputTokens: integer("input_tokens"), // estimated input tokens
+  outputTokens: integer("output_tokens"), // estimated output tokens
+  estimatedCost: real("estimated_cost"), // estimated cost in rupees
+  responseTime: integer("response_time"), // response time in milliseconds
+  success: boolean("success").notNull().default(true),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+  date: text("date").notNull(), // YYYY-MM-DD format for easy filtering
+});
+
 export const insertFoodSchema = createInsertSchema(foods).omit({
   id: true,
 });
@@ -208,6 +226,11 @@ export const insertInfluencerReferralSchema = createInsertSchema(influencerRefer
   createdAt: true,
 });
 
+export const insertAiUsageStatsSchema = createInsertSchema(aiUsageStats).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type Food = typeof foods.$inferSelect;
 export type MealItem = typeof mealItems.$inferSelect;
 export type UserProfile = typeof userProfiles.$inferSelect;
@@ -226,9 +249,11 @@ export type InsertDailyWeight = z.infer<typeof insertDailyWeightSchema>;
 export type InsertHourlyActivity = z.infer<typeof insertHourlyActivitySchema>;
 export type InsertInfluencer = z.infer<typeof insertInfluencerSchema>;
 export type InsertInfluencerReferral = z.infer<typeof insertInfluencerReferralSchema>;
+export type InsertAiUsageStats = z.infer<typeof insertAiUsageStatsSchema>;
 
 // Daily weight types
 export type DailyWeight = typeof dailyWeights.$inferSelect;
+export type AiUsageStats = typeof aiUsageStats.$inferSelect;
 
 // Additional types for API responses
 export const searchFoodsSchema = z.object({

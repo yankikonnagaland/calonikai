@@ -5,7 +5,7 @@
 
 import { STANDARD_FOODS, getStandardFood, calculateAccurateNutrition } from './standardFoodDatabase';
 import { storage } from './storage';
-import type { Food } from '@shared/schema';
+import type { Food, InsertAiUsageStats } from '@shared/schema';
 import { GoogleGenAI } from '@google/genai';
 
 export interface EnhancedFoodResult {
@@ -299,9 +299,81 @@ export async function cleanFoodDatabase(): Promise<{
 }
 
 /**
+ * Track AI usage for cost monitoring
+ */
+async function trackAiUsage(
+  sessionId: string,
+  userId: string | null,
+  provider: string,
+  model: string,
+  requestType: string,
+  query: string,
+  responseTime: number,
+  success: boolean = true,
+  errorMessage?: string,
+  inputTokens?: number,
+  outputTokens?: number
+): Promise<void> {
+  try {
+    const estimatedCost = calculateEstimatedCost(provider, model, inputTokens, outputTokens);
+    const today = new Date().toISOString().split('T')[0];
+    
+    const aiUsageData: InsertAiUsageStats = {
+      userId,
+      sessionId,
+      aiProvider: provider,
+      aiModel: model,
+      requestType,
+      query,
+      inputTokens,
+      outputTokens,
+      estimatedCost,
+      responseTime,
+      success,
+      errorMessage,
+      date: today
+    };
+    
+    await storage.trackAiUsage(aiUsageData);
+  } catch (error) {
+    console.error('Failed to track AI usage:', error);
+    // Don't throw - tracking should not interrupt core functionality
+  }
+}
+
+/**
+ * Calculate estimated cost for AI usage
+ */
+function calculateEstimatedCost(provider: string, model: string, inputTokens?: number, outputTokens?: number): number {
+  if (!inputTokens && !outputTokens) return 0;
+  
+  // Gemini pricing in rupees (approximate)
+  if (provider === 'gemini') {
+    if (model === 'gemini-1.5-flash') {
+      // Gemini 1.5 Flash: ₹0.0008 per 1K input tokens, ₹0.0032 per 1K output tokens
+      const inputCost = (inputTokens || 0) * 0.0008 / 1000;
+      const outputCost = (outputTokens || 0) * 0.0032 / 1000;
+      return inputCost + outputCost;
+    }
+  }
+  
+  return 0;
+}
+
+/**
+ * Estimate token count for text
+ */
+function estimateTokens(text: string): number {
+  // Rough estimation: 1 token ≈ 4 characters for English text
+  return Math.ceil(text.length / 4);
+}
+
+/**
  * TIER-3: Generate AI food results using Gemini 1.5 Flash
  */
-async function generateAIFoodResults(query: string, limit: number): Promise<EnhancedFoodResult[]> {
+async function generateAIFoodResults(query: string, limit: number, sessionId?: string, userId?: string): Promise<EnhancedFoodResult[]> {
+  const startTime = Date.now();
+  
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
     
@@ -335,8 +407,30 @@ Example for "rice": [{"name":"Basmati Rice (Cooked)","calories":121,"protein":2.
       contents: prompt,
     });
 
+    const responseTime = Date.now() - startTime;
     const responseText = response.text || "";
     console.log(`Gemini AI response for "${query}":`, responseText);
+    
+    // Estimate tokens for cost tracking
+    const inputTokens = estimateTokens(prompt);
+    const outputTokens = estimateTokens(responseText);
+    
+    // Track AI usage
+    if (sessionId) {
+      await trackAiUsage(
+        sessionId,
+        userId || null,
+        'gemini',
+        'gemini-1.5-flash',
+        'food_search',
+        query,
+        responseTime,
+        true,
+        undefined,
+        inputTokens,
+        outputTokens
+      );
+    }
 
     // Parse JSON response
     let aiData;
