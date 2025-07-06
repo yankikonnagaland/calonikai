@@ -10,10 +10,13 @@ import {
   Linking,
   Alert
 } from 'react-native';
+import SubscriptionModal from './components/SubscriptionModal';
 // WebView removed due to dependency conflicts
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
+  const [showSubscription, setShowSubscription] = useState(false);
+  const [userId] = useState('mobile_user_123'); // In a real app, this would come from authentication
 
   // Simulate app initialization
   useEffect(() => {
@@ -105,7 +108,22 @@ export default function App() {
             <Text style={styles.featureItem}>📈 Health progress dashboards</Text>
             <Text style={styles.featureItem}>🎯 Personalized nutrition goals</Text>
           </View>
+          
+          <TouchableOpacity 
+            style={styles.subscriptionButton}
+            onPress={() => setShowSubscription(true)}
+          >
+            <Text style={styles.subscriptionButtonText}>
+              View Subscription Plans
+            </Text>
+          </TouchableOpacity>
         </View>
+        
+        <SubscriptionModal
+          visible={showSubscription}
+          onClose={() => setShowSubscription(false)}
+          userId={userId}
+        />
       </View>
       <StatusBar style="light" />
     </SafeAreaView>
@@ -225,6 +243,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#94A3B8',
     lineHeight: 20,
+  },
+  subscriptionButton: {
+    backgroundColor: '#3B82F6',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  subscriptionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   // Removed WebView-related styles due to dependency conflicts
 });

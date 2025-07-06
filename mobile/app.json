@@ -25,6 +25,9 @@
         "NSHealthShareUsageDescription": "Calonik can sync with Health app to share your nutrition and fitness data",
         "NSHealthUpdateUsageDescription": "Calonik can update Health app with your nutrition progress and calorie tracking",
         "UIViewControllerBasedStatusBarAppearance": false
+      },
+      "entitlements": {
+        "com.apple.developer.in-app-payments": true
       }
     },
     "android": {

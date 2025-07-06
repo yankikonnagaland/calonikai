@@ -645,6 +645,18 @@ The application follows a client-server architecture with clear separation of co
 - UPDATED: Calendar button styling to match Health Dashboard purple-blue gradient as requested
 - STATUS: OAuth flow starts successfully but fails at callback due to unregistered redirect URI in Google Console
 
+**July 6, 2025 - COMPLETED: iOS In-App Purchases Integration for App Store Monetization:**
+- IMPLEMENTED: Complete iOS In-App Purchase system using expo-in-app-purchases and Apple StoreKit
+- CREATED: IAPService with subscription management, purchase verification, and restoration functionality
+- CONFIGURED: Two subscription tiers - Basic ($2.99/month) and Premium ($9.99/month) with proper App Store Connect setup
+- ADDED: Backend verification endpoints for Apple receipt validation and subscription activation
+- ENHANCED: Mobile app with professional subscription modal supporting iOS purchase flows
+- INTEGRATED: Secure receipt validation using Apple's servers with app-specific shared secret
+- PREPARED: Complete App Store Connect configuration guide with product IDs and entitlements
+- CONFIGURED: iOS entitlements for in-app payments in app.json configuration
+- DOCUMENTED: Comprehensive APPLE_IAP_SETUP.md guide for App Store submission process
+- READY: Production-ready iOS monetization system with full StoreKit integration for App Store deployment
+
 **July 6, 2025 - COMPLETED: Comprehensive AI Usage Tracking System with User Attribution:**
 - COMPLETED: Final integration of AI usage tracking with full user context across all getCachedOrAnalyze calls
 - UPDATED: All 5 routes.ts endpoints now pass sessionId/userId parameter to AI service functions

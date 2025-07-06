@@ -4170,6 +4170,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // iOS In-App Purchase verification endpoint
+  app.post('/api/ios-verify-purchase', async (req: Request, res: Response) => {
+    try {
+      const { receiptData, productId, transactionId, userId } = req.body;
+      
+      // Verify receipt with Apple's servers
+      const appleVerificationUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://buy.itunes.apple.com/verifyReceipt'
+        : 'https://sandbox.itunes.apple.com/verifyReceipt';
+      
+      const response = await fetch(appleVerificationUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          'receipt-data': receiptData,
+          'password': process.env.APPLE_SHARED_SECRET || ''
+        })
+      });
+      
+      const appleResponse = await response.json();
+      
+      // Check if receipt is valid
+      const isValid = appleResponse.status === 0;
+      
+      if (isValid) {
+        // Log successful verification
+        console.log('iOS IAP verification successful:', {
+          userId,
+          productId,
+          transactionId
+        });
+        
+        res.json({ valid: true, receipt: appleResponse });
+      } else {
+        console.log('iOS IAP verification failed:', appleResponse);
+        res.json({ valid: false, error: appleResponse.status });
+      }
+    } catch (error) {
+      console.error('iOS IAP verification error:', error);
+      res.status(500).json({ valid: false, error: 'Verification failed' });
+    }
+  });
+
+  // iOS subscription activation endpoint
+  app.post('/api/activate-ios-subscription', async (req: Request, res: Response) => {
+    try {
+      const { userId, subscriptionPlan, transactionId, productId, receiptData } = req.body;
+      
+      if (!userId || !subscriptionPlan || !transactionId) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+      
+      // Activate subscription in database
+      if (subscriptionPlan === 'premium') {
+        await storage.activatePremiumSubscription(userId, {
+          customerId: transactionId,
+          subscriptionId: productId
+        });
+      } else {
+        await storage.activateBasicSubscription(userId, {
+          customerId: transactionId,
+          subscriptionId: productId
+        });
+      }
+      
+      console.log('iOS subscription activated:', {
+        userId,
+        subscriptionPlan,
+        transactionId,
+        productId
+      });
+      
+      res.json({ 
+        success: true, 
+        subscriptionPlan,
+        message: 'Subscription activated successfully'
+      });
+    } catch (error) {
+      console.error('iOS subscription activation error:', error);
+      res.status(500).json({ error: 'Failed to activate subscription' });
+    }
+  });
+
+  // Get user subscription status endpoint
+  app.get('/api/user-subscription/:userId', async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      res.json({
+        subscriptionStatus: user.subscription_status || 'free',
+        subscriptionEndsAt: user.subscription_ends_at,
+        razorpayCustomerId: user.razorpay_customer_id,
+        razorpaySubscriptionId: user.razorpay_subscription_id
+      });
+    } catch (error) {
+      console.error('Get subscription status error:', error);
+      res.status(500).json({ error: 'Failed to get subscription status' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
