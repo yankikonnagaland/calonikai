@@ -908,7 +908,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                   🐌
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                  Crawling...
+                  Searching...
                 </div>
               </div>
             </div>
