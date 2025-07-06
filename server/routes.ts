@@ -1711,9 +1711,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(429).json({ 
             message: "Daily search limit reached",
             limits: {
-              free: "2 searches per day",
+              free: "10 searches per lifetime",
               basic: "10 searches per day", 
-              premium: "10 searches per day"
+              premium: "30 searches per day"
             },
             upgrade: !isBasicOrPremium ? "Upgrade to Basic or Premium for more searches" : null
           });

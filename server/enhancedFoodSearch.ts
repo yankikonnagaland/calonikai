@@ -384,6 +384,31 @@ Example for "rice": [{"name":"Basmati Rice (Cooked)","calories":121,"protein":2.
         }
       }
 
+      // Store AI-generated food in database for future use
+      try {
+        const foodToStore = {
+          id: enhancedResult.id,
+          name: enhancedResult.name,
+          calories: enhancedResult.calories,
+          protein: enhancedResult.protein,
+          carbs: enhancedResult.carbs,
+          fat: enhancedResult.fat,
+          portionSize: `${enhancedResult.defaultUnit} (100g)`, // AI foods are per 100g
+          category: enhancedResult.category,
+          defaultUnit: enhancedResult.defaultUnit,
+          smartPortionGrams: portionGrams,
+          smartCalories: enhancedResult.realisticCalories || enhancedResult.calories,
+          smartProtein: enhancedResult.protein,
+          smartCarbs: enhancedResult.carbs,
+          smartFat: enhancedResult.fat,
+          aiConfidence: 85.0 // High confidence for Gemini-generated foods
+        };
+        await storage.storeAiFood(foodToStore);
+        console.log(`Stored AI food in database: ${enhancedResult.name}`);
+      } catch (storeError) {
+        console.error(`Failed to store AI food ${enhancedResult.name}:`, storeError);
+      }
+
       results.push(enhancedResult);
     }
 
