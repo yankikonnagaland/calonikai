@@ -347,7 +347,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       if (name.match(/\b(roti|chapati)\b/)) {
         return {
           unit: "medium roti (50g)",
-          quantity: 2,
+          quantity: 1,
           unitOptions: ["small roti (35g)", "medium roti (50g)", "large roti (70g)"],
           reasoning: "Rotis are typically eaten 2 at a time, medium size is 50g each"
         };
@@ -361,7 +361,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       } else if (name.match(/\b(idli|vada)\b/)) {
         return {
           unit: "piece (30g)",
-          quantity: 3,
+          quantity: 1,
           unitOptions: ["piece (30g)", "small (25g)", "large (40g)"],
           reasoning: "Idli/vada are small, typically served 3 pieces (30g each)"
         };
@@ -375,7 +375,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       } else {
         return {
           unit: "slice (25g)",
-          quantity: 2,
+          quantity: 1,
           unitOptions: ["slice (25g)", "piece", "small", "medium"],
           reasoning: "Bread slices are typically 25g each, eaten 2 at a time"
         };
@@ -465,7 +465,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       if (name.match(/\b(egg|omelette)\b/)) {
         return {
           unit: "piece (50g)",
-          quantity: 2,
+          quantity: 1,
           unitOptions: ["1 piece (50g)", "2 pieces (100g)", "3 pieces (150g)"],
           reasoning: "Eggs are typically eaten 1-2 at a time, 50g each"
         };
@@ -505,7 +505,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       if (name.match(/\b(sweet|laddu|barfi|halwa)\b/)) {
         return {
           unit: "piece (30g)",
-          quantity: 2,
+          quantity: 1,
           unitOptions: ["1 piece (30g)", "2 pieces (60g)", "small portion (50g)", "medium portion (80g)"],
           reasoning: "Traditional sweets are small, typically 30g each"
         };
@@ -514,7 +514,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       // Fried snacks
       return {
         unit: "piece (40g)",
-        quantity: 2,
+        quantity: 1,
         unitOptions: ["1 piece (40g)", "2 pieces (80g)", "3 pieces (120g)", "pieces"],
         reasoning: "Fried snacks like samosa/pakora are about 40g each"
       };
@@ -547,7 +547,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       if (name.includes("pizza")) {
         return {
           unit: "slice (80g)",
-          quantity: 2,
+          quantity: 1,
           unitOptions: ["1 slice (80g)", "2 slices (160g)", "3 slices (240g)", "slices"],
           reasoning: "Pizza slices are about 80g each, typically eaten 2 slices"
         };
@@ -609,11 +609,11 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     if ((food as any).smartUnit && (food as any).smartQuantity) {
       console.log(`Using enhanced portion data for ${food.name}: ${(food as any).smartQuantity} ${(food as any).smartUnit}`);
       setUnit((food as any).smartUnit);
-      setQuantity((food as any).smartQuantity);
+      setQuantity(1); // Always reset to 1
       setUnitOptions([(food as any).smartUnit, ...localSuggestion.unitOptions.filter(opt => opt !== (food as any).smartUnit)]);
     } else {
       setUnit(localSuggestion.unit);
-      setQuantity(localSuggestion.quantity);
+      setQuantity(1); // Always reset to 1
       setUnitOptions(localSuggestion.unitOptions);
     }
     
