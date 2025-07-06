@@ -1023,21 +1023,46 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
 
   // === MAIN DISHES ===
   
-  // Rice dishes - portion-based with weight
+  // Rice dishes - enhanced with katori and traditional Indian measurements
   if (name.includes("rice") || name.includes("biryani") || name.includes("pulao") || name.includes("fried rice")) {
     const isSpecialRice = name.includes("biryani") || name.includes("pulao") || name.includes("fried");
     return {
-      unit: isSpecialRice ? "medium portion (200g)" : "medium portion (150g)",
-      unitOptions: ["small portion (100g)", "medium portion (150g)", "large portion (200g)", "extra large (250g)", "bowl", "grams"],
+      unit: isSpecialRice ? "katori (200ml)" : "katori (150ml)",
+      unitOptions: [
+        "half katori (75ml)",
+        "small katori (110ml)",
+        "katori (150ml)", 
+        "large katori (200ml)",
+        "double katori (300ml)",
+        "small portion (100g)", 
+        "medium portion (150g)", 
+        "large portion (200g)", 
+        "extra large (250g)", 
+        "thali portion (100g)",
+        "closed fist (100g)",  // Visual guide
+        "bowl", 
+        "grams"
+      ],
     };
   }
   
-  // Curry and liquid dishes
+  // Curry and liquid dishes - enhanced with katori options
   if (name.includes("curry") || name.includes("dal") || name.includes("soup") || name.includes("stew")) {
     const isDal = name.includes("dal");
     return {
-      unit: isDal ? "bowl (200g)" : "serving (150g)",
-      unitOptions: ["small bowl (100g)", "medium bowl (150g)", "large bowl (200g)", "serving (150g)", "grams"],
+      unit: isDal ? "katori (150ml)" : "katori (150ml)",
+      unitOptions: [
+        "small katori (110ml)",
+        "katori (150ml)", 
+        "large katori (200ml)",
+        "half katori (75ml)",
+        "double katori (300ml)",
+        "small bowl (100g)", 
+        "medium bowl (150g)", 
+        "large bowl (200g)", 
+        "serving (150g)", 
+        "grams"
+      ],
     };
   }
   
@@ -1085,12 +1110,53 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
     };
   }
   
-  // Indian breads - piece-based with weight
-  if (name.includes("roti") || name.includes("chapati") || name.includes("naan") || name.includes("paratha")) {
-    const breadType = name.includes("naan") ? "80g" : "50g";
+  // Indian breads - enhanced with traditional measurements and visual guides
+  if (name.includes("roti") || name.includes("chapati") || name.includes("naan") || name.includes("paratha") || name.includes("dosa") || name.includes("idli")) {
+    
+    if (name.includes("dosa")) {
+      return {
+        unit: "single dosa (100g)",
+        unitOptions: [
+          "single dosa (100g)",
+          "2 dosas (200g)", 
+          "half dosa (50g)",
+          "large dosa (120g)",
+          "palm size (85g)",  // Visual guide
+          "pieces",
+          "grams"
+        ],
+      };
+    }
+    
+    if (name.includes("idli")) {
+      return {
+        unit: "3 idlis (90g)",
+        unitOptions: [
+          "single idli (30g)",
+          "2 idlis (60g)",
+          "3 idlis (90g)",
+          "4 idlis (120g)",
+          "tennis ball size (100g)",  // Visual guide
+          "pieces",
+          "grams"
+        ],
+      };
+    }
+    
+    const breadType = name.includes("naan") ? "80g" : name.includes("paratha") ? "70g" : "50g";
+    const breadName = name.includes("naan") ? "naan" : name.includes("paratha") ? "paratha" : "roti";
+    
     return {
-      unit: "pieces",
-      unitOptions: [`1 piece (${breadType})`, `2 pieces (${parseInt(breadType) * 2}g)`, `3 pieces (${parseInt(breadType) * 3}g)`, "pieces", "grams"],
+      unit: `single ${breadName} (${breadType})`,
+      unitOptions: [
+        `single ${breadName} (${breadType})`,
+        `2 ${breadName}s (${parseInt(breadType) * 2}g)`,
+        `3 ${breadName}s (${parseInt(breadType) * 3}g)`,
+        "chapati portion (50g)",
+        "palm size (85g)",  // Visual guide
+        "pieces",
+        "grams"
+      ],
     };
   }
   
@@ -1144,30 +1210,58 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
     };
   }
 
-  // === FRUITS ===
+  // === FRUITS - Enhanced with Indian measurements and visual guides ===
   
-  // Large fruits - piece-based with realistic weights
+  // Large fruits - comprehensive measurement options
   if (name.includes("apple") || name.includes("orange") || name.includes("mango")) {
     const fruitWeight = name.includes("mango") ? "200g" : "180g";
     return {
-      unit: "pieces",
-      unitOptions: [`1 medium (${fruitWeight})`, "pieces", "small (120g)", "large (250g)", "grams"],
+      unit: `1 medium (${fruitWeight})`,
+      unitOptions: [
+        `1 small (120g)`,
+        `1 medium (${fruitWeight})`, 
+        `1 large (250g)`,
+        "tennis ball size (100g)",  // Visual guide
+        "half katori (75g)",         // Traditional measurement
+        "quarter katori (37g)",      // Small portion
+        "pieces", 
+        "grams"
+      ],
     };
   }
   
-  // Small fruits
-  if (name.includes("banana") || name.includes("guava")) {
+  // Medium fruits
+  if (name.includes("banana") || name.includes("guava") || name.includes("pear")) {
     return {
-      unit: "pieces",
-      unitOptions: ["1 medium (120g)", "pieces", "small (80g)", "large (150g)", "grams"],
+      unit: "1 medium (120g)",
+      unitOptions: [
+        "1 small (80g)",
+        "1 medium (120g)", 
+        "1 large (150g)",
+        "tennis ball size (100g)",  // Visual guide
+        "half katori (75g)",         // Traditional measurement
+        "pieces", 
+        "grams"
+      ],
     };
   }
   
-  // Berries and small fruits
-  if (name.includes("grape") || name.includes("berry") || name.includes("cherry")) {
+  // Berries and small fruits - enhanced with katori options
+  if (name.includes("grape") || name.includes("berry") || name.includes("cherry") || name.includes("dates")) {
     return {
-      unit: "cup (150g)",
-      unitOptions: ["cup (150g)", "handful (50g)", "small bowl (100g)", "grams"],
+      unit: "small katori (110ml)",
+      unitOptions: [
+        "quarter katori (37g)",
+        "half katori (75g)",
+        "small katori (110ml)",
+        "katori (150ml)",
+        "cup (150g)", 
+        "handful (50g)", 
+        "closed fist (100g)",        // Visual guide
+        "thumb size (30g)",          // Small portion guide
+        "small bowl (100g)", 
+        "grams"
+      ],
     };
   }
 

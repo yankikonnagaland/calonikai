@@ -60,11 +60,26 @@ export const unitToGramMap: Record<string, number> = {
   "half cup": 60,       // Half cup
   "quarter cup": 30,    // Quarter cup
   
-  // Bowl measurements
+  // Traditional Indian Katori measurements (based on Healthify standards)
+  "katori": 150,        // Standard katori (150ml) - most common Indian serving bowl
+  "small katori": 110,  // Small katori (110ml) - traditional household size
+  "medium katori": 150, // Medium katori (150ml) - standard serving
+  "large katori": 200,  // Large katori (200ml) - larger portion
+  "extra large katori": 250, // Extra large katori (250ml)
+  
+  // Traditional bowl measurements  
   "bowl": 150,          // Standard bowl
   "small bowl": 100,    // Small bowl
   "medium bowl": 150,   // Medium bowl
   "large bowl": 225,    // Large bowl
+  "extra large bowl": 300, // Extra large bowl
+  
+  // Traditional Indian serving measurements
+  "thali portion": 100, // Individual thali item portion
+  "dal portion": 150,   // Standard dal serving (1 katori)
+  "curry portion": 120, // Standard curry serving
+  "sabzi portion": 100, // Standard vegetable portion
+  "chapati portion": 50, // Single chapati/roti
   
   // Serving sizes
   "serving": 100,       // Standard serving (100g)
@@ -109,11 +124,45 @@ export const unitToGramMap: Record<string, number> = {
   "bread slice": 25,   // Bread slice
   "toast": 25,         // Toast slice
   
-  // Rice and grain portions
-  "rice portion": 150, // Standard rice portion
+  // Rice and grain portions (removed duplicate)
   "small rice portion": 100,
   "medium rice portion": 150,
   "large rice portion": 200,
+  
+  // Additional Indian measurements (inspired by Healthify standards)
+  "half katori": 75,    // Half katori portion
+  "quarter katori": 37, // Quarter katori portion  
+  "double katori": 300, // Double katori serving
+  
+  // Precise volume-based Indian measurements
+  "glass (250ml)": 250, // Standard glass
+  "small glass (200ml)": 200, // Small glass
+  "large glass (300ml)": 300, // Large glass
+  "cup (240ml)": 240,   // Standard cup
+  "small cup (150ml)": 150, // Small cup
+  "large cup (350ml)": 350, // Large cup
+  
+  // Beverage specific measurements
+  "tea cup": 150,       // Traditional tea cup
+  "coffee mug": 240,    // Coffee mug
+  "lassi glass": 200,   // Traditional lassi glass
+  
+  // Traditional Indian bread measurements
+  "single roti": 50,    // Single roti/chapati
+  "2 rotis": 100,       // 2 rotis
+  "3 rotis": 150,       // 3 rotis
+  "single naan": 80,    // Single naan
+  "paratha": 70,        // Single paratha
+  "dosa": 100,          // Single dosa
+  "idli": 30,           // Single idli
+  "2 idlis": 60,        // 2 idlis
+  "3 idlis": 90,        // 3 idlis
+  
+  // Visual portion guides (based on Healthify visual guides)
+  "tennis ball size": 100, // Fruit portion guide
+  "closed fist": 100,      // Vegetable portion guide
+  "palm size": 85,         // Protein portion guide
+  "thumb size": 30,        // Fat/oil portion guide
   
   // Liquid conversions (ml to equivalent solid weight)
   "ml": 1,             // 1ml ≈ 1g for most liquids
