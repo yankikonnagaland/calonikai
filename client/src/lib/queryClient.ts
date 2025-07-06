@@ -18,6 +18,19 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
     headers['x-admin-key'] = 'calonik_admin_2025';
   }
 
+  // Add Firebase auth token if available
+  try {
+    const { getAuth } = await import('firebase/auth');
+    const auth = getAuth();
+    if (auth.currentUser) {
+      const token = await auth.currentUser.getIdToken();
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  } catch (error) {
+    // Firebase not available or user not authenticated
+    console.log('Firebase auth not available:', error);
+  }
+
   return headers;
 }
 
