@@ -88,12 +88,19 @@ export const unitToGramMap: Record<string, number> = {
   "tsp": 5,            // Abbreviation
   
   // Slice measurements
-  "slice": 25,         // Standard slice
+  "slice": 25,         // Standard slice (bread)
   "thin slice": 15,    // Thin slice
   "thick slice": 40,   // Thick slice
   "small slice": 20,   // Small slice
   "medium slice": 25,  // Medium slice
   "large slice": 35,   // Large slice
+  
+  // Cake-specific slice measurements (realistic portions for 180-250 cal range)
+  "slice (45g)": 45,   // Small cake slice (~200 cal for banana cake)
+  "slice (60g)": 60,   // Standard cake slice (~210-250 cal range)
+  "slice (80g)": 80,   // Large cake slice (~280-320 cal range)
+  "small slice (45g)": 45,  // Small cake slice
+  "large slice (80g)": 80,  // Large cake slice
   
   // Bread-specific
   "roti": 50,          // Standard roti

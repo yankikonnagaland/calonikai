@@ -922,6 +922,10 @@ function calculatePortionNutrition(food: any, unit: string, quantity: number) {
   else if (unitLower.includes('30g')) multiplier = quantity * 0.3; // Small pack
   else if (unitLower.includes('50g')) multiplier = quantity * 0.5; // Medium pack
   
+  // Cake-specific slice calculations (for 180-250 calorie range)
+  else if (unitLower.includes('slice (45g)')) multiplier = quantity * 0.45; // Small cake slice
+  else if (unitLower.includes('slice (60g)')) multiplier = quantity * 0.6;  // Standard cake slice 
+  else if (unitLower.includes('slice (80g)')) multiplier = quantity * 0.8;  // Large cake slice
   // General unit calculations for backward compatibility
   else if (unitLower.includes('slice')) multiplier = quantity * 0.6;
   else if (unitLower.includes('piece') || unitLower.includes('pieces')) {
@@ -1099,6 +1103,14 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
   }
 
   // === SNACKS AND SWEETS ===
+  
+  // Cakes and desserts - slice-based with realistic calorie-focused portions
+  if (name.includes("cake") || name.includes("pastry") || name.includes("tart") || name.includes("dessert")) {
+    return {
+      unit: "slice (60g)",
+      unitOptions: ["slice (60g)", "small slice (45g)", "large slice (80g)", "piece (100g)", "grams"],
+    };
+  }
   
   // Traditional sweets - piece-based
   if (name.includes("laddu") || name.includes("barfi") || name.includes("halwa") || name.includes("sweet")) {
