@@ -268,16 +268,24 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                 type="button"
                 variant="outline"
                 onClick={() => {
+                  console.log('Starting Google OAuth popup...');
+                  
                   const popup = window.open(
                     '/api/auth/google',
                     'google-oauth',
                     'width=500,height=600,scrollbars=yes,resizable=yes'
                   );
                   
+                  if (!popup) {
+                    alert('Popup blocked! Please allow popups for this site and try again.');
+                    return;
+                  }
+                  
                   // Listen for popup close or success
                   const checkClosed = setInterval(() => {
                     if (popup?.closed) {
                       clearInterval(checkClosed);
+                      console.log('Google OAuth popup closed, checking authentication...');
                       // Check if authentication was successful by refreshing user state
                       setTimeout(() => {
                         window.location.reload();
@@ -285,11 +293,32 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                     }
                   }, 1000);
                   
+                  // Listen for error messages from popup
+                  const handleMessage = (event: MessageEvent) => {
+                    if (event.origin !== window.location.origin) return;
+                    
+                    if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
+                      console.log('Google authentication successful!');
+                      clearInterval(checkClosed);
+                      popup?.close();
+                      window.location.reload();
+                    } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
+                      console.error('Google authentication failed:', event.data.error);
+                      clearInterval(checkClosed);
+                      popup?.close();
+                      alert(`Authentication failed: ${event.data.error}`);
+                    }
+                  };
+                  
+                  window.addEventListener('message', handleMessage);
+                  
                   // Auto-close after 5 minutes
                   setTimeout(() => {
                     if (!popup?.closed) {
                       popup?.close();
                       clearInterval(checkClosed);
+                      window.removeEventListener('message', handleMessage);
+                      console.log('Google OAuth timed out');
                     }
                   }, 300000);
                 }}

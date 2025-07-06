@@ -145,6 +145,13 @@ export async function setupAuth(app: Express) {
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
+          console.log('Google OAuth profile received:', {
+            id: profile.id,
+            emails: profile.emails,
+            name: profile.name,
+            provider: profile.provider
+          });
+          
           // Extract user information from Google profile
           const email = profile.emails?.[0]?.value;
           const firstName = profile.name?.givenName;
@@ -152,13 +159,17 @@ export async function setupAuth(app: Express) {
           const profileImageUrl = profile.photos?.[0]?.value;
           
           if (!email) {
+            console.error('No email provided by Google profile');
             return done(new Error('No email provided by Google'), null);
           }
+
+          console.log(`Processing Google OAuth for email: ${email}`);
 
           // Check if user already exists
           let user = await storage.getUserByEmail(email);
           
           if (user) {
+            console.log(`Existing user found: ${user.id}, updating with Google info`);
             // Update existing user with Google info if needed
             user = await storage.upsertUser({
               id: user.id,
@@ -169,6 +180,7 @@ export async function setupAuth(app: Express) {
               googleId: profile.id,
             });
           } else {
+            console.log(`Creating new user for email: ${email}`);
             // Create new user
             user = await storage.upsertUser({
               id: `google_${profile.id}`,
@@ -180,6 +192,7 @@ export async function setupAuth(app: Express) {
             });
           }
 
+          console.log(`Google OAuth successful for user: ${user.id}`);
           return done(null, user);
         } catch (error) {
           console.error('Google OAuth error:', error);
@@ -293,6 +306,24 @@ export async function setupAuth(app: Express) {
     })(req, res, next);
   });
 
+  // Google OAuth test endpoint
+  app.get("/api/auth/google/test", (req, res) => {
+    const hasClientId = !!process.env.GOOGLE_CLIENT_ID;
+    const hasClientSecret = !!process.env.GOOGLE_CLIENT_SECRET;
+    const callbackUrl = process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000';
+    const fullCallbackUrl = callbackUrl.includes('localhost') 
+      ? `http://${callbackUrl}/api/auth/google/callback`
+      : `https://${callbackUrl}/api/auth/google/callback`;
+    
+    res.json({
+      oauth_configured: hasClientId && hasClientSecret,
+      client_id_present: hasClientId,
+      client_secret_present: hasClientSecret,
+      callback_url: fullCallbackUrl,
+      environment: process.env.NODE_ENV || 'development'
+    });
+  });
+
   // Google OAuth routes
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     app.get("/api/auth/google", (req, res, next) => {
@@ -304,14 +335,22 @@ export async function setupAuth(app: Express) {
     });
 
     app.get("/api/auth/google/callback",
-      passport.authenticate("google", { 
-        failureRedirect: "/oauth-callback?error=auth_failed",
-        failureMessage: true 
-      }),
+      (req, res, next) => {
+        console.log("Google OAuth callback received with query:", req.query);
+        passport.authenticate("google", { 
+          failureRedirect: "/oauth-callback?error=auth_failed",
+          failureMessage: true 
+        })(req, res, next);
+      },
       (req, res) => {
         console.log("Google OAuth callback successful for user:", req.user);
-        // For popup flow, redirect to a simple success page that closes the popup
-        res.redirect("/oauth-callback?success=true");
+        if (req.user) {
+          // For popup flow, redirect to a simple success page that closes the popup
+          res.redirect("/oauth-callback?success=true");
+        } else {
+          console.error("No user found after OAuth callback");
+          res.redirect("/oauth-callback?error=no_user");
+        }
       }
     );
   } else {
