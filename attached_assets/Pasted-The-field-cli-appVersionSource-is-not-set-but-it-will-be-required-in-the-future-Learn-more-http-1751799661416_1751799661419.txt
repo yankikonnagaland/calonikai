@@ -1,0 +1,25 @@
+The field "cli.appVersionSource" is not set, but it will be required in the future. Learn more: https://docs.expo.dev/build-reference/app-versions/
+Cannot find module 'metro/src/ModuleGraph/worker/importLocationsPlugin'
+Require stack:
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\node_modules\@expo\metro-config\build\serializer\reconcileTransformSerializerPlugin.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\node_modules\@expo\metro-config\build\serializer\withExpoSerializers.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\node_modules\@expo\metro-config\build\ExpoMetroConfig.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\node_modules\expo\metro-config.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\metro.config.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\node_modules\metro-config\node_modules\import-fresh\index.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\node_modules\metro-config\node_modules\cosmiconfig\dist\loaders.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\node_modules\metro-config\node_modules\cosmiconfig\dist\createExplorer.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\node_modules\metro-config\node_modules\cosmiconfig\dist\index.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\node_modules\metro-config\src\loadConfig.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\node_modules\metro-config\src\index.js
+- C:\Users\Lenovo\AppData\Roaming\npm\node_modules\eas-cli\build\project\metroConfig.js
+- C:\Users\Lenovo\AppData\Roaming\npm\node_modules\eas-cli\build\build\runBuildAndSubmit.js
+- C:\Users\Lenovo\AppData\Roaming\npm\node_modules\eas-cli\build\commands\build\index.js
+- C:\Users\Lenovo\AppData\Roaming\npm\node_modules\eas-cli\node_modules\@oclif\core\lib\module-loader.js
+- C:\Users\Lenovo\AppData\Roaming\npm\node_modules\eas-cli\node_modules\@oclif\core\lib\config\plugin.js
+- C:\Users\Lenovo\AppData\Roaming\npm\node_modules\eas-cli\node_modules\@oclif\core\lib\config\config.js
+- C:\Users\Lenovo\AppData\Roaming\npm\node_modules\eas-cli\node_modules\@oclif\core\lib\config\index.js
+- C:\Users\Lenovo\AppData\Roaming\npm\node_modules\eas-cli\node_modules\@oclif\core\lib\command.js
+- C:\Users\Lenovo\AppData\Roaming\npm\node_modules\eas-cli\node_modules\@oclif\core\lib\index.js
+- C:\Users\Lenovo\AppData\Roaming\npm\node_modules\eas-cli\bin\run
+    Error: build command failed.
