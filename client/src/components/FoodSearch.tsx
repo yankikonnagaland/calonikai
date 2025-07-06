@@ -597,6 +597,10 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     setSearchQuery("");
     setDebouncedQuery("");
     
+    // Reset quantity to 1 when selecting a new food item
+    setQuantity(1);
+    setQuantityInput("1");
+    
     // Clear any pending hide timeout
     if (suggestionTimeoutRef.current) {
       clearTimeout(suggestionTimeoutRef.current);
