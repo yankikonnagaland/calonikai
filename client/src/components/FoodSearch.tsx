@@ -136,14 +136,27 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     setQuantityInput(quantity.toString());
   }, [quantity]);
 
-  const { data: searchResults = [], isLoading: isSearching } = useQuery<Food[]>({
+  const { data: rawSearchResults = [], isLoading: isSearching } = useQuery<Food[]>({
     queryKey: [`/api/foods/ai-search`, debouncedQuery],
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/foods/ai-search?query=${encodeURIComponent(debouncedQuery)}`);
-      return response.json();
+      const results = await response.json();
+      
+      // Frontend deduplication as extra safety
+      const uniqueResults = results.filter((food: Food, index: number, self: Food[]) =>
+        index === self.findIndex((f: Food) => 
+          f.name.toLowerCase() === food.name.toLowerCase() && 
+          f.category === food.category
+        )
+      );
+      
+      return uniqueResults;
     },
     enabled: debouncedQuery.length > 0,
   });
+
+  // Use deduplicated results
+  const searchResults = rawSearchResults;
 
   const addMealMutation = useMutation({
     mutationFn: async (mealItem: { foodId: number; quantity: number; unit: string; sessionId: string }) => {

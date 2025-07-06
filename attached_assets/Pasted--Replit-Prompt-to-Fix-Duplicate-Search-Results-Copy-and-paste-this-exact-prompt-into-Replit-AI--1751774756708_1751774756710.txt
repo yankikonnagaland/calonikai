@@ -1,0 +1,292 @@
+# Replit Prompt to Fix Duplicate Search Results
+
+Copy and paste this exact prompt into Replit AI:
+
+---
+
+**Please help me fix the duplicate search results issue in my food search. The search is returning multiple entries for the same food item (like "Paneer Curry" appearing 3 times). Here's what needs to be fixed:**
+
+## 1. Update the Backend Search Query
+
+In `server/routes/foods.ts`, modify the search endpoint to remove duplicates:
+
+```typescript
+app.get("/api/foods/search", authenticateUser, async (req, res) => {
+  try {
+    const { query } = req.query;
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({ error: "Query parameter is required" });
+    }
+
+    // Search with DISTINCT to avoid duplicates
+    const searchResults = await db
+      .selectDistinct({
+        id: foods.id,
+        name: foods.name,
+        category: foods.category,
+        calories: foods.calories,
+        protein: foods.protein,
+        carbs: foods.carbs,
+        fat: foods.fat,
+        portionSize: foods.portionSize,
+      })
+      .from(foods)
+      .where(
+        or(
+          sql`LOWER(${foods.name}) LIKE ${`%${query.toLowerCase()}%`}`,
+          sql`LOWER(${foods.category}) LIKE ${`%${query.toLowerCase()}%`}`
+        )
+      )
+      .limit(10)
+      .orderBy(
+        // Prioritize exact matches
+        sql`CASE 
+          WHEN LOWER(${foods.name}) = ${query.toLowerCase()} THEN 1
+          WHEN LOWER(${foods.name}) LIKE ${`${query.toLowerCase()}%`} THEN 2
+          WHEN LOWER(${foods.name}) LIKE ${`%${query.toLowerCase()}%`} THEN 3
+          ELSE 4
+        END`,
+        foods.name
+      );
+
+    // Additional deduplication in case database has actual duplicates
+    const uniqueResults = searchResults.filter((food, index, self) =>
+      index === self.findIndex((f) => f.name === food.name && f.category === food.category)
+    );
+
+    res.json(uniqueResults);
+  } catch (error) {
+    console.error("Search error:", error);
+    res.status(500).json({ error: "Search failed" });
+  }
+});
+```
+
+## 2. If Using AI-Enhanced Search, Update That Too
+
+In `server/routes/foods.ts`, if you have the AI-enhanced search endpoint:
+
+```typescript
+app.get("/api/foods/ai-search", authenticateUser, async (req, res) => {
+  try {
+    const { query } = req.query;
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({ error: "Query parameter is required" });
+    }
+
+    // First, search the database with deduplication
+    const dbResults = await db
+      .selectDistinct()
+      .from(foods)
+      .where(
+        or(
+          sql`LOWER(${foods.name}) LIKE ${`%${query.toLowerCase()}%`}`,
+          sql`LOWER(${foods.category}) LIKE ${`%${query.toLowerCase()}%`}`
+        )
+      )
+      .limit(5)
+      .orderBy(
+        sql`CASE 
+          WHEN LOWER(${foods.name}) = ${query.toLowerCase()} THEN 1
+          WHEN LOWER(${foods.name}) LIKE ${`${query.toLowerCase()}%`} THEN 2
+          ELSE 3
+        END`,
+        foods.name
+      );
+
+    // Ensure unique results by name
+    const uniqueDbResults = dbResults.filter((food, index, self) =>
+      index === self.findIndex((f) => f.name.toLowerCase() === food.name.toLowerCase())
+    );
+
+    if (uniqueDbResults.length > 0) {
+      // Enhance with AI data if available
+      const enhancedResults = await Promise.all(
+        uniqueDbResults.map(async (food) => {
+          try {
+            const aiData = await getCachedOrAnalyze(food.name);
+            return {
+              ...food,
+              smartUnit: aiData.smartUnit || getDefaultUnit(food),
+              smartQuantity: aiData.smartQuantity || 1,
+              realisticCalories: aiData.realisticCalories,
+              portionExplanation: aiData.portionExplanation
+            };
+          } catch {
+            return food;
+          }
+        })
+      );
+      
+      return res.json(enhancedResults);
+    }
+
+    // If no DB results, use AI
+    try {
+      const aiFood = await getCachedOrAnalyze(query);
+      const formattedFood = {
+        id: -1,
+        name: aiFood.name,
+        category: aiFood.category,
+        calories: aiFood.calories,
+        protein: aiFood.protein,
+        carbs: aiFood.carbs,
+        fat: aiFood.fat,
+        portionSize: "100g",
+        smartUnit: aiFood.smartUnit,
+        smartQuantity: aiFood.smartQuantity,
+        realisticCalories: aiFood.realisticCalories,
+        portionExplanation: aiFood.portionExplanation,
+        aiGenerated: true
+      };
+      
+      return res.json([formattedFood]);
+    } catch (aiError) {
+      console.error("AI search failed:", aiError);
+      return res.json([]);
+    }
+  } catch (error) {
+    console.error("AI search endpoint error:", error);
+    res.status(500).json({ error: "Search failed" });
+  }
+});
+```
+
+## 3. Add Database Cleanup Script
+
+Create `server/scripts/remove-duplicate-foods.ts` to clean up any existing duplicates:
+
+```typescript
+import { db } from '../db';
+import { foods } from '../db/schema';
+import { sql } from 'drizzle-orm';
+
+async function removeDuplicateFoods() {
+  console.log('Checking for duplicate foods...');
+  
+  // Find duplicates
+  const duplicates = await db.execute(sql`
+    SELECT name, category, COUNT(*) as count
+    FROM foods
+    GROUP BY name, category
+    HAVING COUNT(*) > 1
+  `);
+
+  if (duplicates.rows.length === 0) {
+    console.log('No duplicates found!');
+    return;
+  }
+
+  console.log(`Found ${duplicates.rows.length} duplicate food entries`);
+
+  // Keep only one of each duplicate
+  for (const dup of duplicates.rows) {
+    const duplicateFoods = await db
+      .select()
+      .from(foods)
+      .where(sql`${foods.name} = ${dup.name} AND ${foods.category} = ${dup.category}`)
+      .orderBy(foods.id);
+
+    // Keep the first one, delete the rest
+    if (duplicateFoods.length > 1) {
+      const idsToDelete = duplicateFoods.slice(1).map(f => f.id);
+      
+      await db
+        .delete(foods)
+        .where(sql`${foods.id} IN (${sql.join(idsToDelete, sql`, `)})`);
+      
+      console.log(`Removed ${idsToDelete.length} duplicates of "${dup.name}"`);
+    }
+  }
+
+  console.log('Duplicate removal complete!');
+}
+
+// Add unique constraint to prevent future duplicates
+async function addUniqueConstraint() {
+  try {
+    await db.execute(sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_foods_name_category 
+      ON foods(name, category)
+    `);
+    console.log('Added unique constraint on (name, category)');
+  } catch (error) {
+    console.log('Unique constraint may already exist:', error.message);
+  }
+}
+
+async function main() {
+  try {
+    await removeDuplicateFoods();
+    await addUniqueConstraint();
+    process.exit(0);
+  } catch (error) {
+    console.error('Error:', error);
+    process.exit(1);
+  }
+}
+
+main();
+```
+
+## 4. Add Script to package.json
+
+```json
+{
+  "scripts": {
+    "remove-duplicate-foods": "tsx server/scripts/remove-duplicate-foods.ts"
+  }
+}
+```
+
+## 5. Frontend Deduplication (Extra Safety)
+
+Update the `FoodSearch` component to also deduplicate on the frontend:
+
+```typescript
+// In FoodSearch component, after receiving search results
+const { data: rawSearchResults = [], isLoading: isSearching } = useQuery<Food[]>({
+  queryKey: [`/api/foods/search`, debouncedQuery],
+  queryFn: async () => {
+    const response = await apiRequest("GET", `/api/foods/search?query=${encodeURIComponent(debouncedQuery)}`);
+    const results = await response.json();
+    
+    // Frontend deduplication as extra safety
+    const uniqueResults = results.filter((food: Food, index: number, self: Food[]) =>
+      index === self.findIndex((f: Food) => 
+        f.name.toLowerCase() === food.name.toLowerCase() && 
+        f.category === food.category
+      )
+    );
+    
+    return uniqueResults;
+  },
+  enabled: debouncedQuery.length > 0,
+});
+
+// Use uniqueResults instead of searchResults in your component
+const searchResults = rawSearchResults;
+```
+
+## 6. Run the Cleanup
+
+After implementing these changes:
+
+1. First, clean up existing duplicates:
+   ```bash
+   npm run remove-duplicate-foods
+   ```
+
+2. Restart your server to use the updated search logic
+
+## Why This Fixes the Problem:
+
+1. **DISTINCT Query**: Ensures database returns unique records
+2. **Order By Relevance**: Exact matches appear first
+3. **Frontend Deduplication**: Extra safety layer
+4. **Unique Constraint**: Prevents future duplicates
+5. **Name + Category**: Deduplicates based on both fields
+
+This will ensure you never see duplicate "Paneer Curry" entries in your search results!
+
+---

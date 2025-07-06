@@ -587,6 +587,15 @@ The application follows a client-server architecture with clear separation of co
 - VERIFIED: Admin users maintain unlimited access, regular users properly limited with clear upgrade messaging
 - COMPLETED: Full usage limit system now covers meal tracking, photo analysis, and food search functionality
 
+**July 6, 2025 - Fixed Gemini API Model & Comprehensive Duplicate Prevention System:**
+- RESOLVED: Critical Gemini API bug - corrected model name from "gemini-pro" to "gemini-1.5-flash" enabling AI search functionality
+- IMPLEMENTED: Comprehensive duplicate prevention system with frontend deduplication in FoodSearch component
+- ENHANCED: Search results now filtered by name.toLowerCase() and category to prevent duplicate display
+- ADDED: Database cleanup script (server/scripts/remove-duplicate-foods.ts) for removing existing duplicates
+- VERIFIED: AI search working correctly - "rice" returns 5 unique varieties without duplicates (Rice, Boiled Rice, Axone Fried Rice, Brown Rice, White Rice)
+- CONFIRMED: Search results show proper diversity with unique food entries and accurate AI-enhanced portion recommendations
+- COMPLETED: Duplicate prevention system operational across both database and AI-generated search results
+
 **July 4, 2025 - Fixed React Native Crash & Enhanced Mobile App Stability:**
 - RESOLVED: Critical React Native "RCTFatal" and "non-std C++ exception" crashes in Expo app
 - FIXED: App configuration by disabling new React Native architecture in app.json build properties
