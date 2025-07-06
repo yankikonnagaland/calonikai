@@ -183,6 +183,25 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
   // Use deduplicated results
   const searchResults = rawSearchResults;
 
+  // Automatically reset quantity to 1 and unit to first option after search results are displayed
+  useEffect(() => {
+    if (searchResults && searchResults.length > 0 && !editingFood?.isEditing) {
+      // Reset quantity to 1
+      setQuantity(1);
+      setQuantityInput("1");
+      
+      // Reset unit to first option from the first food item
+      const firstFood = searchResults[0] as any; // Enhanced search results have unitOptions
+      if (firstFood && firstFood.unitOptions && Array.isArray(firstFood.unitOptions) && firstFood.unitOptions.length > 0) {
+        setUnit(firstFood.unitOptions[0]);
+      } else if (firstFood && firstFood.defaultUnit) {
+        setUnit(firstFood.defaultUnit);
+      } else {
+        setUnit("serving"); // fallback default
+      }
+    }
+  }, [searchResults, editingFood?.isEditing]);
+
   const addMealMutation = useMutation({
     mutationFn: async (mealItem: { foodId: number; quantity: number; unit: string; sessionId: string; foodName?: string }) => {
       console.log("Sending meal item:", mealItem);
