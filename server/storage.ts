@@ -146,6 +146,12 @@ export class DatabaseStorage implements IStorage {
         unit: mealItems.unit,
         date: mealItems.date,
         createdAt: mealItems.createdAt,
+        // Frontend-calculated nutrition values (exact from search)
+        frontendCalories: mealItems.frontendCalories,
+        frontendProtein: mealItems.frontendProtein,
+        frontendCarbs: mealItems.frontendCarbs,
+        frontendFat: mealItems.frontendFat,
+        frontendTotalGrams: mealItems.frontendTotalGrams,
         food: {
           id: foods.id,
           name: foods.name,

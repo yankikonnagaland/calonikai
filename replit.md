@@ -618,6 +618,17 @@ The application follows a client-server architecture with clear separation of co
 - TESTED: Traditional Indian measurements working correctly with updated bowl terminology
 - STATUS: Complete bowl terminology system operational across all food categories and measurement types
 
+**July 6, 2025 - CRITICAL BUG FIXED: Exact Calorie Display from Food Search to Meal Summary:**
+- RESOLVED: Critical calorie calculation bug where meal summary showed recalculated values instead of exact search calories
+- IMPLEMENTED: Frontend nutrition storage system with database fields (frontendCalories, frontendProtein, frontendCarbs, frontendFat, frontendTotalGrams)
+- FIXED: Backend API to capture exact frontend-calculated nutrition values when adding meals to database
+- UPDATED: DatabaseStorage getMealItems method to return stored frontend nutrition values to frontend
+- ENHANCED: MealSummary component to prioritize stored frontend values over recalculated nutrition
+- VERIFIED: System now displays "✓ exact from search" indicator for meals with stored frontend values
+- TESTED: "1 small slice (45g)" showing 193.5 calories in search now appears as exactly 193.5 calories in meal summary
+- TECHNICAL: Direct database column addition using SQL ALTER TABLE commands for immediate deployment
+- RESULT: Complete accuracy between food search display and meal summary without any recalculation differences
+
 **July 6, 2025 - Enhanced Google OAuth Debugging & Authentication Flow:**
 - ENHANCED: Google OAuth callback logging with detailed error tracking and parameter inspection
 - IMPROVED: Popup authentication flow with better error messages, timeout handling, and message passing
