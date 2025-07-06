@@ -1692,10 +1692,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Store the AI food first if it doesn't exist
       const food = await storage.getFoodById(mealData.foodId);
-      if (!food) {
+      if (!food && mealData.foodId === -1) {
+        console.log(
+          "AI-generated food not found in storage, regenerating and storing...",
+        );
+        
+        // For AI foods with ID -1, we need to regenerate the food data
+        // This happens when AI search results weren't stored properly
+        try {
+          // Extract food name from unit if possible, or use a generic approach
+          const extractedFoodName = mealData.unit.includes('(') ? 
+            mealData.unit.split('(')[0].trim() : 
+            "AI Generated Food";
+          
+          // Generate new AI food data
+          const aiAnalysisResult = await getCachedOrAnalyze(extractedFoodName);
+          
+          // Create a proper AI food record with deterministic ID
+          const foodHash = extractedFoodName.toLowerCase().replace(/\s+/g, '');
+          const hashId = Math.abs(foodHash.split('').reduce((a: number, b: string) => {
+            a = ((a << 5) - a) + b.charCodeAt(0);
+            return a & a;
+          }, 0));
+          const aiId = -(2100000000 + (hashId % 47000000)); // Negative ID for AI foods
+          
+          const aiFoodRecord = {
+            id: aiId,
+            name: aiAnalysisResult.name,
+            calories: aiAnalysisResult.calories,
+            protein: aiAnalysisResult.protein,
+            carbs: aiAnalysisResult.carbs,
+            fat: aiAnalysisResult.fat,
+            portionSize: "100g",
+            category: aiAnalysisResult.category,
+            defaultUnit: aiAnalysisResult.smartUnit || "serving",
+            smartPortionGrams: aiAnalysisResult.smartQuantity ? parseFloat(aiAnalysisResult.smartQuantity) : null,
+            smartCalories: aiAnalysisResult.realisticCalories || aiAnalysisResult.calories,
+            smartProtein: null,
+            smartCarbs: null,
+            smartFat: null,
+            aiConfidence: 85,
+            sodium: null,
+            fiber: null,
+            source: "Regenerated AI Food"
+          };
+          
+          // Store the AI food
+          await storage.storeAiFood(aiFoodRecord);
+          
+          // Update the meal data to use the proper AI food ID
+          mealData.foodId = aiId;
+          
+          console.log(`Generated and stored AI food: ${aiAnalysisResult.name} with ID ${aiId}`);
+        } catch (aiError) {
+          console.error("Failed to generate AI food data:", aiError);
+          return res.status(400).json({ 
+            message: "Cannot add meal item: AI food data not available" 
+          });
+        }
+      } else if (!food) {
         console.log(
           "Food not found in storage, this might be an AI-generated food",
         );
+        return res.status(400).json({ 
+          message: "Food not found" 
+        });
       }
 
       const meal = await storage.addMealItem(validation.data);
