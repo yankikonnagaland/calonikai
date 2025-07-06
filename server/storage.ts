@@ -278,7 +278,23 @@ export class DatabaseStorage implements IStorage {
 
   // AI food operations
   async storeAiFood(food: Food): Promise<void> {
-    await db.insert(foods).values(food).onConflictDoUpdate({
+    await db.insert(foods).values({
+      id: food.id,
+      name: food.name,
+      calories: food.calories,
+      protein: food.protein,
+      carbs: food.carbs,
+      fat: food.fat,
+      portionSize: food.portionSize,
+      category: food.category,
+      defaultUnit: food.defaultUnit,
+      smartPortionGrams: food.smartPortionGrams,
+      smartCalories: food.smartCalories,
+      smartProtein: food.smartProtein,
+      smartCarbs: food.smartCarbs,
+      smartFat: food.smartFat,
+      aiConfidence: food.aiConfidence
+    }).onConflictDoUpdate({
       target: foods.id,
       set: {
         name: food.name,
@@ -288,7 +304,13 @@ export class DatabaseStorage implements IStorage {
         fat: food.fat,
         portionSize: food.portionSize,
         category: food.category,
-        defaultUnit: food.defaultUnit
+        defaultUnit: food.defaultUnit,
+        smartPortionGrams: food.smartPortionGrams,
+        smartCalories: food.smartCalories,
+        smartProtein: food.smartProtein,
+        smartCarbs: food.smartCarbs,
+        smartFat: food.smartFat,
+        aiConfidence: food.aiConfidence
       }
     });
   }
