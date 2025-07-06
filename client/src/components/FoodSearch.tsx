@@ -1155,7 +1155,8 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                 // Smart portion data is for display purposes only, not for recalculating base values
                 const hasRealisticData = (selectedFood as any).realisticCalories !== undefined;
                 if (hasRealisticData) {
-                  const smartGrams = extractGramFromUnit((selectedFood as any).smartUnit) || 70;
+                  const smartUnit = (selectedFood as any).smartUnit;
+                  const smartGrams = smartUnit ? extractGramFromUnit(smartUnit) || 70 : 70;
                   const smartCalories = (selectedFood as any).realisticCalories || 0;
                   
                   console.log(`Smart portion calculation for ${selectedFood.name}:`, {
