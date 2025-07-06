@@ -159,7 +159,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
   const searchResults = rawSearchResults;
 
   const addMealMutation = useMutation({
-    mutationFn: async (mealItem: { foodId: number; quantity: number; unit: string; sessionId: string }) => {
+    mutationFn: async (mealItem: { foodId: number; quantity: number; unit: string; sessionId: string; foodName?: string }) => {
       console.log("Sending meal item:", mealItem);
       return apiRequest("POST", "/api/meal", mealItem);
     },
@@ -830,6 +830,8 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       unit,
       sessionId,
       date: selectedDate || new Date().toISOString().split('T')[0],
+      // Include food name for AI-generated foods (ID -1) to preserve original name
+      ...(selectedFood.id === -1 && { foodName: selectedFood.name }),
     };
     
     console.log("FoodSearch: Current unit value:", unit);

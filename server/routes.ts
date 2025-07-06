@@ -1712,10 +1712,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // For AI foods with ID -1, we need to regenerate the food data
         // This happens when AI search results weren't stored properly
         try {
-          // Extract food name from unit if possible, or use a generic approach
-          const extractedFoodName = mealData.unit.includes('(') ? 
-            mealData.unit.split('(')[0].trim() : 
-            "AI Generated Food";
+          // Use the provided food name or extract from unit as fallback
+          const extractedFoodName = (req.body as any).foodName || 
+            (mealData.unit.includes('(') ? 
+              mealData.unit.split('(')[0].trim() : 
+              "AI Generated Food");
+          
+          console.log(`Using food name: ${extractedFoodName} for AI food regeneration`);
           
           // Generate new AI food data
           const aiAnalysisResult = await getCachedOrAnalyze(extractedFoodName);
