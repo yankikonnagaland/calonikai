@@ -962,6 +962,8 @@ function calculatePortionNutrition(food: any, unit: string, quantity: number) {
 
 function getLocalUnitSelection(foodName: string, category: string = "") {
   const name = foodName.toLowerCase();
+  console.log(`Processing unit selection for: "${name}" with category: "${category}"`);
+  
   const isBeverage = category.toLowerCase().includes("beverage") || category.toLowerCase().includes("drink") ||
                    name.includes("juice") || name.includes("tea") || name.includes("coffee") || 
                    name.includes("milk") || name.includes("lassi") || name.includes("shake") ||
@@ -1020,6 +1022,17 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
     return {
       unit: "shot (30ml)",
       unitOptions: ["shot (30ml)", "double (60ml)", "ml"],
+    };
+  }
+
+  // === PROTEIN SUPPLEMENTS ===
+  
+  // Whey protein and protein powder - scoop-based measurements
+  if (name.includes("whey") || name.includes("protein powder")) {
+    console.log(`Matched protein powder for: ${name}`);
+    return {
+      unit: "scoop (30g)",
+      unitOptions: ["scoop (30g)", "half scoop (15g)", "2 scoops (60g)", "grams"],
     };
   }
 

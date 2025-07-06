@@ -50,6 +50,9 @@ export const unitToGramMap: Record<string, number> = {
   "small handful": 20,   // Small handful
   "large handful": 45,   // Large handful
   "scoop": 25,          // Standard scoop
+  "scoop (30g)": 30,    // Protein powder scoop
+  "half scoop (15g)": 15, // Half protein scoop
+  "2 scoops (60g)": 60, // Double protein scoop
   "small scoop": 15,    // Small scoop
   "large scoop": 40,    // Large scoop
   
