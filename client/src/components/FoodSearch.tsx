@@ -849,8 +849,8 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       unit,
       sessionId,
       date: selectedDate || new Date().toISOString().split('T')[0],
-      // Include food name for AI-generated foods (ID -1) to preserve original name
-      ...(selectedFood.id === -1 && { foodName: selectedFood.name }),
+      // Include food name for AI-generated foods (ID -1 or > 9000000) to preserve original name
+      ...((selectedFood.id === -1 || selectedFood.id > 9000000) && { foodName: selectedFood.name }),
     };
     
     console.log("FoodSearch: Current unit value:", unit);
