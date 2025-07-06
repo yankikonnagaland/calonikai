@@ -587,7 +587,7 @@ The application follows a client-server architecture with clear separation of co
 - VERIFIED: Admin users maintain unlimited access, regular users properly limited with clear upgrade messaging
 - COMPLETED: Full usage limit system now covers meal tracking, photo analysis, and food search functionality
 
-**July 6, 2025 - Complete Usage Limits Restructure & Calendar Button Styling:**
+**July 6, 2025 - Complete Usage Limits Restructure & Manual Search Implementation:**
 - IMPLEMENTED: New usage limit structure - Free: 20 searches (lifetime forever), Basic: 100 searches (daily), Premium: 200 searches (daily)
 - ADDED: getLifetimeUserUsage method to both DatabaseStorage and FallbackStorage for tracking free user lifetime limits vs daily limits for paid tiers
 - ENHANCED: canUserPerformAction method now differentiates between lifetime tracking for free users and daily tracking for paid users
@@ -597,6 +597,9 @@ The application follows a client-server architecture with clear separation of co
 - RESET: Daily usage limit for user yankikonic@gmail.com (premium user) as requested
 - VERIFIED: Authentication system working correctly - both food search and AI food analysis endpoints functional for regular users
 - COMPLETED: Admin users maintain unlimited access while regular users follow new tiered usage structure
+- IMPLEMENTED: Manual search button functionality - removed automatic search on typing, added Search button with loading animation
+- ENHANCED: Search button disabled when input empty or search in progress, Enter key support maintained
+- REMOVED: Snail loading animation since search button has its own spinner animation for cleaner UI
 
 **July 6, 2025 - Complete Tier-3 Gemini AI Fallback Implementation:**
 - IMPLEMENTED: Complete 3-tier enhanced food search system with Gemini 1.5 Flash API integration

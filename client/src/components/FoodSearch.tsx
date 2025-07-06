@@ -973,20 +973,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
               "Search"
             )}
           </Button>
-          
-          {/* Snail Loading Animation */}
-          {isSearching && searchTrigger.length > 0 && (
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-              <div className="flex items-center gap-2">
-                <div className="text-lg animate-pulse">
-                  🐌
-                </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                  Searching...
-                </div>
-              </div>
-            </div>
-          )}
+
           
           {shouldShowSuggestions && (
             <div 
