@@ -3310,6 +3310,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         else if (totalWeightChange < -1) weightTrend = 'decreasing';
       }
 
+      // Calculate total monthly calories burned from exercises
+      const totalCaloriesBurned = exerciseHistory.reduce((sum, exercise) => sum + (exercise.caloriesBurned || 0), 0);
+
       // Activity consistency
       const activeDays = dailyNutrition.filter(day => day.totalCalories > 0).length;
       const consistencyScore = totalDays > 0 ? Math.round((activeDays / totalDays) * 100) : 0;
@@ -3346,6 +3349,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             totalWeightChange
           },
           exerciseHistory: exerciseHistory.slice(0, 14),
+          exerciseMetrics: {
+            totalCaloriesBurned,
+            exerciseHistory: exerciseHistory.slice(0, 14)
+          },
           activityMetrics: {
             consistencyScore,
             activeDays,

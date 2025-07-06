@@ -1901,11 +1901,7 @@ Powered by Calonik.ai 🚀
                   </div>
                   <div className="flex justify-between">
                     <span className="text-orange-600 dark:text-orange-300">Total burned:</span>
-                    <span className="font-medium">{dailySummaries.filter(s => {
-                      const summaryDate = new Date(s.date);
-                      return summaryDate.getMonth() === currentMonth.getMonth() && 
-                             summaryDate.getFullYear() === currentMonth.getFullYear();
-                    }).reduce((sum, s) => sum + s.caloriesBurned, 0).toLocaleString()}</span>
+                    <span className="font-medium">{userAnalytics?.analytics?.exerciseMetrics?.totalCaloriesBurned?.toLocaleString() || '0'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-purple-600 dark:text-purple-300">Monthly avg:</span>
