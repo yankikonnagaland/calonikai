@@ -463,7 +463,7 @@ export class FallbackStorage {
       const premiumLimits = {
         meal_add: 999999,   // Unlimited meal adds for premium
         photo_analyze: 10,  // 10 photo analysis per day for premium
-        food_search: 1      // TEMP: Testing notification - normally 30 food searches per day for premium
+        food_search: 30     // 30 food searches per day for premium
       };
       
       return usage < premiumLimits[actionType];

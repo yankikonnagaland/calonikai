@@ -1936,7 +1936,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Store the AI food first if it doesn't exist
       const food = await storage.getFoodById(mealData.foodId);
-      if (!food && mealData.foodId === -1) {
+      if (!food && (mealData.foodId === -1 || mealData.foodId > 9000000)) {
         console.log(
           "AI-generated food not found in storage, regenerating and storing...",
         );
