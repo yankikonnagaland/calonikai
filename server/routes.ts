@@ -1050,18 +1050,37 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
   if (name.includes("curry") || name.includes("dal") || name.includes("soup") || name.includes("stew")) {
     const isDal = name.includes("dal");
     return {
-      unit: isDal ? "bowl (150ml)" : "bowl (150ml)",
+      unit: isDal ? "bowl (150g)" : "bowl (150ml)",
       unitOptions: [
-        "small bowl (110ml)",
-        "bowl (150ml)", 
-        "large bowl (200ml)",
-        "half bowl (75ml)",
-        "double bowl (300ml)",
+        "25g",
+        "50g", 
+        "75g",
+        "100g",
+        "125g",
+        "150g",
+        "175g",
+        "200g",
+        "250g",
+        "300g",
+        "grams",
+        "small bowl (75g)",
         "small bowl (100g)", 
         "medium bowl (150g)", 
-        "large bowl (200g)", 
+        "large bowl (200g)",
+        "extra large bowl (250g)",
+        "serving (100g)",
         "serving (150g)", 
-        "grams"
+        "serving (200g)",
+        "small portion (75g)",
+        "medium portion (150g)",
+        "large portion (200g)",
+        "half bowl (75g)",
+        "bowl (150g)",
+        "double bowl (300g)",
+        "1 tablespoon (15g)",
+        "2 tablespoons (30g)",
+        "3 tablespoons (45g)",
+        "4 tablespoons (60g)"
       ],
     };
   }
