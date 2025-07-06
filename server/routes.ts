@@ -1752,10 +1752,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Store the AI food
           await storage.storeAiFood(aiFoodRecord);
           
-          // Update the meal data to use the proper AI food ID
-          mealData.foodId = aiId;
-          
           console.log(`Generated and stored AI food: ${aiAnalysisResult.name} with ID ${aiId}`);
+          
+          // Update the meal data to reference the newly created AI food
+          mealData.foodId = aiId;
         } catch (aiError) {
           console.error("Failed to generate AI food data:", aiError);
           return res.status(400).json({ 
@@ -1771,7 +1771,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const meal = await storage.addMealItem(validation.data);
+      const meal = await storage.addMealItem(mealData);
       console.log(
         "Meal added successfully:",
         meal.id,
