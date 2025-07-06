@@ -3783,13 +3783,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Authentication required" });
       }
 
-      // First, search the database
+      // First, search the database with deduplication
       const dbResults = await storage.searchFoods(query);
 
-      // If we have good database results, enhance them with AI data
-      if (dbResults.length > 0) {
+      // Remove duplicates based on name and category
+      const uniqueDbResults = dbResults.filter((food, index, self) =>
+        index === self.findIndex((f) => 
+          f.name.toLowerCase() === food.name.toLowerCase() && 
+          f.category === food.category
+        )
+      );
+
+      // If we have good database results (>= 3), enhance them with AI data
+      if (uniqueDbResults.length >= 3) {
         const enhancedResults = await Promise.all(
-          dbResults.map(async (food) => {
+          uniqueDbResults.slice(0, 5).map(async (food) => {
             try {
               const aiData = await getCachedOrAnalyze(food.name);
               return {
