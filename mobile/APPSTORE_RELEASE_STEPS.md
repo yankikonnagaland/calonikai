@@ -33,8 +33,8 @@ Your mobile app has all the necessary components:
 
 ### 2.1 Install EAS Command Line Tools
 ```bash
-# Install EAS CLI globally
-npm install -g @expo/eas-cli
+# Install EAS CLI globally (correct package name)
+npm install -g eas-cli
 
 # Navigate to your mobile app directory
 cd mobile
