@@ -6,6 +6,7 @@
 import { STANDARD_FOODS, getStandardFood, calculateAccurateNutrition } from './standardFoodDatabase';
 import { storage } from './storage';
 import type { Food } from '@shared/schema';
+import { GoogleGenAI } from '@google/genai';
 
 export interface EnhancedFoodResult {
   id: number;
@@ -102,7 +103,18 @@ export async function enhancedFoodSearch(query: string, limit: number = 10): Pro
     console.error('Database search error:', error);
   }
 
-  // 3. Sort by accuracy and relevance
+  // 3. TIER-3: Gemini AI Fallback for unknown foods
+  if (results.length < 3 && query.length > 2) {
+    try {
+      console.log(`Tier-3 fallback: Using Gemini AI for "${query}" (only ${results.length} results found)`);
+      const aiResults = await generateAIFoodResults(query, limit - results.length);
+      results.push(...aiResults);
+    } catch (error) {
+      console.error('Gemini AI search error:', error);
+    }
+  }
+
+  // 4. Sort by accuracy and relevance
   results.sort((a, b) => {
     // Prioritize accuracy
     const accuracyWeight = { 'high': 3, 'medium': 2, 'low': 1 };
@@ -284,4 +296,110 @@ export async function cleanFoodDatabase(): Promise<{
     console.error('Database cleaning error:', error);
     return { duplicatesRemoved: 0, inaccurateRemoved: 0, totalCleaned: 0 };
   }
+}
+
+/**
+ * TIER-3: Generate AI food results using Gemini 1.5 Flash
+ */
+async function generateAIFoodResults(query: string, limit: number): Promise<EnhancedFoodResult[]> {
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+    
+    const prompt = `
+You are a nutrition expert specializing in Indian foods. Generate accurate nutrition data for the food query: "${query}"
+
+Return ONLY a JSON array with ${limit} relevant food variations. Each food must have:
+{
+  "name": "Exact food name",
+  "calories": number per 100g,
+  "protein": number per 100g,
+  "carbs": number per 100g, 
+  "fat": number per 100g,
+  "category": "Main Course|Snacks|Beverages|Fruits|Vegetables|Grains|Dairy|Desserts",
+  "defaultUnit": "serving (100g)|piece (50g)|cup (240ml)|bowl (150g)",
+  "smartPortion": "realistic portion like 'medium bowl (200g)' or 'regular serving (150g)'"
+}
+
+Requirements:
+- Use accurate USDA/IFCT nutrition values
+- Focus on Indian food variations if applicable
+- Provide realistic portion sizes for defaultUnit
+- Categories must match the exact list above
+- Return ONLY the JSON array, no other text
+
+Example for "rice": [{"name":"Basmati Rice (Cooked)","calories":121,"protein":2.5,"carbs":25,"fat":0.2,"category":"Grains","defaultUnit":"bowl (150g)","smartPortion":"medium bowl (150g)"}]
+`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-1.5-flash",
+      contents: prompt,
+    });
+
+    const responseText = response.text || "";
+    console.log(`Gemini AI response for "${query}":`, responseText);
+
+    // Parse JSON response
+    let aiData;
+    try {
+      // Extract JSON from response (remove any markdown or extra text)
+      const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+      const jsonText = jsonMatch ? jsonMatch[0] : responseText;
+      aiData = JSON.parse(jsonText);
+    } catch (parseError) {
+      console.error('Failed to parse Gemini JSON response:', parseError);
+      return [];
+    }
+
+    if (!Array.isArray(aiData)) {
+      console.error('Gemini response is not an array:', aiData);
+      return [];
+    }
+
+    const results: EnhancedFoodResult[] = [];
+    
+    for (const item of aiData) {
+      if (!item.name || !item.calories) continue;
+      
+      const enhancedResult: EnhancedFoodResult = {
+        id: Math.floor(Math.random() * 1000000) + 8000000, // Unique ID for AI foods
+        name: item.name,
+        calories: item.calories || 0,
+        protein: item.protein || 0,
+        carbs: item.carbs || 0,
+        fat: item.fat || 0,
+        category: item.category || 'Main Course',
+        defaultUnit: item.defaultUnit || 'serving (100g)',
+        unitOptions: getUnitOptionsForFood(item.name, item.category || 'Main Course'),
+        accuracy: 'medium',
+        source: 'ai',
+        isVerified: false
+      };
+
+      // Calculate realistic calories for smart portion
+      if (item.smartPortion) {
+        const portionGrams = extractGramFromSmartPortion(item.smartPortion);
+        if (portionGrams) {
+          enhancedResult.realisticCalories = Math.round((item.calories * portionGrams) / 100);
+          enhancedResult.gramEquivalent = `(${portionGrams}g)`;
+        }
+      }
+
+      results.push(enhancedResult);
+    }
+
+    console.log(`Generated ${results.length} AI food results for "${query}"`);
+    return results.slice(0, limit);
+
+  } catch (error) {
+    console.error('Gemini AI food generation error:', error);
+    return [];
+  }
+}
+
+/**
+ * Extract gram amount from smart portion strings like "medium bowl (200g)"
+ */
+function extractGramFromSmartPortion(portion: string): number | null {
+  const gramMatch = portion.match(/\((\d+(?:\.\d+)?)g\)/);
+  return gramMatch ? parseFloat(gramMatch[1]) : null;
 }
