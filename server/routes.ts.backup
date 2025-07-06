@@ -4098,3 +4098,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 // Import AI service
 import { getCachedOrAnalyze } from './services/aiService';
+
+// AI Food Analysis Functions (moved outside registerRoutes)
+async function generateAIFoodAnalysis(foodName: string, imageBuffer?: string) {
+    try {
+      const aiResult = await getCachedOrAnalyze(foodName);
+      
+      // Transform AI service result to match expected format
+      if (aiResult) {
+        return {
+          category: aiResult.category,
+          smartUnit: aiResult.smartUnit,
+          smartQuantity: aiResult.smartQuantity,
+          unitOptions: aiResult.alternativeUnits || [aiResult.smartUnit, "serving (100g)", "grams"],
+          aiConfidence: 0.85, // High confidence for Gemini API results
+          reasoning: aiResult.portionExplanation || `Recommended serving: ${aiResult.smartQuantity} ${aiResult.smartUnit}`
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Gemini AI analysis failed:', error);
+      return null;
+    }
+  }
+
+  function generateFallbackFoodAnalysis(foodName: string) {
+    const name = foodName.toLowerCase();
+    
+    // Intelligent categorization based on food name patterns
+    let category = "other";
+    let caloriesPer100g = 200; // Default moderate calorie estimate
+    let smartUnit = "serving (100g)";
+    let smartQuantity = 1;
+    let unitOptions = ["serving (100g)", "small portion (75g)", "large portion (150g)", "grams"];
+    
+    // Categorize and estimate based on common food patterns
+    if (name.match(/\b(apple|orange|banana|mango|grape|berry)\b/)) {
+      category = "fruit";
+      caloriesPer100g = 60;
+      smartUnit = "medium piece (150g)";
+      unitOptions = ["small piece (100g)", "medium piece (150g)", "large piece (200g)", "pieces"];
+    } else if (name.match(/\b(rice|bread|pasta|roti|naan)\b/)) {
+      category = "grain";
+      caloriesPer100g = 350;
+      smartUnit = "medium portion (100g)";
+      unitOptions = ["small portion (75g)", "medium portion (100g)", "large portion (150g)", "grams"];
+    } else if (name.match(/\b(chicken|fish|meat|egg|paneer)\b/)) {
+      category = "protein";
+      caloriesPer100g = 250;
+      smartUnit = "medium portion (120g)";
+      unitOptions = ["small portion (80g)", "medium portion (120g)", "large portion (180g)", "piece"];
+    } else if (name.match(/\b(milk|yogurt|cheese|butter)\b/)) {
+      category = "dairy";
+      caloriesPer100g = 150;
+      smartUnit = "cup (250ml)";
+      unitOptions = ["cup (200ml)", "cup (250ml)", "large cup (300ml)", "ml"];
+    } else if (name.match(/\b(potato|tomato|onion|vegetable)\b/)) {
+      category = "vegetable";
+      caloriesPer100g = 40;
+      smartUnit = "medium portion (150g)";
+      unitOptions = ["small portion (100g)", "medium portion (150g)", "large portion (200g)", "piece"];
+    } else if (name.match(/\b(cola|juice|beer|tea|coffee)\b/)) {
+      category = "beverage";
+      caloriesPer100g = 40;
+      smartUnit = "glass (250ml)";
+      unitOptions = ["glass (200ml)", "glass (250ml)", "bottle (500ml)", "ml"];
+    }
+    
+    return {
+      foodName: foodName,
+      category: category,
+      caloriesPer100g: caloriesPer100g,
+      smartUnit: smartUnit,
+      smartQuantity: smartQuantity,
+      unitOptions: unitOptions,
+      reasoning: `Based on food type analysis, ${foodName} is categorized as ${category} with typical serving of ${smartUnit}`
+    };
+  } // End of generateFallbackFoodAnalysis function
+
+  // Return a placeholder server 
+  return {} as Server;
+}
