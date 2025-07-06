@@ -3937,13 +3937,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Enhanced AI analysis using Gemini
-      const aiAnalysis = await generateAIFoodAnalysis(foodName, imageBuffer);
-      
-      if (aiAnalysis) {
-        return res.json(aiAnalysis);
-      } else {
+      try {
+        const aiAnalysis = await getCachedOrAnalyze(foodName);
+        
+        // Format response to match expected structure
+        const formattedAnalysis = {
+          category: aiAnalysis.category,
+          smartUnit: aiAnalysis.smartUnit,
+          smartQuantity: aiAnalysis.smartQuantity,
+          unitOptions: aiAnalysis.alternativeUnits || [aiAnalysis.smartUnit, "cup", "piece", "serving"],
+          aiConfidence: 0.85,
+          reasoning: aiAnalysis.portionExplanation || "AI-generated portion recommendation"
+        };
+        
+        return res.json(formattedAnalysis);
+      } catch (aiError) {
+        console.error("AI analysis failed:", aiError);
+        
         // Fallback to intelligent local analysis if AI fails
-        const fallbackAnalysis = generateFallbackFoodAnalysis(foodName);
+        const fallbackAnalysis = {
+          category: categorizeFood(foodName),
+          smartUnit: getSmartDefaultUnit(foodName, categorizeFood(foodName)),
+          smartQuantity: 1,
+          unitOptions: ["cup", "piece", "serving", "grams"],
+          aiConfidence: 0.6,
+          reasoning: "Local analysis based on food category"
+        };
+        
         return res.json(fallbackAnalysis);
       }
       
@@ -3951,7 +3971,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('AI food analysis error:', error);
       
       // Always provide fallback analysis
-      const fallbackAnalysis = generateFallbackFoodAnalysis(req.body.foodName || "unknown food");
+      const fallbackAnalysis = {
+        category: categorizeFood(req.body.foodName || "unknown food"),
+        smartUnit: getSmartDefaultUnit(req.body.foodName || "unknown food", "Main Dish"),
+        smartQuantity: 1,
+        unitOptions: ["cup", "piece", "serving", "grams"],
+        aiConfidence: 0.5,
+        reasoning: "Local fallback analysis due to error"
+      };
       return res.json(fallbackAnalysis);
     }
   });
@@ -4073,13 +4100,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Enhanced AI analysis using Gemini
-      const aiAnalysis = await generateAIFoodAnalysis(foodName, imageBuffer);
-      
-      if (aiAnalysis) {
-        return res.json(aiAnalysis);
-      } else {
+      try {
+        const aiAnalysis = await getCachedOrAnalyze(foodName);
+        
+        // Format response to match expected structure
+        const formattedAnalysis = {
+          category: aiAnalysis.category,
+          smartUnit: aiAnalysis.smartUnit,
+          smartQuantity: aiAnalysis.smartQuantity,
+          unitOptions: aiAnalysis.alternativeUnits || [aiAnalysis.smartUnit, "cup", "piece", "serving"],
+          aiConfidence: 0.85,
+          reasoning: aiAnalysis.portionExplanation || "AI-generated portion recommendation"
+        };
+        
+        return res.json(formattedAnalysis);
+      } catch (aiError) {
+        console.error("AI analysis failed:", aiError);
+        
         // Fallback to intelligent local analysis if AI fails
-        const fallbackAnalysis = generateFallbackFoodAnalysis(foodName);
+        const fallbackAnalysis = {
+          category: categorizeFood(foodName),
+          smartUnit: getSmartDefaultUnit(foodName, categorizeFood(foodName)),
+          smartQuantity: 1,
+          unitOptions: ["cup", "piece", "serving", "grams"],
+          aiConfidence: 0.6,
+          reasoning: "Local analysis based on food category"
+        };
+        
         return res.json(fallbackAnalysis);
       }
       
@@ -4087,7 +4134,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('AI food analysis error:', error);
       
       // Always provide fallback analysis
-      const fallbackAnalysis = generateFallbackFoodAnalysis(req.body.foodName || "unknown food");
+      const fallbackAnalysis = {
+        category: categorizeFood(req.body.foodName || "unknown food"),
+        smartUnit: getSmartDefaultUnit(req.body.foodName || "unknown food", "Main Dish"),
+        smartQuantity: 1,
+        unitOptions: ["cup", "piece", "serving", "grams"],
+        aiConfidence: 0.5,
+        reasoning: "Local fallback analysis due to error"
+      };
       return res.json(fallbackAnalysis);
     }
   });
