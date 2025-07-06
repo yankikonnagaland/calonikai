@@ -1,0 +1,238 @@
+Please implement AI-powered food search in my app with the following changes:
+1. Backend Changes
+Create a new AI service file at server/services/aiService.ts:
+typescript// Use Google Gemini for AI analysis
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+export async function analyzeWithAI(foodQuery: string) {
+  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+  
+  const prompt = `Analyze this food item and provide accurate nutritional information:
+    Food: "${foodQuery}"
+    
+    Return ONLY a valid JSON object (no markdown, no extra text) with these exact fields:
+    {
+      "name": "Proper name of the food",
+      "category": "Choose ONE from: Hot Beverage, Cold Beverage, Fruit, Vegetable, Grain, Protein, Dairy, Snack, Dessert, Main Dish, Side Dish, Sauce, Nuts, Fast Food",
+      "calories": number per 100g or 100ml,
+      "protein": number in grams per 100g/100ml,
+      "carbs": number in grams per 100g/100ml,
+      "fat": number in grams per 100g/100ml,
+      "smartUnit": "Most common serving unit like 'cup (240ml)' or 'piece (100g)'",
+      "smartQuantity": typical quantity as number,
+      "portionExplanation": "Brief explanation of typical portion",
+      "realisticCalories": calories for the smart portion,
+      "alternativeUnits": ["array", "of", "other", "common", "units"]
+    }
+    
+    Important rules:
+    - For beverages like plain tea/coffee without milk: calories should be 0-5
+    - For water: calories must be 0
+    - Be accurate with nutritional values based on real food data
+    - Smart portions should reflect how people actually consume this food`;
+  
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    
+    // Clean the response to ensure valid JSON
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("Invalid AI response");
+    
+    return JSON.parse(jsonMatch[0]);
+  } catch (error) {
+    console.error("AI analysis error:", error);
+    throw error;
+  }
+}
+
+// Cache AI results to reduce API calls
+const aiCache = new Map<string, any>();
+
+export async function getCachedOrAnalyze(query: string) {
+  const cacheKey = query.toLowerCase().trim();
+  
+  if (aiCache.has(cacheKey)) {
+    return aiCache.get(cacheKey);
+  }
+  
+  const result = await analyzeWithAI(query);
+  aiCache.set(cacheKey, result);
+  
+  return result;
+}
+Add to server/routes/foods.ts - Create a new endpoint:
+typescript// Add this new endpoint for AI-enhanced search
+app.get("/api/foods/ai-search", authenticateUser, async (req, res) => {
+  try {
+    const { query } = req.query;
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({ error: "Query parameter is required" });
+    }
+
+    // First, search the database
+    const dbResults = await db
+      .select()
+      .from(foods)
+      .where(
+        or(
+          sql`LOWER(${foods.name}) LIKE ${`%${query.toLowerCase()}%`}`,
+          sql`LOWER(${foods.category}) LIKE ${`%${query.toLowerCase()}%`}`
+        )
+      )
+      .limit(5);
+
+    // If we have good database results, enhance them with AI data
+    if (dbResults.length > 0) {
+      // For existing foods, just add smart portion data
+      const enhancedResults = await Promise.all(
+        dbResults.map(async (food) => {
+          try {
+            const aiData = await getCachedOrAnalyze(food.name);
+            return {
+              ...food,
+              smartUnit: aiData.smartUnit,
+              smartQuantity: aiData.smartQuantity,
+              realisticCalories: aiData.realisticCalories,
+              portionExplanation: aiData.portionExplanation
+            };
+          } catch {
+            // If AI fails, return original food
+            return food;
+          }
+        })
+      );
+      
+      return res.json(enhancedResults);
+    }
+
+    // No database results - use AI to generate food data
+    try {
+      const aiFood = await getCachedOrAnalyze(query);
+      
+      // Format AI result to match Food schema
+      const formattedFood = {
+        id: -1, // Negative ID indicates AI-generated
+        name: aiFood.name,
+        category: aiFood.category,
+        calories: aiFood.calories,
+        protein: aiFood.protein,
+        carbs: aiFood.carbs,
+        fat: aiFood.fat,
+        portionSize: "100g",
+        smartUnit: aiFood.smartUnit,
+        smartQuantity: aiFood.smartQuantity,
+        realisticCalories: aiFood.realisticCalories,
+        portionExplanation: aiFood.portionExplanation,
+        aiGenerated: true
+      };
+      
+      return res.json([formattedFood]);
+    } catch (aiError) {
+      console.error("AI search failed:", aiError);
+      // Return empty array if both DB and AI fail
+      return res.json([]);
+    }
+  } catch (error) {
+    console.error("AI search endpoint error:", error);
+    res.status(500).json({ error: "Search failed" });
+  }
+});
+Add to .env:
+GEMINI_API_KEY=your_gemini_api_key_here
+Add to package.json dependencies:
+json"@google/generative-ai": "^0.21.0"
+2. Frontend Changes
+Update FoodSearch component - Change the search query:
+Replace the existing useQuery for search with:
+typescriptconst { data: searchResults = [], isLoading: isSearching } = useQuery<Food[]>({
+  queryKey: [`/api/foods/ai-search`, debouncedQuery], // Changed to ai-search
+  queryFn: async () => {
+    const response = await apiRequest("GET", `/api/foods/ai-search?query=${encodeURIComponent(debouncedQuery)}`);
+    return response.json();
+  },
+  enabled: debouncedQuery.length > 0,
+});
+Update the food selection display to show AI enhancements:
+In the search results map, update the Badge to show when AI is used:
+typescript{searchResults.map((food: Food, index) => {
+  const isAiFood = food.aiGenerated || food.id === -1;
+  return (
+    <div
+      key={`${food.id}-${index}`}
+      className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border-b last:border-b-0 transition-colors"
+      onMouseDown={(e) => {
+        e.preventDefault();
+        handleFoodSelect(food);
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-sm">{food.name}</span>
+            {isAiFood && (
+              <Badge variant="secondary" className="text-xs">
+                <Sparkles className="h-3 w-3 mr-1" />
+                AI
+              </Badge>
+            )}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            <div className="flex items-center justify-between">
+              {food.realisticCalories ? (
+                <span>
+                  <span className="font-medium text-green-600 dark:text-green-400">
+                    {food.realisticCalories} cal
+                  </span> 
+                  <span className="text-gray-400 dark:text-gray-500">
+                    {" "}({food.smartQuantity} {food.smartUnit})
+                  </span> • {food.protein}g protein
+                </span>
+              ) : (
+                <span>{food.calories} cal • {food.protein}g protein</span>
+              )}
+              <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full">
+                {food.smartUnit || getIntelligentUnits(food).unit}
+              </span>
+            </div>
+            <div className="mt-1">
+              <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded-full">
+                {food.category}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+})}
+3. Database Migration (Optional but recommended)
+Add new columns to the foods table to cache AI data:
+sqlALTER TABLE foods ADD COLUMN smart_unit VARCHAR(100);
+ALTER TABLE foods ADD COLUMN smart_quantity DECIMAL(10,2);
+ALTER TABLE foods ADD COLUMN portion_explanation TEXT;
+ALTER TABLE foods ADD COLUMN ai_analyzed BOOLEAN DEFAULT FALSE;
+Testing Instructions:
+
+Get a free Gemini API key from https://makersuite.google.com/app/apikey
+Add it to your .env file
+Run npm install @google/generative-ai
+Test by searching for:
+
+"green tea" - should show Hot Beverage category, ~1 calorie
+"chicken biryani" - should show Main Dish category with proper nutrition
+"apple" - should show Fruit category with ~52 calories per 100g
+
+
+
+The AI will now automatically:
+
+Categorize foods (no manual category needed)
+Provide accurate nutritional information
+Suggest smart portion sizes
+Show realistic calories for typical servings
+
+Please implement these changes to enable AI-powered food search that automatically determines categories and nutrition.

@@ -3766,6 +3766,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI-enhanced food search endpoint
+  app.get("/api/foods/ai-search", async (req, res) => {
+    try {
+      const { query } = req.query;
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ error: "Query parameter is required" });
+      }
+
+      // Check authentication
+      const adminKey = req.headers['x-admin-key'] as string;
+      const sessionId = (req.session as any)?.userId || (req.session as any)?.user?.id || req.headers['x-session-id'] as string;
+      const isAdmin = adminKey === (process.env.ADMIN_SECRET || "calonik_admin_2025");
+      
+      if (!isAdmin && !sessionId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      // First, search the database
+      const dbResults = await storage.searchFoods(query);
+
+      // If we have good database results, enhance them with AI data
+      if (dbResults.length > 0) {
+        const enhancedResults = await Promise.all(
+          dbResults.map(async (food) => {
+            try {
+              const aiData = await getCachedOrAnalyze(food.name);
+              return {
+                ...food,
+                smartUnit: aiData.smartUnit,
+                smartQuantity: aiData.smartQuantity,
+                realisticCalories: aiData.realisticCalories,
+                portionExplanation: aiData.portionExplanation,
+                aiGenerated: false
+              };
+            } catch {
+              // If AI fails, return original food
+              return food;
+            }
+          })
+        );
+        
+        return res.json(enhancedResults);
+      }
+
+      // No database results - use AI to generate food data
+      try {
+        const aiFood = await getCachedOrAnalyze(query);
+        
+        // Format AI result to match Food schema
+        const formattedFood = {
+          id: -1, // Negative ID indicates AI-generated
+          name: aiFood.name,
+          category: aiFood.category,
+          calories: aiFood.calories,
+          protein: aiFood.protein,
+          carbs: aiFood.carbs,
+          fat: aiFood.fat,
+          portionSize: "100g",
+          smartUnit: aiFood.smartUnit,
+          smartQuantity: aiFood.smartQuantity,
+          realisticCalories: aiFood.realisticCalories,
+          portionExplanation: aiFood.portionExplanation,
+          aiGenerated: true
+        };
+        
+        return res.json([formattedFood]);
+      } catch (aiError) {
+        console.error("AI search failed:", aiError);
+        // Return empty array if both DB and AI fail
+        return res.json([]);
+      }
+    } catch (error) {
+      console.error("AI search endpoint error:", error);
+      res.status(500).json({ error: "Search failed" });
+    }
+  });
+
   // AI Food Analysis endpoint for enhanced categorization and unit suggestions
   app.post("/api/ai-food-analysis", async (req, res) => {
     try {
@@ -3808,45 +3885,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   return httpServer;
 }
 
+// Import AI service
+import { getCachedOrAnalyze } from './services/aiService';
+
 // AI Food Analysis Functions (moved outside registerRoutes)
 async function generateAIFoodAnalysis(foodName: string, imageBuffer?: string) {
     try {
-      const { GoogleGenerativeAI } = require('@google/genai');
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-
-      const prompt = `
-      Analyze this food item and provide accurate nutritional and portion information: "${foodName}"
-
-      Please respond with a JSON object containing:
-      {
-        "foodName": "standardized name",
-        "category": "food category (e.g., fruit, vegetable, beverage, grain, protein, dairy, snack, dessert)",
-        "caloriesPer100g": number (accurate calories per 100g),
-        "smartUnit": "most appropriate unit with weight/volume (e.g., 'medium apple (180g)', 'cup (240ml)', 'slice (30g)')",
-        "smartQuantity": number (typical serving quantity),
-        "unitOptions": ["array of alternative units with weights/volumes"],
-        "reasoning": "explanation for unit and quantity choice"
-      }
-
-      Guidelines:
-      - Use accurate nutritional data from USDA or similar sources
-      - Choose realistic portion sizes based on typical consumption
-      - Include weight/volume in parentheses for units when possible
-      - Consider cultural context and eating patterns
-      - Prioritize commonly consumed portions
-      `;
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const aiResult = await getCachedOrAnalyze(foodName);
       
-      // Extract JSON from response
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const analysis = JSON.parse(jsonMatch[0]);
-        console.log(`AI Analysis for ${foodName}:`, analysis);
-        return analysis;
+      // Transform AI service result to match expected format
+      if (aiResult) {
+        return {
+          category: aiResult.category,
+          smartUnit: aiResult.smartUnit,
+          smartQuantity: aiResult.smartQuantity,
+          unitOptions: aiResult.alternativeUnits || [aiResult.smartUnit, "serving (100g)", "grams"],
+          aiConfidence: 0.85, // High confidence for Gemini API results
+          reasoning: aiResult.portionExplanation || `Recommended serving: ${aiResult.smartQuantity} ${aiResult.smartUnit}`
+        };
       }
       
       return null;

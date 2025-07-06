@@ -137,9 +137,9 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
   }, [quantity]);
 
   const { data: searchResults = [], isLoading: isSearching } = useQuery<Food[]>({
-    queryKey: [`/api/foods/search`, debouncedQuery],
+    queryKey: [`/api/foods/ai-search`, debouncedQuery],
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/foods/search?query=${encodeURIComponent(debouncedQuery)}`);
+      const response = await apiRequest("GET", `/api/foods/ai-search?query=${encodeURIComponent(debouncedQuery)}`);
       return response.json();
     },
     enabled: debouncedQuery.length > 0,
@@ -888,7 +888,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
               onMouseDown={(e) => e.preventDefault()} // Prevent input blur when clicking
             >
               {searchResults.map((food: Food, index) => {
-                const isAiFood = food.name.includes("(Not Found)") || food.id === -1;
+                const isAiFood = (food as any).aiGenerated || food.id === -1 || food.name.includes("(Not Found)");
                 return (
                   <div
                     key={`${food.id}-${index}`}
@@ -903,9 +903,15 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-sm">{food.name}</span>
                           {isAiFood && (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge className="text-xs bg-purple-500 hover:bg-purple-600 text-white">
                               <Sparkles className="h-3 w-3 mr-1" />
-                              AI
+                              AI Enhanced
+                            </Badge>
+                          )}
+                          {(food as any).smartUnit && !isAiFood && (
+                            <Badge variant="outline" className="text-xs border-blue-500 text-blue-600">
+                              <Sparkles className="h-3 w-3 mr-1" />
+                              Enhanced
                             </Badge>
                           )}
                         </div>
