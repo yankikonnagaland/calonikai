@@ -587,6 +587,14 @@ The application follows a client-server architecture with clear separation of co
 - VERIFIED: Admin users maintain unlimited access, regular users properly limited with clear upgrade messaging
 - COMPLETED: Full usage limit system now covers meal tracking, photo analysis, and food search functionality
 
+**July 6, 2025 - Complete Usage Limits Restructure & Calendar Button Styling:**
+- IMPLEMENTED: New usage limit structure - Free: 10 searches + 5 photo analysis (lifetime), Basic: 10 searches + 5 photo analysis (daily), Premium: 30 searches + 10 photo analysis (daily)
+- ADDED: getLifetimeUserUsage method to both DatabaseStorage and FallbackStorage for tracking free user lifetime limits vs daily limits for paid tiers
+- ENHANCED: canUserPerformAction method now differentiates between lifetime tracking for free users and daily tracking for paid users
+- UPDATED: Calendar button styling in Dashboard to match Health Dashboard text gradient (blue-600 to purple-600) with hover effects
+- VERIFIED: Authentication system working correctly - both food search and AI food analysis endpoints functional for regular users
+- COMPLETED: Admin users maintain unlimited access while regular users follow new tiered usage structure
+
 **July 6, 2025 - Fixed Gemini API Model & Comprehensive Duplicate Prevention System:**
 - RESOLVED: Critical Gemini API bug - corrected model name from "gemini-pro" to "gemini-1.5-flash" enabling AI search functionality
 - IMPLEMENTED: Comprehensive duplicate prevention system with frontend deduplication in FoodSearch component
