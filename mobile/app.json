@@ -3,8 +3,9 @@
     "name": "Calonik - AI Calorie Tracker",
     "slug": "calonik",
     "version": "1.0.0",
+    "appVersionSource": "local",
     "orientation": "portrait",
-    "icon": "./assets/calonik-logo.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/calonik-logo.png",
@@ -28,7 +29,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/calonik-logo.png",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#0F172A"
       },
       "package": "ai.calonik.app",

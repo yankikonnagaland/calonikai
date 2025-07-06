@@ -1,0 +1,54 @@
+npx expo-doctor
+Unexpected error while running 'Check for issues with Metro config' check:
+Error: Cannot find module 'metro/src/ModuleGraph/worker/importLocationsPlugin'
+Require stack:
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\node_modules\@expo\metro-config\build\serializer\reconcileTransformSerializerPlugin.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\node_modules\@expo\metro-config\build\serializer\withExpoSerializers.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\node_modules\@expo\metro-config\build\ExpoMetroConfig.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\node_modules\expo\metro-config.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\metro.config.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\node_modules\metro-config\node_modules\import-fresh\index.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\node_modules\metro-config\node_modules\cosmiconfig\dist\loaders.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\node_modules\metro-config\node_modules\cosmiconfig\dist\createExplorer.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\node_modules\metro-config\node_modules\cosmiconfig\dist\index.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\node_modules\metro-config\src\loadConfig.js
+- C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\node_modules\metro-config\src\index.js
+- C:\Users\Lenovo\AppData\Local\npm-cache\_npx\c15e4b19a90d9797\node_modules\expo-doctor\build\index.js
+11/15 checks passed. 4 checks failed. Possible issues detected:
+Use the --verbose flag to see more details about passed checks.
+
+✖ Check Expo config (app.json/ app.config.js) schema
+Error validating asset fields in C:\Users\Lenovo\Documents\CALONIK\APP\calonikai\calonikai\mobile\app.json:
+ Field: Android.adaptiveIcon.foregroundImage - image should be square, but the file at './assets/calonik-logo.png' has dimensions 792x1235.
+ Field: icon - image should be square, but the file at './assets/calonik-logo.png' has dimensions 792x1235.
+Advice:
+Resolve schema errors in your app config. Learn more: https://docs.expo.dev/workflow/configuration/
+
+✖ Check for issues with Metro config
+✖ Check that native modules use compatible support package versions for installed Expo SDK
+Expected package metro@^0.82.0
+Found invalid:
+  metro@0.80.12
+  (for more info, run: npm why metro)
+Expected package metro-resolver@^0.82.0
+Found invalid:
+  metro-resolver@0.80.12
+  (for more info, run: npm why metro-resolver)
+Expected package metro-config@^0.82.0
+Found invalid:
+  metro-config@0.80.12
+  (for more info, run: npm why metro-config)
+Advice:
+Upgrade dependencies that are using the invalid package versions.
+
+✖ Check that packages match versions required by installed Expo SDK
+The following packages should be updated for best compatibility with the installed expo version:
+  expo-status-bar@2.0.1 - expected version: ~2.2.3
+  react@18.3.1 - expected version: 19.0.0
+  react-native@0.75.4 - expected version: 0.79.5
+Your project may not work correctly until you install the expected versions of the packages.
+Found outdated dependencies
+Advice:
+Use 'npx expo install --check' to review and upgrade your dependencies.
+
+4 checks failed, indicating possible issues with the project.
