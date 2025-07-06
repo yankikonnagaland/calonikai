@@ -3739,10 +3739,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check authentication
       const adminKey = req.headers['x-admin-key'] as string;
-      const sessionId = req.session?.userId || req.session?.user?.id || req.headers['x-session-id'] as string;
       const isAdmin = adminKey === (process.env.ADMIN_SECRET || "calonik_admin_2025");
       
-      if (!isAdmin && !sessionId) {
+      // For regular users, check multiple authentication methods
+      let sessionId: string | null = null;
+      
+      if (isAdmin) {
+        sessionId = "admin_testing_user";
+      } else {
+        // Check various session structures for regular authenticated users
+        sessionId = (req.session as any)?.userId || 
+                   (req.session as any)?.user?.id ||
+                   (req as any)?.user?.id ||  // Passport.js stores user here
+                   (req.session as any)?.passport?.user?.id ||  // Alternative Passport.js location
+                   req.headers['x-session-id'] as string;
+      }
+      
+      if (!sessionId) {
         return res.status(401).json({ message: "Authentication required" });
       }
 
