@@ -1023,17 +1023,17 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
 
   // === MAIN DISHES ===
   
-  // Rice dishes - enhanced with katori and traditional Indian measurements
+  // Rice dishes - enhanced with bowl and traditional Indian measurements
   if (name.includes("rice") || name.includes("biryani") || name.includes("pulao") || name.includes("fried rice")) {
     const isSpecialRice = name.includes("biryani") || name.includes("pulao") || name.includes("fried");
     return {
-      unit: isSpecialRice ? "katori (200ml)" : "katori (150ml)",
+      unit: isSpecialRice ? "bowl (200ml)" : "bowl (150ml)",
       unitOptions: [
-        "half katori (75ml)",
-        "small katori (110ml)",
-        "katori (150ml)", 
-        "large katori (200ml)",
-        "double katori (300ml)",
+        "half bowl (75ml)",
+        "small bowl (110ml)",
+        "bowl (150ml)", 
+        "large bowl (200ml)",
+        "double bowl (300ml)",
         "small portion (100g)", 
         "medium portion (150g)", 
         "large portion (200g)", 
@@ -1046,17 +1046,17 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
     };
   }
   
-  // Curry and liquid dishes - enhanced with katori options
+  // Curry and liquid dishes - enhanced with bowl options
   if (name.includes("curry") || name.includes("dal") || name.includes("soup") || name.includes("stew")) {
     const isDal = name.includes("dal");
     return {
-      unit: isDal ? "katori (150ml)" : "katori (150ml)",
+      unit: isDal ? "bowl (150ml)" : "bowl (150ml)",
       unitOptions: [
-        "small katori (110ml)",
-        "katori (150ml)", 
-        "large katori (200ml)",
-        "half katori (75ml)",
-        "double katori (300ml)",
+        "small bowl (110ml)",
+        "bowl (150ml)", 
+        "large bowl (200ml)",
+        "half bowl (75ml)",
+        "double bowl (300ml)",
         "small bowl (100g)", 
         "medium bowl (150g)", 
         "large bowl (200g)", 
@@ -1222,8 +1222,8 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
         `1 medium (${fruitWeight})`, 
         `1 large (250g)`,
         "tennis ball size (100g)",  // Visual guide
-        "half katori (75g)",         // Traditional measurement
-        "quarter katori (37g)",      // Small portion
+        "half bowl (75g)",           // Traditional measurement
+        "quarter bowl (37g)",        // Small portion
         "pieces", 
         "grams"
       ],
@@ -1239,22 +1239,22 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
         "1 medium (120g)", 
         "1 large (150g)",
         "tennis ball size (100g)",  // Visual guide
-        "half katori (75g)",         // Traditional measurement
+        "half bowl (75g)",           // Traditional measurement
         "pieces", 
         "grams"
       ],
     };
   }
   
-  // Berries and small fruits - enhanced with katori options
+  // Berries and small fruits - enhanced with bowl options
   if (name.includes("grape") || name.includes("berry") || name.includes("cherry") || name.includes("dates")) {
     return {
-      unit: "small katori (110ml)",
+      unit: "small bowl (110ml)",
       unitOptions: [
-        "quarter katori (37g)",
-        "half katori (75g)",
-        "small katori (110ml)",
-        "katori (150ml)",
+        "quarter bowl (37g)",
+        "half bowl (75g)",
+        "small bowl (110ml)",
+        "bowl (150ml)",
         "cup (150g)", 
         "handful (50g)", 
         "closed fist (100g)",        // Visual guide
@@ -1539,9 +1539,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           "small portion (50g)",
           "medium portion (100g)",
           "large portion (150g)",
-          "small katori (110ml)",
-          "katori (150ml)",
-          "large katori (200ml)",
+          "small bowl (110ml)",
+          "bowl (150ml)",
+          "large bowl (200ml)",
           "pieces",
           "grams",
           "ml"

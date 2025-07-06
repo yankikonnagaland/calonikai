@@ -60,23 +60,20 @@ export const unitToGramMap: Record<string, number> = {
   "half cup": 60,       // Half cup
   "quarter cup": 30,    // Quarter cup
   
-  // Traditional Indian Katori measurements (based on Healthify standards)
-  "katori": 150,        // Standard katori (150ml) - most common Indian serving bowl
-  "small katori": 110,  // Small katori (110ml) - traditional household size
-  "medium katori": 150, // Medium katori (150ml) - standard serving
-  "large katori": 200,  // Large katori (200ml) - larger portion
-  "extra large katori": 250, // Extra large katori (250ml)
+  // Traditional Indian Bowl measurements (based on Healthify standards)
+  "bowl": 150,        // Standard bowl (150ml) - most common Indian serving bowl
+  "small bowl": 110,  // Small bowl (110ml) - traditional household size
+  "medium bowl": 150, // Medium bowl (150ml) - standard serving
+  "large bowl": 200,  // Large bowl (200ml) - larger portion
+  "extra large bowl": 250, // Extra large bowl (250ml)
   
-  // Traditional bowl measurements  
-  "bowl": 150,          // Standard bowl
-  "small bowl": 100,    // Small bowl
-  "medium bowl": 150,   // Medium bowl
-  "large bowl": 225,    // Large bowl
-  "extra large bowl": 300, // Extra large bowl
+  // Traditional bowl measurements variants
+  "standard bowl": 150, // Standard bowl (alternate naming)
+  "regular bowl": 150,  // Regular bowl
   
   // Traditional Indian serving measurements
   "thali portion": 100, // Individual thali item portion
-  "dal portion": 150,   // Standard dal serving (1 katori)
+  "dal portion": 150,   // Standard dal serving (1 bowl)
   "curry portion": 120, // Standard curry serving
   "sabzi portion": 100, // Standard vegetable portion
   "chapati portion": 50, // Single chapati/roti
@@ -130,9 +127,9 @@ export const unitToGramMap: Record<string, number> = {
   "large rice portion": 200,
   
   // Additional Indian measurements (inspired by Healthify standards)
-  "half katori": 75,    // Half katori portion
-  "quarter katori": 37, // Quarter katori portion  
-  "double katori": 300, // Double katori serving
+  "half bowl": 75,      // Half bowl portion
+  "quarter bowl": 37,   // Quarter bowl portion  
+  "double bowl": 300,   // Double bowl serving
   
   // Precise volume-based Indian measurements
   "glass (250ml)": 250, // Standard glass
