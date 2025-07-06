@@ -23,7 +23,7 @@ import {
   MealItemWithFood 
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, ilike } from "drizzle-orm";
+import { eq, and, desc, ilike, sql } from "drizzle-orm";
 import { 
   foods, 
   mealItems, 
@@ -83,6 +83,7 @@ export interface IStorage {
   // Usage tracking operations
   trackUsage(userId: string, actionType: "meal_add" | "photo_analyze" | "food_search"): Promise<void>;
   getUserUsage(userId: string, actionType: "meal_add" | "photo_analyze" | "food_search", date: string): Promise<number>;
+  getLifetimeUserUsage(userId: string, actionType: "meal_add" | "photo_analyze" | "food_search"): Promise<number>;
   canUserPerformAction(userId: string, actionType: "meal_add" | "photo_analyze" | "food_search"): Promise<boolean>;
   activatePremiumSubscription(userId: string, razorpayData: { customerId?: string; subscriptionId?: string }): Promise<User>;
   activateBasicSubscription(userId: string, razorpayData: { customerId?: string; subscriptionId?: string }): Promise<User>;
@@ -437,6 +438,22 @@ export class DatabaseStorage implements IStorage {
     return usage?.count || 0;
   }
 
+  async getLifetimeUserUsage(userId: string, actionType: "meal_add" | "photo_analyze" | "food_search"): Promise<number> {
+    const usageRecords = await db
+      .select()
+      .from(usageTracking)
+      .where(
+        and(
+          eq(usageTracking.userId, userId),
+          eq(usageTracking.actionType, actionType)
+        )
+      );
+    
+    // Sum up all the count values
+    const total = usageRecords.reduce((sum, record) => sum + (record.count || 0), 0);
+    return total;
+  }
+
   async canUserPerformAction(userId: string, actionType: "meal_add" | "photo_analyze" | "food_search"): Promise<boolean> {
     // Admin testing user has unlimited access
     if (userId === "admin_testing_user") {
@@ -447,14 +464,14 @@ export class DatabaseStorage implements IStorage {
     if (!user) return false;
 
     const today = new Date().toISOString().split('T')[0];
-    const usage = await this.getUserUsage(userId, actionType, today);
-
+    
     // Premium users have highest daily limits
     if (user.subscriptionStatus === 'premium') {
+      const usage = await this.getUserUsage(userId, actionType, today);
       const premiumLimits = {
-        meal_add: 20,
-        photo_analyze: 5,
-        food_search: 10  // 10 food searches per day for premium
+        meal_add: 999999,   // Unlimited meal adds for premium
+        photo_analyze: 10,  // 10 photo analysis per day for premium
+        food_search: 30     // 30 food searches per day for premium
       };
       
       return usage < premiumLimits[actionType];
@@ -462,23 +479,25 @@ export class DatabaseStorage implements IStorage {
 
     // Basic users have moderate daily limits
     if (user.subscriptionStatus === 'basic') {
+      const usage = await this.getUserUsage(userId, actionType, today);
       const basicLimits = {
-        meal_add: 5,
-        photo_analyze: 2,
-        food_search: 10  // 10 food searches per day for basic
+        meal_add: 999999,   // Unlimited meal adds for basic
+        photo_analyze: 5,   // 5 photo analysis per day for basic
+        food_search: 10     // 10 food searches per day for basic
       };
       
       return usage < basicLimits[actionType];
     }
 
-    // For free users, check basic limits
+    // For free users, check lifetime limits (not daily)
+    const lifetimeUsage = await this.getLifetimeUserUsage(userId, actionType);
     const freeLimits = {
-      meal_add: 1,
-      photo_analyze: 2,
-      food_search: 2  // 2 food searches per day for free users
+      meal_add: 999999,   // Unlimited meal adds for free users
+      photo_analyze: 5,   // 5 photo analysis lifetime for free users
+      food_search: 10     // 10 food searches lifetime for free users
     };
 
-    return usage < freeLimits[actionType];
+    return lifetimeUsage < freeLimits[actionType];
   }
 
   async activatePremiumSubscription(userId: string, razorpayData: { customerId?: string; subscriptionId?: string }): Promise<User> {
