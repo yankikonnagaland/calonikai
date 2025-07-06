@@ -10,6 +10,7 @@ import Landing from "@/pages/landing";
 import AdminLogin from "@/pages/admin-login";
 import OAuthRedirect from "@/pages/oauth-redirect";
 import OAuthCallback from "@/pages/oauth-callback";
+import OAuthTest from "@/pages/oauth-test";
 import PaymentSuccess from "@/pages/payment-success";
 import HourlyActivitiesPage from "@/pages/hourly-activities";
 import InfluencerDashboard from "@/pages/InfluencerDashboard";
@@ -58,6 +59,7 @@ function Router() {
       <Route path="/expo" component={ExpoPage} />
       <Route path="/oauth/google" component={OAuthRedirect} />
       <Route path="/oauth-callback" component={OAuthCallback} />
+      <Route path="/oauth-test" component={OAuthTest} />
       <Route path="/payment-success" component={PaymentSuccess} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-conditions" component={TermsConditions} />

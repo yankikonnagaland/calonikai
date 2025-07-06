@@ -604,6 +604,16 @@ The application follows a client-server architecture with clear separation of co
 - CONFIRMED: Search results show proper diversity with unique food entries and accurate AI-enhanced portion recommendations
 - COMPLETED: Duplicate prevention system operational across both database and AI-generated search results
 
+**July 6, 2025 - Enhanced Google OAuth Debugging & Authentication Flow:**
+- ENHANCED: Google OAuth callback logging with detailed error tracking and parameter inspection
+- IMPROVED: Popup authentication flow with better error messages, timeout handling, and message passing
+- CREATED: Comprehensive debug guide (GOOGLE_OAUTH_DEBUG.md) with step-by-step troubleshooting solutions
+- ADDED: OAuth configuration test endpoint (/api/auth/google/test) for verifying credentials and callback URLs
+- ADDED: OAuth test page (/oauth-test) for validating configuration and displaying exact callback URL requirements
+- IDENTIFIED: Primary issue is redirect URI mismatch - Google Console needs callback URL: https://951c9b0b-a7e6-4243-ad92-b80de619ea52-00-2w9g548p0tyi.worf.replit.dev/api/auth/google/callback
+- UPDATED: Calendar button styling to match Health Dashboard purple-blue gradient as requested
+- STATUS: OAuth flow starts successfully but fails at callback due to unregistered redirect URI in Google Console
+
 **July 4, 2025 - Fixed React Native Crash & Enhanced Mobile App Stability:**
 - RESOLVED: Critical React Native "RCTFatal" and "non-std C++ exception" crashes in Expo app
 - FIXED: App configuration by disabling new React Native architecture in app.json build properties
