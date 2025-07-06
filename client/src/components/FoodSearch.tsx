@@ -68,7 +68,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
   const [unit, setUnit] = useState("serving");
   const [unitOptions, setUnitOptions] = useState<string[]>(["serving", "piece", "cup"]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [searchTrigger, setSearchTrigger] = useState(""); // Trigger for manual search
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<{
     enhancedCategory: string;
@@ -95,14 +95,20 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     refetchInterval: 5000, // Refresh every 5 seconds for real-time updates
   });
 
-  // Debounce search query to prevent excessive API calls (300ms delay)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(searchQuery);
-    }, 300);
+  // Handle manual search trigger
+  const handleSearch = () => {
+    if (searchQuery.trim().length > 0) {
+      setSearchTrigger(searchQuery.trim());
+      setShowSuggestions(true);
+    }
+  };
 
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+  // Handle Enter key press to trigger search
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   // Handle external food selection from parent (pencil button editing)
   useEffect(() => {
@@ -139,11 +145,11 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
   }, [quantity]);
 
   const { data: rawSearchResults = [], isLoading: isSearching } = useQuery<Food[]>({
-    queryKey: [`/api/foods/enhanced-search`, debouncedQuery],
+    queryKey: [`/api/foods/enhanced-search`, searchTrigger],
     queryFn: async () => {
-      console.log("Making enhanced search request for:", debouncedQuery);
+      console.log("Making enhanced search request for:", searchTrigger);
       try {
-        const response = await apiRequest("GET", `/api/foods/enhanced-search?query=${encodeURIComponent(debouncedQuery)}`);
+        const response = await apiRequest("GET", `/api/foods/enhanced-search?query=${encodeURIComponent(searchTrigger)}`);
         
         // Check if response indicates daily limit reached
         if (response.status === 429) {
@@ -170,7 +176,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
         throw error;
       }
     },
-    enabled: debouncedQuery.length > 0,
+    enabled: searchTrigger.length > 0,
     retry: false, // Don't retry on limit errors
   });
 
@@ -595,7 +601,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     onFoodSelect(food);
     setShowSuggestions(false);
     setSearchQuery("");
-    setDebouncedQuery("");
+    setSearchTrigger("");
     
     // Reset quantity to 1 when selecting a new food item
     setQuantity(1);
@@ -686,24 +692,24 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
 
   // Show suggestions when search results are available
   useEffect(() => {
-    if (debouncedQuery.length > 0 && searchResults.length > 0) {
+    if (searchTrigger.length > 0 && searchResults.length > 0) {
       setShowSuggestions(true);
-    } else if (debouncedQuery.length === 0) {
+    } else if (searchTrigger.length === 0) {
       setShowSuggestions(false);
     }
-  }, [searchResults, debouncedQuery]);
+  }, [searchResults, searchTrigger]);
 
   // Debug logging
   useEffect(() => {
-    const shouldShow = showSuggestions && debouncedQuery.length > 0 && searchResults.length > 0;
+    const shouldShow = showSuggestions && searchTrigger.length > 0 && searchResults.length > 0;
     console.log("Search debug:", {
       searchQuery,
-      debouncedQuery,
+      searchTrigger,
       showSuggestions,
       searchResultsLength: searchResults.length,
       shouldShowSuggestions: shouldShow
     });
-  }, [searchQuery, debouncedQuery, showSuggestions, searchResults.length]);
+  }, [searchQuery, searchTrigger, showSuggestions, searchResults.length]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -903,11 +909,11 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     setUnit("serving");
   };
 
-  const shouldShowSuggestions = showSuggestions && debouncedQuery.length > 0 && searchResults.length > 0;
+  const shouldShowSuggestions = showSuggestions && searchTrigger.length > 0 && searchResults.length > 0;
   
   console.log("Search debug:", {
     searchQuery,
-    debouncedQuery,
+    searchTrigger,
     showSuggestions,
     searchResultsLength: searchResults.length,
     shouldShowSuggestions
@@ -932,7 +938,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="relative">
+        <div className="relative flex gap-2">
           <Input
             ref={searchInputRef}
             type="text"
@@ -944,11 +950,32 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
             }}
             onFocus={handleInputFocus}
             onBlur={handleInputBlur}
-            className="w-full pr-10"
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleSearch();
+              }
+            }}
+            className="flex-1"
           />
+          <Button
+            onClick={handleSearch}
+            disabled={!searchQuery.trim() || isSearching}
+            variant="default"
+            size="sm"
+            className="px-4 whitespace-nowrap"
+          >
+            {isSearching ? (
+              <div className="flex items-center gap-2">
+                <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                <span>Searching...</span>
+              </div>
+            ) : (
+              "Search"
+            )}
+          </Button>
           
           {/* Snail Loading Animation */}
-          {isSearching && debouncedQuery.length > 0 && (
+          {isSearching && searchTrigger.length > 0 && (
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
               <div className="flex items-center gap-2">
                 <div className="text-lg animate-pulse">
