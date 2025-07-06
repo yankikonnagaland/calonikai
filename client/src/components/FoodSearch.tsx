@@ -926,7 +926,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
               variant="outline"
               className="ml-auto text-xs border-purple-300 bg-[#1b2027]"
             >
-              {usageStats.remaining?.meals || 0} searches left
+              {usageStats.remaining?.meals || 0} credits left
             </Badge>
           )}
         </CardTitle>

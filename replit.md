@@ -593,6 +593,7 @@ The application follows a client-server architecture with clear separation of co
 - ENHANCED: canUserPerformAction method now differentiates between lifetime tracking for free users and daily tracking for paid users
 - UPDATED: Calendar button styling in Dashboard to match Health Dashboard text gradient (blue-600 to purple-600) with hover effects
 - UPDATED: Food search limits increased significantly - Free: 10→20 lifetime, Basic: 10→100/day, Premium: 30→200/day
+- UPDATED: Food search counter terminology changed from "xx searches left" to "xx credits left" for better user experience
 - RESET: Daily usage limit for user yankikonic@gmail.com (premium user) as requested
 - VERIFIED: Authentication system working correctly - both food search and AI food analysis endpoints functional for regular users
 - COMPLETED: Admin users maintain unlimited access while regular users follow new tiered usage structure
