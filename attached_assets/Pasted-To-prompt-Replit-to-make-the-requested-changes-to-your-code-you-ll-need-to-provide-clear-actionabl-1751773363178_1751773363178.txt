@@ -1,0 +1,76 @@
+To prompt Replit to make the requested changes to your code, you'll need to provide clear, actionable instructions.
+
+-----
+
+### **Replit Prompt**
+
+````
+I need to integrate an AI backend for food categorization, calorie estimation, and smart unit suggestions into my existing React `FoodSearch` component.
+
+Here's the plan:
+
+**1. Create a New API Endpoint for AI Food Analysis:**
+
+* **Endpoint:** `/api/ai-food-analysis`
+* **Method:** `POST`
+* **Request Body:**
+    ```json
+    {
+        "foodName": "string",
+        "imageBuffer": "string" // Base64 encoded image buffer
+    }
+    ```
+* **Response Body:**
+    ```json
+    {
+        "foodName": "string",
+        "category": "string",
+        "caloriesPer100g": "number",
+        "smartUnit": "string",
+        "smartQuantity": "number",
+        "unitOptions": ["string"],
+        "reasoning": "string"
+    }
+    ```
+* **Functionality:** This endpoint will receive a food name and an optional image. It should use an AI model (e.g., a vision model for categorization and estimation) to:
+    * **Categorize the food:** Assign it to a relevant food category (e.g., "fruit", "vegetable", "beverage", "grain").
+    * **Estimate calories per 100g:** Provide a calorie estimate for the food.
+    * **Suggest a smart unit and quantity:** Based on the food's type and the AI's analysis, suggest the most appropriate unit (e.g., "medium apple", "cup", "slice", "grams") and a realistic default quantity for that unit.
+    * **Provide a list of `unitOptions`:** Offer several common units for the food, including the `smartUnit`.
+    * **Include `reasoning`:** Explain why the AI chose the suggested unit and quantity.
+* **Error Handling:** Implement robust error handling, including a fallback to a default intelligent unit suggestion if the AI service is unavailable or returns an invalid response.
+
+**2. Modify the `handleFoodSelect` Function:**
+
+* **Remove the existing `getIntelligentUnits` function and its calls.** The AI backend will now handle this logic.
+* **Before setting `selectedFood` and other states, make an API call to `/api/ai-food-analysis` if the selected food is an AI-generated food (i.e., `food.id === -1` or `food.name.includes("(Not Found)")`).**
+    * Pass `food.name` and the `imageBuffer` (if available from user input, though for now, only `foodName` is needed since the `imageBuffer` is not yet part of the `FoodSearch` component's input).
+    * **Upon successful AI response:**
+        * Update `setUnit(aiResponse.smartUnit)`.
+        * Update `setQuantity(aiResponse.smartQuantity)`.
+        * Update `setUnitOptions(aiResponse.unitOptions)`.
+        * Optionally, store `aiResponse.reasoning` for potential display.
+    * **If the AI call fails or the food is not AI-generated:**
+        * Fall back to a sensible default, for example, `setUnit("serving")` and `setQuantity(1)`, and a generic list of `unitOptions` like `["serving", "grams", "pieces", "cup"]`.
+
+**3. Update `getUnitMultiplier`:**
+
+* **Simplify `getUnitMultiplier`:** The `getUnitMultiplier` function should primarily focus on converting the selected `unit` (which now comes from the AI or fallback) into a multiplier against the `caloriesPer100g` from the `Food` object.
+* **Remove all the detailed `if/else if` blocks for specific food types and unit variations.** The AI will handle the "smartness."
+* **The function should only need to extract the gram/ml value from the unit string (e.g., "(250ml)", "(100g)") or use a predefined multiplier for generic units like "serving", "piece", "cup".**
+
+**4. Adjust `Add to Meal` functionality:**
+
+* Ensure that the `addMealMutation.mutate` call correctly sends the `foodId`, `quantity`, `unit`, `sessionId`, and `date`. The `foodId` for AI-generated foods might be a temporary placeholder (-1), so ensure the backend can handle this by either creating a new food entry or by intelligently matching.
+
+**5. Consider UI/UX for AI Integration (Optional but recommended):**
+
+* You might want to add a loading indicator or a message while the AI analysis is in progress within `handleFoodSelect`.
+* Think about how `aiResponse.reasoning` could be displayed to the user for transparency.
+
+**Here is the full current code for the `FoodSearch` component:**
+
+[Your provided `FoodSearch.tsx` code goes here]
+````
+
+-----

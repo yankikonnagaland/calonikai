@@ -3728,6 +3728,184 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Food Analysis endpoint for enhanced categorization and unit suggestions
+  app.post("/api/ai-food-analysis", async (req, res) => {
+    try {
+      const { foodName, imageBuffer } = req.body;
+      
+      if (!foodName) {
+        return res.status(400).json({ message: "Food name is required" });
+      }
+
+      // Check authentication
+      const adminKey = req.headers['x-admin-key'] as string;
+      const sessionId = req.session?.userId || req.session?.user?.id || req.headers['x-session-id'] as string;
+      const isAdmin = adminKey === (process.env.ADMIN_SECRET || "calonik_admin_2025");
+      
+      if (!isAdmin && !sessionId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      // Enhanced AI analysis using Gemini
+      const aiAnalysis = await generateAIFoodAnalysis(foodName, imageBuffer);
+      
+      if (aiAnalysis) {
+        return res.json(aiAnalysis);
+      } else {
+        // Fallback to intelligent local analysis if AI fails
+        const fallbackAnalysis = generateFallbackFoodAnalysis(foodName);
+        return res.json(fallbackAnalysis);
+      }
+      
+    } catch (error) {
+      console.error('AI food analysis error:', error);
+      
+      // Always provide fallback analysis
+      const fallbackAnalysis = generateFallbackFoodAnalysis(req.body.foodName || "unknown food");
+      return res.json(fallbackAnalysis);
+    }
+  });
+
+  // AI Food Analysis endpoint for enhanced categorization and unit suggestions
+  app.post("/api/ai-food-analysis", async (req, res) => {
+    try {
+      const { foodName, imageBuffer } = req.body;
+      
+      if (!foodName) {
+        return res.status(400).json({ message: "Food name is required" });
+      }
+
+      // Check authentication
+      const adminKey = req.headers['x-admin-key'] as string;
+      const sessionId = (req.session as any)?.userId || (req.session as any)?.user?.id || req.headers['x-session-id'] as string;
+      const isAdmin = adminKey === (process.env.ADMIN_SECRET || "calonik_admin_2025");
+      
+      if (!isAdmin && !sessionId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      // Enhanced AI analysis using Gemini
+      const aiAnalysis = await generateAIFoodAnalysis(foodName, imageBuffer);
+      
+      if (aiAnalysis) {
+        return res.json(aiAnalysis);
+      } else {
+        // Fallback to intelligent local analysis if AI fails
+        const fallbackAnalysis = generateFallbackFoodAnalysis(foodName);
+        return res.json(fallbackAnalysis);
+      }
+      
+    } catch (error) {
+      console.error('AI food analysis error:', error);
+      
+      // Always provide fallback analysis
+      const fallbackAnalysis = generateFallbackFoodAnalysis(req.body.foodName || "unknown food");
+      return res.json(fallbackAnalysis);
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
+
+// AI Food Analysis Functions (moved outside registerRoutes)
+async function generateAIFoodAnalysis(foodName: string, imageBuffer?: string) {
+    try {
+      const { GoogleGenerativeAI } = require('@google/genai');
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+
+      const prompt = `
+      Analyze this food item and provide accurate nutritional and portion information: "${foodName}"
+
+      Please respond with a JSON object containing:
+      {
+        "foodName": "standardized name",
+        "category": "food category (e.g., fruit, vegetable, beverage, grain, protein, dairy, snack, dessert)",
+        "caloriesPer100g": number (accurate calories per 100g),
+        "smartUnit": "most appropriate unit with weight/volume (e.g., 'medium apple (180g)', 'cup (240ml)', 'slice (30g)')",
+        "smartQuantity": number (typical serving quantity),
+        "unitOptions": ["array of alternative units with weights/volumes"],
+        "reasoning": "explanation for unit and quantity choice"
+      }
+
+      Guidelines:
+      - Use accurate nutritional data from USDA or similar sources
+      - Choose realistic portion sizes based on typical consumption
+      - Include weight/volume in parentheses for units when possible
+      - Consider cultural context and eating patterns
+      - Prioritize commonly consumed portions
+      `;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      
+      // Extract JSON from response
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const analysis = JSON.parse(jsonMatch[0]);
+        console.log(`AI Analysis for ${foodName}:`, analysis);
+        return analysis;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Gemini AI analysis failed:', error);
+      return null;
+    }
+  }
+
+  function generateFallbackFoodAnalysis(foodName: string) {
+    const name = foodName.toLowerCase();
+    
+    // Intelligent categorization based on food name patterns
+    let category = "other";
+    let caloriesPer100g = 200; // Default moderate calorie estimate
+    let smartUnit = "serving (100g)";
+    let smartQuantity = 1;
+    let unitOptions = ["serving (100g)", "small portion (75g)", "large portion (150g)", "grams"];
+    
+    // Categorize and estimate based on common food patterns
+    if (name.match(/\b(apple|orange|banana|mango|grape|berry)\b/)) {
+      category = "fruit";
+      caloriesPer100g = 60;
+      smartUnit = "medium piece (150g)";
+      unitOptions = ["small piece (100g)", "medium piece (150g)", "large piece (200g)", "pieces"];
+    } else if (name.match(/\b(rice|bread|pasta|roti|naan)\b/)) {
+      category = "grain";
+      caloriesPer100g = 350;
+      smartUnit = "medium portion (100g)";
+      unitOptions = ["small portion (75g)", "medium portion (100g)", "large portion (150g)", "grams"];
+    } else if (name.match(/\b(chicken|fish|meat|egg|paneer)\b/)) {
+      category = "protein";
+      caloriesPer100g = 250;
+      smartUnit = "medium portion (120g)";
+      unitOptions = ["small portion (80g)", "medium portion (120g)", "large portion (180g)", "piece"];
+    } else if (name.match(/\b(milk|yogurt|cheese|butter)\b/)) {
+      category = "dairy";
+      caloriesPer100g = 150;
+      smartUnit = "cup (250ml)";
+      unitOptions = ["cup (200ml)", "cup (250ml)", "large cup (300ml)", "ml"];
+    } else if (name.match(/\b(potato|tomato|onion|vegetable)\b/)) {
+      category = "vegetable";
+      caloriesPer100g = 40;
+      smartUnit = "medium portion (150g)";
+      unitOptions = ["small portion (100g)", "medium portion (150g)", "large portion (200g)", "piece"];
+    } else if (name.match(/\b(cola|juice|beer|tea|coffee)\b/)) {
+      category = "beverage";
+      caloriesPer100g = 40;
+      smartUnit = "glass (250ml)";
+      unitOptions = ["glass (200ml)", "glass (250ml)", "bottle (500ml)", "ml"];
+    }
+    
+    return {
+      foodName: foodName,
+      category: category,
+      caloriesPer100g: caloriesPer100g,
+      smartUnit: smartUnit,
+      smartQuantity: smartQuantity,
+      unitOptions: unitOptions,
+      reasoning: `Based on food type analysis, ${foodName} is categorized as ${category} with typical serving of ${smartUnit}`
+    };
+  }

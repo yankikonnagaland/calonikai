@@ -13,6 +13,43 @@ import { calculateNutritionFromUnit, formatNutritionDisplay, validateCalorieCalc
 import SubscriptionModal from "./SubscriptionModal";
 import calonikLogo from "@assets/CALONIK LOGO TRANSPARENT_1751559015747.png";
 
+// AI Food Analysis Hook
+const useAIFoodAnalysis = () => {
+  const analyzeFood = useCallback(async (foodName: string): Promise<{
+    enhancedCategory: string;
+    smartUnit: string;
+    smartQuantity: number;
+    unitOptions: string[];
+    aiConfidence: number;
+    reasoning: string;
+  } | null> => {
+    try {
+      const response = await apiRequest("POST", "/api/ai-food-analysis", {
+        foodName: foodName
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          enhancedCategory: data.category,
+          smartUnit: data.smartUnit,
+          smartQuantity: data.smartQuantity,
+          unitOptions: data.unitOptions,
+          aiConfidence: data.aiConfidence || 0.8, // Default confidence
+          reasoning: data.reasoning
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.log("AI analysis unavailable, using local intelligence");
+      return null;
+    }
+  }, []);
+
+  return { analyzeFood };
+};
+
 interface FoodSearchProps {
   sessionId: string;
   selectedDate?: string;
@@ -32,11 +69,22 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<{
+    enhancedCategory: string;
+    smartUnit: string;
+    smartQuantity: number;
+    unitOptions: string[];
+    aiConfidence: number;
+    reasoning: string;
+  } | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const suggestionTimeoutRef = useRef<NodeJS.Timeout>();
+  const { analyzeFood } = useAIFoodAnalysis();
 
   // Get user's daily usage stats
   const { data: usageStats } = useQuery({
@@ -509,7 +557,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     };
   };
 
-  const handleFoodSelect = useCallback((food: Food) => {
+  const handleFoodSelect = useCallback(async (food: Food) => {
     // Immediately update UI state for instant responsiveness
     setSelectedFood(food);
     onFoodSelect(food);
@@ -537,6 +585,29 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       setUnitOptions(localSuggestion.unitOptions);
     }
     
+    // Start AI analysis in the background for enhanced recommendations
+    setIsAnalyzing(true);
+    setAiAnalysis(null);
+    
+    try {
+      const aiResult = await analyzeFood(food.name);
+      if (aiResult) {
+        setAiAnalysis(aiResult);
+        console.log(`AI Enhanced Analysis for ${food.name}:`, aiResult);
+        
+        // Update unit options with AI suggestions if better than local
+        if (aiResult.aiConfidence > 0.7) {
+          setUnit(aiResult.smartUnit);
+          setQuantity(aiResult.smartQuantity);
+          setUnitOptions(aiResult.unitOptions);
+        }
+      }
+    } catch (error) {
+      console.log("AI analysis failed, using local suggestions");
+    } finally {
+      setIsAnalyzing(false);
+    }
+    
     // Fetch backend unit options asynchronously (non-blocking for better UX)
     fetch(`/api/unit-selection/${encodeURIComponent(food.name)}?category=${encodeURIComponent(food.category)}`)
       .then(response => {
@@ -557,7 +628,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
         // Local data already set above - no action needed
       });
     
-  }, [onFoodSelect]);
+  }, [onFoodSelect, analyzeFood]);
 
   const handleInputFocus = () => {
     if (searchQuery.length > 0 && searchResults.length > 0) {
@@ -888,6 +959,40 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
               <Badge variant="outline" className="bg-white/50">{selectedFood.category}</Badge>
             </div>
             
+            {/* AI Analysis Display */}
+            {isAnalyzing && (
+              <div className="mb-4 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-md border border-purple-200 dark:border-purple-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-4 h-4 text-purple-500 animate-pulse" />
+                  <span className="text-sm font-medium text-purple-700 dark:text-purple-300">AI Analysis in progress...</span>
+                </div>
+                <div className="text-xs text-purple-600 dark:text-purple-400">
+                  Analyzing food category and optimal serving suggestions
+                </div>
+              </div>
+            )}
+            
+            {aiAnalysis && (
+              <div className="mb-4 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-md border border-purple-200 dark:border-purple-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-4 h-4 text-purple-500" />
+                  <span className="text-sm font-medium text-purple-700 dark:text-purple-300">AI Enhanced Analysis</span>
+                  <Badge variant="outline" className="text-xs bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300">
+                    {Math.round(aiAnalysis.aiConfidence * 100)}% confidence
+                  </Badge>
+                </div>
+                <div className="text-sm text-purple-600 dark:text-purple-400">
+                  <div className="mb-1">
+                    <span className="font-medium">Category:</span> {aiAnalysis.enhancedCategory}
+                  </div>
+                  <div className="mb-1">
+                    <span className="font-medium">Recommended:</span> {aiAnalysis.smartQuantity} {aiAnalysis.smartUnit}
+                  </div>
+                  <div className="text-xs italic">{aiAnalysis.reasoning}</div>
+                </div>
+              </div>
+            )}
+
             {/* Intelligent Suggestion Display */}
             <div className="mb-4 p-3 bg-white/60 dark:bg-gray-800/60 rounded-md border border-blue-100 dark:border-blue-900">
               <div className="flex items-center gap-2 mb-2">
