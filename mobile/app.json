@@ -52,7 +52,6 @@
       "android",
       "web"
     ],
-    "sdkVersion": "53.0.0",
     "plugins": [
       [
         "expo-build-properties",
