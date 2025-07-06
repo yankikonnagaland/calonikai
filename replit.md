@@ -588,10 +588,12 @@ The application follows a client-server architecture with clear separation of co
 - COMPLETED: Full usage limit system now covers meal tracking, photo analysis, and food search functionality
 
 **July 6, 2025 - Complete Usage Limits Restructure & Calendar Button Styling:**
-- IMPLEMENTED: New usage limit structure - Free: 10 searches + 5 photo analysis (lifetime), Basic: 10 searches + 5 photo analysis (daily), Premium: 30 searches + 10 photo analysis (daily)
+- IMPLEMENTED: New usage limit structure - Free: 20 searches (lifetime forever), Basic: 100 searches (daily), Premium: 200 searches (daily)
 - ADDED: getLifetimeUserUsage method to both DatabaseStorage and FallbackStorage for tracking free user lifetime limits vs daily limits for paid tiers
 - ENHANCED: canUserPerformAction method now differentiates between lifetime tracking for free users and daily tracking for paid users
 - UPDATED: Calendar button styling in Dashboard to match Health Dashboard text gradient (blue-600 to purple-600) with hover effects
+- UPDATED: Food search limits increased significantly - Free: 10→20 lifetime, Basic: 10→100/day, Premium: 30→200/day
+- RESET: Daily usage limit for user yankikonic@gmail.com (premium user) as requested
 - VERIFIED: Authentication system working correctly - both food search and AI food analysis endpoints functional for regular users
 - COMPLETED: Admin users maintain unlimited access while regular users follow new tiered usage structure
 

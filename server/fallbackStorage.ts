@@ -463,7 +463,7 @@ export class FallbackStorage {
       const premiumLimits = {
         meal_add: 999999,   // Unlimited meal adds for premium
         photo_analyze: 10,  // 10 photo analysis per day for premium
-        food_search: 30     // 30 food searches per day for premium
+        food_search: 200    // 200 food searches per day for premium
       };
       
       return usage < premiumLimits[actionType];
@@ -475,7 +475,7 @@ export class FallbackStorage {
       const basicLimits = {
         meal_add: 999999,   // Unlimited meal adds for basic
         photo_analyze: 5,   // 5 photo analysis per day for basic
-        food_search: 10     // 10 food searches per day for basic
+        food_search: 100    // 100 food searches per day for basic
       };
       
       return usage < basicLimits[actionType];
@@ -486,7 +486,7 @@ export class FallbackStorage {
     const freeLimits = {
       meal_add: 999999,   // Unlimited meal adds for free users
       photo_analyze: 5,   // 5 photo analysis lifetime for free users
-      food_search: 10     // 10 food searches lifetime for free users
+      food_search: 20     // 20 food searches lifetime forever for free users
     };
 
     return lifetimeUsage < freeLimits[actionType];
