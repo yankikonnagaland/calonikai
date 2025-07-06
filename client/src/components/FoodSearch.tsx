@@ -843,6 +843,32 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
   const handleAddToMeal = () => {
     if (!selectedFood) return;
     
+    // Calculate the exact nutrition shown in the food search display
+    const basePer100g = (() => {
+      if ((selectedFood as any).smartCalories && (selectedFood as any).smartProtein) {
+        return {
+          calories: (selectedFood as any).smartCalories,
+          protein: (selectedFood as any).smartProtein,
+          carbs: (selectedFood as any).smartCarbs,
+          fat: (selectedFood as any).smartFat
+        };
+      } else {
+        return {
+          calories: selectedFood.calories,
+          protein: selectedFood.protein,
+          carbs: selectedFood.carbs,
+          fat: selectedFood.fat
+        };
+      }
+    })();
+    
+    const calculatedNutrition = calculateNutritionFromUnit(
+      selectedFood.name,
+      unit,
+      quantity,
+      basePer100g
+    );
+    
     const mealItemData = {
       foodId: selectedFood.id,
       quantity: Math.max(0.1, Math.round(quantity * 10) / 10),
@@ -851,9 +877,16 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       date: selectedDate || new Date().toISOString().split('T')[0],
       // Include food name for AI-generated foods (ID -1 or > 9000000) to preserve original name
       ...((selectedFood.id === -1 || selectedFood.id > 9000000) && { foodName: selectedFood.name }),
+      // Pass the exact calories and nutrition from the search display
+      frontendCalories: calculatedNutrition.calories,
+      frontendProtein: calculatedNutrition.protein,
+      frontendCarbs: calculatedNutrition.carbs,
+      frontendFat: calculatedNutrition.fat,
+      frontendTotalGrams: calculatedNutrition.totalGrams,
     };
     
     console.log("FoodSearch: Current unit value:", unit);
+    console.log("FoodSearch: Calculated nutrition:", calculatedNutrition);
     console.log("FoodSearch: Complete meal item data:", mealItemData);
     console.log("FoodSearch: Sending meal item:", mealItemData);
     

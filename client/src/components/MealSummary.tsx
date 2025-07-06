@@ -227,10 +227,20 @@ export default function MealSummary({
         });
       }
       
-      acc.calories += calculatedNutrition.calories;
-      acc.protein += calculatedNutrition.protein;
-      acc.carbs += calculatedNutrition.carbs;
-      acc.fat += calculatedNutrition.fat;
+      // Use smart calories if available, otherwise use calculated nutrition
+      const finalCalories = item.food.smartPortionGrams && item.food.smartCalories ? 
+        item.food.smartCalories : calculatedNutrition.calories;
+      const finalProtein = item.food.smartPortionGrams && item.food.smartProtein ? 
+        item.food.smartProtein : calculatedNutrition.protein;
+      const finalCarbs = item.food.smartPortionGrams && item.food.smartCarbs ? 
+        item.food.smartCarbs : calculatedNutrition.carbs;
+      const finalFat = item.food.smartPortionGrams && item.food.smartFat ? 
+        item.food.smartFat : calculatedNutrition.fat;
+      
+      acc.calories += finalCalories;
+      acc.protein += finalProtein;
+      acc.carbs += finalCarbs;
+      acc.fat += finalFat;
       return acc;
     },
     { calories: 0, protein: 0, carbs: 0, fat: 0 }
@@ -460,7 +470,9 @@ export default function MealSummary({
                             )}
                           </div>
                           <div className="text-xs text-primary mt-1">
-                            {calculatedNutrition.calories} cal
+                            {/* Use smart calories if available, otherwise use calculated nutrition */}
+                            {item.food.smartPortionGrams && item.food.smartCalories ? 
+                              item.food.smartCalories : calculatedNutrition.calories} cal
                             {item.food.aiConfidence && (
                               <span className="text-green-600 ml-1 text-[10px]">
                                 ({item.food.aiConfidence}% confidence)

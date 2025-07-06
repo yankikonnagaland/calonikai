@@ -1919,6 +1919,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         quantity: Number(req.body.quantity),
         unit: req.body.unit,
         date: req.body.date || new Date().toISOString().split("T")[0],
+        // Include frontend-calculated nutrition if provided
+        frontendCalories: req.body.frontendCalories ? Number(req.body.frontendCalories) : undefined,
+        frontendProtein: req.body.frontendProtein ? Number(req.body.frontendProtein) : undefined,
+        frontendCarbs: req.body.frontendCarbs ? Number(req.body.frontendCarbs) : undefined,
+        frontendFat: req.body.frontendFat ? Number(req.body.frontendFat) : undefined,
+        frontendTotalGrams: req.body.frontendTotalGrams ? Number(req.body.frontendTotalGrams) : undefined,
       };
 
       console.log("Adding meal with data:", mealData);
