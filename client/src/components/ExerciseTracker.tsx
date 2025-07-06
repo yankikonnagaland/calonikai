@@ -873,28 +873,31 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
                     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
                       <div className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-3">Time Tracking</div>
                       
-                      <div className="grid grid-cols-2 gap-3 mb-3">
-                        <div className="text-center">
-                          <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">Start Time</div>
-                          <div className="text-sm font-mono bg-white dark:bg-gray-800 p-2 rounded border">
-                            {startTime ? startTime.toLocaleTimeString('en-US', { 
-                              hour: 'numeric', 
-                              minute: '2-digit',
-                              hour12: true 
-                            }) : '--:--'}
+                      {/* Only show start/end times after starting tracking */}
+                      {startTime && (
+                        <div className="grid grid-cols-2 gap-3 mb-3">
+                          <div className="text-center">
+                            <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">Start Time</div>
+                            <div className="text-sm font-mono bg-white dark:bg-gray-800 p-2 rounded border">
+                              {startTime.toLocaleTimeString('en-US', { 
+                                hour: 'numeric', 
+                                minute: '2-digit',
+                                hour12: true 
+                              })}
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">End Time</div>
+                            <div className="text-sm font-mono bg-white dark:bg-gray-800 p-2 rounded border">
+                              {endTime ? endTime.toLocaleTimeString('en-US', { 
+                                hour: 'numeric', 
+                                minute: '2-digit',
+                                hour12: true 
+                              }) : isTracking ? 'In Progress...' : '--:--'}
+                            </div>
                           </div>
                         </div>
-                        <div className="text-center">
-                          <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">End Time</div>
-                          <div className="text-sm font-mono bg-white dark:bg-gray-800 p-2 rounded border">
-                            {endTime ? endTime.toLocaleTimeString('en-US', { 
-                              hour: 'numeric', 
-                              minute: '2-digit',
-                              hour12: true 
-                            }) : isTracking ? 'In Progress...' : '--:--'}
-                          </div>
-                        </div>
-                      </div>
+                      )}
 
                       <div className="flex gap-2 justify-center">
                         {!isTracking && !startTime && (
@@ -942,10 +945,10 @@ export default function ExerciseTracker({ sessionId, selectedDate }: ExerciseTra
                     {/* Duration Input */}
                     <div className="space-y-3">
                       <NumberInput
-                        placeholder="Enter in mins (overrides automatic time tracking above)"
+                        placeholder="Enter in mins (overrides time tracking above)"
                         value={manualTime}
                         onChange={(e) => setManualTime(e.target.value)}
-                        className="w-full h-12 text-lg font-medium text-center border-blue-200 dark:border-blue-700"
+                        className="w-full h-12 text-lg font-medium text-center border-blue-200 dark:border-blue-700 placeholder:text-xs sm:placeholder:text-sm"
                         min="1"
                       />
                       <Button 
