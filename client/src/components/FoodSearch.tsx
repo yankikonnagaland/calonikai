@@ -137,9 +137,9 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
   }, [quantity]);
 
   const { data: rawSearchResults = [], isLoading: isSearching } = useQuery<Food[]>({
-    queryKey: [`/api/foods/ai-search`, debouncedQuery],
+    queryKey: [`/api/foods/enhanced-search`, debouncedQuery],
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/foods/ai-search?query=${encodeURIComponent(debouncedQuery)}`);
+      const response = await apiRequest("GET", `/api/foods/enhanced-search?query=${encodeURIComponent(debouncedQuery)}`);
       const results = await response.json();
       
       // Frontend deduplication as extra safety
@@ -903,7 +903,12 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
               onMouseDown={(e) => e.preventDefault()} // Prevent input blur when clicking
             >
               {searchResults.map((food: Food, index) => {
-                const isAiFood = (food as any).aiGenerated || food.id === -1 || food.name.includes("(Not Found)");
+                const enhancedFood = food as any;
+                const isAiFood = enhancedFood.aiGenerated || food.id === -1 || food.name.includes("(Not Found)");
+                const accuracy = enhancedFood.accuracyBadge || enhancedFood.accuracy || 'medium';
+                const source = enhancedFood.sourceBadge || enhancedFood.source || 'database';
+                const isVerified = enhancedFood.isVerified;
+                
                 return (
                   <div
                     key={`${food.id}-${index}`}
@@ -917,25 +922,57 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-sm">{food.name}</span>
+                          {/* Accuracy Badge */}
+                          {accuracy === 'high' && (
+                            <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-1 rounded-full font-medium">
+                              ✓ High Accuracy
+                            </span>
+                          )}
+                          {accuracy === 'medium' && (
+                            <span className="text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 px-2 py-1 rounded-full font-medium">
+                              ~ Medium
+                            </span>
+                          )}
+                          {accuracy === 'low' && (
+                            <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-2 py-1 rounded-full font-medium">
+                              ! Review Needed
+                            </span>
+                          )}
+                          {/* Source Badge */}
+                          {source === 'standard' && (
+                            <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full font-medium">
+                              📊 Standardized
+                            </span>
+                          )}
+                          {isVerified && (
+                            <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-1 rounded-full font-medium">
+                              ✅ Verified
+                            </span>
+                          )}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1">
                           <div className="flex items-center justify-between">
-                            {(food as any).realisticCalories ? (
+                            {enhancedFood.realisticCalories ? (
                               <span>
-                                <span className="font-medium text-green-600 dark:text-green-400">{(food as any).realisticCalories} cal</span> 
-                                <span className="text-gray-400 dark:text-gray-500"> ({(food as any).smartQuantity} {(food as any).smartUnit})</span> • {food.protein}g protein
+                                <span className="font-medium text-green-600 dark:text-green-400">{enhancedFood.realisticCalories} cal</span> 
+                                <span className="text-gray-400 dark:text-gray-500"> ({enhancedFood.portionDisplay || enhancedFood.defaultUnit})</span> • {food.protein}g protein
                               </span>
                             ) : (
-                              <span>{food.calories} cal • {food.protein}g protein</span>
+                              <span>{food.calories} cal per 100g • {food.protein}g protein</span>
                             )}
                             <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full">
-                              {(food as any).smartUnit || getIntelligentUnits(food).unit}
+                              {enhancedFood.defaultUnit || enhancedFood.smartUnit || getIntelligentUnits(food).unit}
                             </span>
                           </div>
-                          <div className="mt-1">
+                          <div className="mt-1 flex items-center gap-1">
                             <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded-full">
                               {food.category}
                             </span>
+                            {enhancedFood.gramEquivalent && (
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                • {enhancedFood.gramEquivalent}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>

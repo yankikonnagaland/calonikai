@@ -28,6 +28,8 @@ import { calculateNutritionFromUnit, validateCalorieCalculation } from "@shared/
 import { GoogleGenAI } from "@google/genai";
 import crypto from "crypto";
 import { checkWeightGoalAchievement, markGoalAsAchieved } from "./weightGoalChecker";
+import { enhancedFoodSearch, cleanFoodDatabase, type EnhancedFoodResult } from './enhancedFoodSearch';
+import { calculateAccurateNutrition } from './standardFoodDatabase';
 import { testHourlyNudge } from "./hourlyNudgeScheduler";
 import { ImageOptimizer } from "./imageOptimizer";
 import { ImageCache } from "./imageCache";
@@ -1566,6 +1568,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
           "ml"
         ]
       });
+    }
+  });
+
+  // Enhanced Food Search with Accuracy Prioritization
+  app.get("/api/foods/enhanced-search", async (req, res) => {
+    try {
+      const validation = searchFoodsSchema.safeParse(req.query);
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid search query" });
+      }
+
+      const { query } = validation.data;
+      
+      // Check user authentication and limits
+      const adminKey = req.headers['x-admin-key'] as string;
+      const sessionId = req.session?.userId || req.session?.user?.id || req.headers['x-session-id'] as string;
+      const isAdmin = adminKey === (process.env.ADMIN_SECRET || "calonik_admin_2025");
+      
+      if (!isAdmin && !sessionId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      // Check usage limits (skip for admin)
+      if (!isAdmin) {
+        const user = await storage.getUser(sessionId);
+        const isBasicOrPremium = user && ['basic', 'premium'].includes(user.subscriptionStatus || '');
+        const canSearch = await storage.canUserPerformAction(sessionId, "food_search");
+        
+        if (!canSearch) {
+          return res.status(429).json({ 
+            message: "Daily search limit reached",
+            limits: {
+              free: "10 searches per day (lifetime)",
+              basic: "10 searches per day", 
+              premium: "30 searches per day"
+            },
+            upgrade: !isBasicOrPremium ? "Upgrade to Basic or Premium for more searches" : null
+          });
+        }
+
+        // Track usage
+        await storage.trackUsage(sessionId, "food_search");
+      }
+
+      // Use enhanced search system
+      const results = await enhancedFoodSearch(query, 10);
+      
+      console.log(`Enhanced search for "${query}": found ${results.length} results with accuracy scores`);
+      
+      res.json(results.map(result => ({
+        ...result,
+        // Calculate realistic portion display
+        realisticCalories: result.realisticCalories || Math.round(result.calories),
+        portionDisplay: `${result.defaultUnit} ${result.gramEquivalent || ''}`.trim(),
+        accuracyBadge: result.accuracy,
+        sourceBadge: result.source,
+        isVerified: result.isVerified
+      })));
+      
+    } catch (error) {
+      console.error("Enhanced search error:", error);
+      res.status(500).json({ message: "Search failed" });
+    }
+  });
+
+  // Database cleanup endpoint (admin only)
+  app.post("/api/foods/clean-database", async (req, res) => {
+    try {
+      const adminKey = req.headers['x-admin-key'] as string;
+      const isAdmin = adminKey === (process.env.ADMIN_SECRET || "calonik_admin_2025");
+      
+      if (!isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const result = await cleanFoodDatabase();
+      
+      res.json({
+        message: "Database cleanup completed",
+        ...result
+      });
+      
+    } catch (error) {
+      console.error("Database cleanup error:", error);
+      res.status(500).json({ message: "Cleanup failed" });
+    }
+  });
+
+  // Accurate nutrition calculation endpoint
+  app.post("/api/foods/calculate-nutrition", async (req, res) => {
+    try {
+      const { foodName, quantity, unit } = req.body;
+      
+      if (!foodName || !quantity || !unit) {
+        return res.status(400).json({ message: "Missing required parameters" });
+      }
+
+      const nutrition = calculateAccurateNutrition(foodName, quantity, unit);
+      
+      res.json({
+        ...nutrition,
+        message: `Nutrition calculated for ${quantity} ${unit} of ${foodName}`,
+        calculation: `${nutrition.totalGrams}g portion = ${nutrition.calories} calories`
+      });
+      
+    } catch (error) {
+      console.error("Nutrition calculation error:", error);
+      res.status(500).json({ message: "Calculation failed" });
     }
   });
 
