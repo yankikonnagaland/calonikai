@@ -8,9 +8,12 @@ import { Brain, Search, TrendingUp, DollarSign, Calendar, Activity } from "lucid
 
 interface AiUsageStat {
   id: number;
+  sessionId: string | null;
   userId: string | null;
-  serviceType: string;
-  endpoint: string;
+  aiProvider: string;
+  aiModel: string;
+  requestType: string;
+  query: string | null;
   inputTokens: number | null;
   outputTokens: number | null;
   totalTokens: number | null;
@@ -60,15 +63,38 @@ export default function AiUsageAnalyticsDashboard() {
       setIsLoading(true);
       const response = await fetch('/api/ai-usage-stats');
       const data = await response.json();
-      setStats(data);
+      
+      // Ensure data is an array
+      if (Array.isArray(data)) {
+        setStats(data);
+      } else {
+        console.warn('AI usage stats API returned non-array data:', data);
+        setStats([]);
+      }
     } catch (error) {
       console.error('Failed to fetch AI usage stats:', error);
+      setStats([]); // Set empty array on error
     } finally {
       setIsLoading(false);
     }
   };
 
   const applyFilters = () => {
+    // Ensure stats is an array before filtering
+    if (!Array.isArray(stats)) {
+      console.warn('Stats is not an array:', stats);
+      setFilteredStats([]);
+      setAggregatedStats({
+        totalCalls: 0,
+        totalCost: 0,
+        averageResponseTime: 0,
+        successRate: 0,
+        totalTokens: 0,
+        averageCostPerCall: 0,
+      });
+      return;
+    }
+
     let filtered = stats;
 
     if (dateFilter) {
@@ -77,7 +103,8 @@ export default function AiUsageAnalyticsDashboard() {
 
     if (serviceFilter) {
       filtered = filtered.filter(stat => 
-        stat.serviceType.toLowerCase().includes(serviceFilter.toLowerCase())
+        stat.requestType?.toLowerCase().includes(serviceFilter.toLowerCase()) ||
+        stat.aiProvider?.toLowerCase().includes(serviceFilter.toLowerCase())
       );
     }
 
@@ -89,7 +116,12 @@ export default function AiUsageAnalyticsDashboard() {
 
     setFilteredStats(filtered);
 
-    // Calculate aggregated stats
+    // Calculate aggregated stats only if filtered is an array
+    if (!Array.isArray(filtered)) {
+      console.warn('Filtered is not an array:', filtered);
+      return;
+    }
+
     const totalCalls = filtered.length;
     const totalCost = filtered.reduce((sum, stat) => sum + (stat.estimatedCost || 0), 0);
     const totalTokens = filtered.reduce((sum, stat) => sum + (stat.totalTokens || 0), 0);
@@ -279,8 +311,8 @@ export default function AiUsageAnalyticsDashboard() {
                 <thead>
                   <tr className="border-b">
                     <th className="text-left p-2">Date</th>
-                    <th className="text-left p-2">Service</th>
-                    <th className="text-left p-2">Endpoint</th>
+                    <th className="text-left p-2">Provider</th>
+                    <th className="text-left p-2">Request Type</th>
                     <th className="text-left p-2">User</th>
                     <th className="text-right p-2">Tokens</th>
                     <th className="text-right p-2">Cost</th>
@@ -293,11 +325,11 @@ export default function AiUsageAnalyticsDashboard() {
                     <tr key={stat.id} className="border-b hover:bg-gray-50">
                       <td className="p-2">{formatDate(stat.createdAt)}</td>
                       <td className="p-2">
-                        <Badge className={getServiceBadgeColor(stat.serviceType)}>
-                          {stat.serviceType}
+                        <Badge className={getServiceBadgeColor(stat.aiProvider)}>
+                          {stat.aiProvider}
                         </Badge>
                       </td>
-                      <td className="p-2 text-xs font-mono">{stat.endpoint}</td>
+                      <td className="p-2 text-xs font-mono">{stat.requestType}</td>
                       <td className="p-2 text-xs">{stat.userId || 'Anonymous'}</td>
                       <td className="p-2 text-right">{stat.totalTokens?.toLocaleString() || '-'}</td>
                       <td className="p-2 text-right">{stat.estimatedCost ? formatCurrency(stat.estimatedCost) : '-'}</td>
