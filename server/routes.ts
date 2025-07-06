@@ -1572,7 +1572,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Enhanced Food Search with Accuracy Prioritization
-  app.get("/api/foods/enhanced-search", optionalAuth, async (req, res) => {
+  app.get("/api/foods/enhanced-search", async (req, res) => {
     try {
       const validation = searchFoodsSchema.safeParse(req.query);
       if (!validation.success) {
@@ -1581,16 +1581,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { query } = validation.data;
       
-      // Check user authentication and limits
+      // Check user authentication using session system
       const adminKey = req.headers['x-admin-key'] as string;
-      const sessionId = (req as any).user?.uid || req.headers['x-session-id'] as string || "guest";
+      const sessionId = req.session?.userId || "guest";
       const isAdmin = adminKey === (process.env.ADMIN_SECRET || "calonik_admin_2025");
       
       console.log("Enhanced search auth debug:", { 
         sessionId, 
-        hasUser: !!(req as any).user, 
-        isAdmin, 
-        userUid: (req as any).user?.uid 
+        hasSession: !!req.session?.userId, 
+        isAdmin
       });
 
       // Check usage limits (skip for admin)
