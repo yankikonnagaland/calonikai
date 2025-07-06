@@ -139,8 +139,11 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
   const { data: rawSearchResults = [], isLoading: isSearching } = useQuery<Food[]>({
     queryKey: [`/api/foods/enhanced-search`, debouncedQuery],
     queryFn: async () => {
+      console.log("Making enhanced search request for:", debouncedQuery);
       const response = await apiRequest("GET", `/api/foods/enhanced-search?query=${encodeURIComponent(debouncedQuery)}`);
       const results = await response.json();
+      
+      console.log("Enhanced search results:", results);
       
       // Frontend deduplication as extra safety
       const uniqueResults = results.filter((food: Food, index: number, self: Food[]) =>

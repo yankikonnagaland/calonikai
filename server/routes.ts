@@ -1572,7 +1572,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Enhanced Food Search with Accuracy Prioritization
-  app.get("/api/foods/enhanced-search", async (req, res) => {
+  app.get("/api/foods/enhanced-search", isAuthenticated, async (req: any, res) => {
     try {
       const validation = searchFoodsSchema.safeParse(req.query);
       if (!validation.success) {
@@ -1581,22 +1581,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { query } = validation.data;
       
-      // Check user authentication using session system
+      // Get user ID from authenticated request (same pattern as usage stats)
       const adminKey = req.headers['x-admin-key'] as string;
-      const sessionId = req.session?.userId || "guest";
+      const userId = req.user.id;
       const isAdmin = adminKey === (process.env.ADMIN_SECRET || "calonik_admin_2025");
       
       console.log("Enhanced search auth debug:", { 
-        sessionId, 
-        hasSession: !!req.session?.userId, 
+        userId, 
+        isAuthenticated: !!req.user, 
         isAdmin
       });
 
       // Check usage limits (skip for admin)
       if (!isAdmin) {
-        const user = await storage.getUser(sessionId);
+        const user = await storage.getUser(userId);
         const isBasicOrPremium = user && ['basic', 'premium'].includes(user.subscriptionStatus || '');
-        const canSearch = await storage.canUserPerformAction(sessionId, "food_search");
+        const canSearch = await storage.canUserPerformAction(userId, "food_search");
         
         if (!canSearch) {
           return res.status(429).json({ 
@@ -1611,7 +1611,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Track usage
-        await storage.trackUsage(sessionId, "food_search");
+        await storage.trackUsage(userId, "food_search");
       }
 
       // Use enhanced search system
