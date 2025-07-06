@@ -915,18 +915,6 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-sm">{food.name}</span>
-                          {isAiFood && (
-                            <Badge className="text-xs bg-purple-500 hover:bg-purple-600 text-white">
-                              <Sparkles className="h-3 w-3 mr-1" />
-                              AI Enhanced
-                            </Badge>
-                          )}
-                          {(food as any).smartUnit && !isAiFood && (
-                            <Badge variant="outline" className="text-xs border-blue-500 text-blue-600">
-                              <Sparkles className="h-3 w-3 mr-1" />
-                              Enhanced
-                            </Badge>
-                          )}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1">
                           <div className="flex items-center justify-between">
