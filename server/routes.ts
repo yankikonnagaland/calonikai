@@ -3163,9 +3163,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.id;
       const today = new Date().toISOString().split("T")[0];
 
-      const [photoUsage, mealUsage] = await Promise.all([
+      const [photoUsage, mealUsage, searchUsage] = await Promise.all([
         storage.getUserUsage(userId, "photo_analyze", today),
         storage.getUserUsage(userId, "meal_add", today),
+        storage.getUserUsage(userId, "food_search", today),
       ]);
 
       const user = await storage.getUser(userId);
@@ -3178,24 +3179,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       const limits = isPremium
-        ? { photos: 5, meals: 20 }
+        ? { photos: 5, meals: 30 }
         : isBasic
-        ? { photos: 2, meals: 5 }
-        : { photos: 2, meals: 1 };
+        ? { photos: 2, meals: 10 }
+        : { photos: 2, meals: 10 };
 
       const remainingPhotos = Math.max(0, limits.photos - photoUsage);
-      const remainingMeals = Math.max(0, limits.meals - mealUsage);
+      const remainingMeals = Math.max(0, limits.meals - searchUsage);
 
       console.log(
-        `Usage stats for ${userId}: photos used: ${photoUsage}/${limits.photos}, meals used: ${mealUsage}/${limits.meals}, isPremium: ${isPremium}`,
+        `Usage stats for ${userId}: photos used: ${photoUsage}/${limits.photos}, searches used: ${searchUsage}/${limits.meals}, isPremium: ${isPremium}`,
       );
       console.log(
-        `Remaining: photos: ${remainingPhotos}, meals: ${remainingMeals}`,
+        `Remaining: photos: ${remainingPhotos}, searches: ${remainingMeals}`,
       );
 
       res.json({
         photos: photoUsage,
         meals: mealUsage,
+        searches: searchUsage,
         limits,
         remaining: {
           photos: remainingPhotos,

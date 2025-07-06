@@ -921,10 +921,13 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
             <Search className="h-5 w-5" />
             Food Search
           </div>
-          {usageStats && (
-            <div className="text-sm text-gray-600 dark:text-gray-400 font-normal">
-              {usageStats.remaining.meals} searches left
-            </div>
+          {user && usageStats && (
+            <Badge
+              variant="outline"
+              className="ml-auto text-xs border-purple-300 bg-[#1b2027]"
+            >
+              {usageStats.remaining?.meals || 0} searches left
+            </Badge>
           )}
         </CardTitle>
       </CardHeader>
