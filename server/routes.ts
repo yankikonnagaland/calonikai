@@ -967,7 +967,10 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
   const isBeverage = category.toLowerCase().includes("beverage") || category.toLowerCase().includes("drink") ||
                    name.includes("juice") || name.includes("tea") || name.includes("coffee") || 
                    name.includes("milk") || name.includes("lassi") || name.includes("shake") ||
-                   name.includes("beer") || name.includes("wine") || name.includes("alcohol");
+                   name.includes("beer") || name.includes("wine") || name.includes("alcohol") ||
+                   name.includes("cola") || name.includes("coke") || name.includes("pepsi") ||
+                   name.includes("soda") || name.includes("diet") || name.includes("sprite") ||
+                   name.includes("fanta");
 
   // === BEVERAGES ===
   
@@ -988,10 +991,12 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
   }
   
   // Cold beverages and soft drinks
-  if (name.includes("juice") || name.includes("cola") || name.includes("soda") || name.includes("soft drink")) {
+  if (name.includes("juice") || name.includes("cola") || name.includes("coke") || name.includes("pepsi") || 
+      name.includes("soda") || name.includes("soft drink") || name.includes("diet") || name.includes("sprite") || 
+      name.includes("fanta") || name.includes("mountain dew") || name.includes("7up")) {
     return {
-      unit: "glass (250ml)",
-      unitOptions: ["glass (250ml)", "can (330ml)", "bottle (500ml)", "bottle (600ml)", "ml"],
+      unit: "can (330ml)",
+      unitOptions: ["can (330ml)", "bottle (500ml)", "bottle (600ml)", "glass (250ml)", "ml"],
     };
   }
   
@@ -1523,24 +1528,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Always use the comprehensive local unit selection with Indian measurements
       const unitSelection = getLocalUnitSelection(foodName, category);
+      console.log(`Initial unit selection for ${foodName}:`, unitSelection);
       
       // Ensure comprehensive unit options including grams/ml
       let unitOptions = [...unitSelection.unitOptions];
       
-      // Always add "grams" if not present
-      if (!unitOptions.includes("grams")) {
-        unitOptions.push("grams");
-      }
-      
-      // Add "ml" for beverages if not present
+      // Check if this is a beverage
       const isBeverage = category.toLowerCase().includes("beverage") || category.toLowerCase().includes("drink") ||
                         foodName.toLowerCase().includes("juice") || foodName.toLowerCase().includes("tea") || 
                         foodName.toLowerCase().includes("coffee") || foodName.toLowerCase().includes("milk") || 
                         foodName.toLowerCase().includes("lassi") || foodName.toLowerCase().includes("shake") ||
-                        foodName.toLowerCase().includes("beer") || foodName.toLowerCase().includes("wine");
+                        foodName.toLowerCase().includes("beer") || foodName.toLowerCase().includes("wine") ||
+                        foodName.toLowerCase().includes("cola") || foodName.toLowerCase().includes("coke") || 
+                        foodName.toLowerCase().includes("pepsi") || foodName.toLowerCase().includes("soda") ||
+                        foodName.toLowerCase().includes("diet") || foodName.toLowerCase().includes("sprite") ||
+                        foodName.toLowerCase().includes("fanta");
       
-      if (isBeverage && !unitOptions.includes("ml")) {
-        unitOptions.push("ml");
+      if (isBeverage) {
+        // For beverages, only add "ml" if not present and remove inappropriate units
+        if (!unitOptions.includes("ml")) {
+          unitOptions.push("ml");
+        }
+        // Remove grams and pieces from beverages as they should only use ml-based measurements
+        unitOptions = unitOptions.filter(unit => unit !== "grams" && unit !== "pieces");
+      } else {
+        // For non-beverages, add "grams" if not present
+        if (!unitOptions.includes("grams")) {
+          unitOptions.push("grams");
+        }
       }
       
       // Don't add "pieces" for dairy category items
@@ -1553,8 +1568,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
                      foodName.toLowerCase().includes("cheese") ||
                      foodName.toLowerCase().includes("paneer");
       
-      if (!isDairy && !unitOptions.includes("pieces")) {
+      // Add pieces only for foods that are not dairy or beverages
+      if (!isDairy && !isBeverage && !unitOptions.includes("pieces")) {
         unitOptions.push("pieces");
+      }
+      
+      // Final cleanup: ensure beverages don't have inappropriate units
+      if (isBeverage) {
+        unitOptions = unitOptions.filter(unit => unit !== "grams" && unit !== "pieces");
       }
       
       console.log(`Unit options for ${foodName}:`, unitOptions);
