@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Calendar, TrendingUp, TrendingDown, Target, Flame, ChevronLeft, ChevronRight, Activity, Utensils, Scale, UserCircle, Copy, Download, X } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -1219,27 +1219,74 @@ Powered by Calonik.ai 🚀
               </p>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between text-sm font-medium">
-                  <span>Progress</span>
-                  <span>{Math.round(((selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) / targetCalories) * 100)}%</span>
-                </div>
-                <Progress 
-                  value={Math.min(((selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) / targetCalories) * 100, 100)}
-                  className="h-3"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>0</span>
-                  <span>{targetCalories} cal</span>
-                </div>
-                {(selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) > targetCalories && (
-                  <div className="bg-red-50 dark:bg-red-950/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
-                    <p className="text-sm text-red-700 dark:text-red-300 font-medium">
-                      You've exceeded your daily calorie goal by {Math.round((selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) - targetCalories)} calories
-                    </p>
+              <div className="flex items-center gap-6">
+                {/* Small Doughnut Chart */}
+                <div className="w-24 h-24 relative">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { 
+                            name: 'Progress', 
+                            value: Math.min(((selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) / targetCalories) * 100, 100),
+                            color: '#8b5cf6'
+                          },
+                          { 
+                            name: 'Remaining', 
+                            value: Math.max(100 - ((selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) / targetCalories) * 100, 0),
+                            color: '#e5e7eb'
+                          }
+                        ]}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={28}
+                        outerRadius={40}
+                        startAngle={90}
+                        endAngle={450}
+                        dataKey="value"
+                      >
+                        <Cell fill="#8b5cf6" />
+                        <Cell fill="#e5e7eb" />
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                  {/* Center percentage text */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-lg font-bold text-purple-600">
+                      {Math.round(((selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) / targetCalories) * 100)}%
+                    </span>
                   </div>
-                )}
+                </div>
+                
+                {/* Progress details */}
+                <div className="flex-1 space-y-2">
+                  <div className="flex justify-between text-sm font-medium">
+                    <span>Current</span>
+                    <span className="text-purple-600 font-semibold">{selectedDate === today ? todayCaloriesIn : selectedCaloriesIn} cal</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Target</span>
+                    <span>{targetCalories} cal</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Remaining</span>
+                    <span className={targetCalories - (selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) < 0 ? 'text-red-500' : 'text-green-600'}>
+                      {targetCalories - (selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) < 0 
+                        ? `+${Math.abs(targetCalories - (selectedDate === today ? todayCaloriesIn : selectedCaloriesIn))} cal over`
+                        : `${targetCalories - (selectedDate === today ? todayCaloriesIn : selectedCaloriesIn)} cal left`
+                      }
+                    </span>
+                  </div>
+                </div>
               </div>
+              
+              {(selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) > targetCalories && (
+                <div className="bg-red-50 dark:bg-red-950/20 p-3 rounded-lg border border-red-200 dark:border-red-800 mt-4">
+                  <p className="text-sm text-red-700 dark:text-red-300 font-medium">
+                    You've exceeded your daily calorie goal by {Math.round((selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) - targetCalories)} calories
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
