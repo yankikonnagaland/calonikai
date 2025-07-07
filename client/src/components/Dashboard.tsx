@@ -13,6 +13,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import type { DailySummary, UserProfile, Exercise } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
+import SubscriptionModal from "./SubscriptionModal";
 
 interface DashboardProps {
   sessionId: string;
@@ -22,6 +23,7 @@ export default function Dashboard({ sessionId }: DashboardProps) {
   const today = useMemo(() => new Date().toISOString().split('T')[0], []);
   const [selectedDate, setSelectedDate] = useState<string>(today);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const calendarRef = useRef<HTMLDivElement>(null);
 
   // Reset selected date to today on component mount
@@ -1363,7 +1365,7 @@ Powered by Calonik.ai 🚀
                     )}
                   </div>
                   <Button 
-                    onClick={() => window.location.href = "/?tab=tracker&subscribe=true"}
+                    onClick={() => setShowSubscriptionModal(true)}
                     className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium px-6 py-2"
                   >
                     Upgrade to Premium
@@ -1512,7 +1514,7 @@ Powered by Calonik.ai 🚀
                     )}
                   </div>
                   <Button 
-                    onClick={() => window.location.href = "/?tab=tracker&subscribe=true"}
+                    onClick={() => setShowSubscriptionModal(true)}
                     className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium px-6 py-2"
                   >
                     Upgrade to Premium
@@ -1936,7 +1938,7 @@ Powered by Calonik.ai 🚀
                           )}
                         </div>
                         <Button 
-                          onClick={() => window.location.href = "/?tab=tracker&subscribe=true"}
+                          onClick={() => setShowSubscriptionModal(true)}
                           className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-medium px-6 py-2"
                         >
                           Upgrade to Premium
@@ -2203,6 +2205,14 @@ Powered by Calonik.ai 🚀
       </div>
       </div>
       </div>
+
+      {/* Subscription Modal */}
+      {showSubscriptionModal && (
+        <SubscriptionModal 
+          isOpen={showSubscriptionModal} 
+          onClose={() => setShowSubscriptionModal(false)} 
+        />
+      )}
     </div>
   );
 }
