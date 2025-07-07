@@ -1315,33 +1315,60 @@ Powered by Calonik.ai 🚀
             </CardContent>
           </Card>
         ) : userProfile && !usageStats?.isPremium ? (
-          <Card className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200 dark:border-amber-800 relative">
-            <div className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center">
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg text-center max-w-sm">
-                <div className="mx-auto w-12 h-12 bg-gradient-to-r from-amber-500 to-orange-600 rounded-full flex items-center justify-center mb-4">
-                  <Crown className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="font-semibold text-lg mb-2">Daily Calorie Goal Progress</h3>
-                <p className="text-muted-foreground text-sm mb-4">
-                  Track your calorie goals with beautiful progress charts
-                </p>
-                <Button 
-                  onClick={() => window.location.href = "/?tab=tracker&subscribe=true"}
-                  className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-medium px-6 py-2"
-                >
-                  Upgrade to Premium
-                </Button>
-              </div>
-            </div>
+          <Card className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 border-blue-200 dark:border-blue-800 relative">
             <CardHeader>
-              <CardTitle className="flex items-center text-xl blur-sm">
-                <Target className="w-5 h-5 mr-2 text-blue-600" />
-                Daily Calorie Goal Progress
-              </CardTitle>
+              <div className="flex items-center gap-3">
+                <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full">
+                  <Target className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl text-blue-800 dark:text-blue-200">Daily Calorie Goal Progress</CardTitle>
+                  <p className="text-sm text-blue-600 dark:text-blue-400">Track your calorie intake vs targets with visual progress</p>
+                </div>
+                <div className="ml-auto">
+                  <Badge variant="outline" className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 text-amber-700">
+                    Premium Feature
+                  </Badge>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="blur-sm">
-              <div className="flex items-center justify-center h-64">
-                <div className="w-48 h-48 rounded-full bg-gray-200"></div>
+            <CardContent className="relative">
+              <div className="h-64 blur-md">
+                <div className="flex items-center justify-center h-full">
+                  <div className="w-48 h-48 rounded-full bg-gradient-to-r from-blue-200 to-purple-200 dark:from-blue-800 to-purple-800"></div>
+                </div>
+              </div>
+              
+              {/* Premium Access Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-white/90 to-white/80 dark:from-gray-900/95 dark:via-gray-900/90 dark:to-gray-900/80 flex items-center justify-center rounded-lg">
+                <div className="text-center p-6 bg-white/90 dark:bg-gray-800/90 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg">
+                  <div className="mb-4">
+                    <div className="w-16 h-16 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Target className="w-8 h-8 text-white" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                      Daily Calorie Goal Progress
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Unlock beautiful doughnut charts to visualize your daily calorie intake vs your personal targets
+                    </p>
+                    {usageStats?.isBasic ? (
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mb-4">
+                        Upgrade from Basic (🔰) to Premium (👑) plan
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                        Premium feature - Subscribe to unlock
+                      </p>
+                    )}
+                  </div>
+                  <Button 
+                    onClick={() => window.location.href = "/?tab=tracker&subscribe=true"}
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium px-6 py-2"
+                  >
+                    Upgrade to Premium
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -1437,33 +1464,60 @@ Powered by Calonik.ai 🚀
             </CardContent>
           </Card>
         ) : userProfile && (userProfile.targetProtein || userProfile.dailyProteinTarget) && !usageStats?.isPremium ? (
-          <Card className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200 dark:border-amber-800 relative">
-            <div className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center">
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg text-center max-w-sm">
-                <div className="mx-auto w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mb-4">
-                  <Crown className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="font-semibold text-lg mb-2">Daily Protein Goal Progress</h3>
-                <p className="text-muted-foreground text-sm mb-4">
-                  Track your protein intake with beautiful progress charts
-                </p>
-                <Button 
-                  onClick={() => window.location.href = "/?tab=tracker&subscribe=true"}
-                  className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium px-6 py-2"
-                >
-                  Upgrade to Premium
-                </Button>
-              </div>
-            </div>
+          <Card className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800 relative">
             <CardHeader>
-              <CardTitle className="flex items-center text-xl blur-sm">
-                <Activity className="w-5 h-5 mr-2 text-green-600" />
-                Daily Protein Goal Progress
-              </CardTitle>
+              <div className="flex items-center gap-3">
+                <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-full">
+                  <Activity className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl text-green-800 dark:text-green-200">Daily Protein Goal Progress</CardTitle>
+                  <p className="text-sm text-green-600 dark:text-green-400">Track your protein intake vs targets with visual progress</p>
+                </div>
+                <div className="ml-auto">
+                  <Badge variant="outline" className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 text-amber-700">
+                    Premium Feature
+                  </Badge>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="blur-sm">
-              <div className="flex items-center justify-center h-64">
-                <div className="w-48 h-48 rounded-full bg-gray-200"></div>
+            <CardContent className="relative">
+              <div className="h-64 blur-md">
+                <div className="flex items-center justify-center h-full">
+                  <div className="w-48 h-48 rounded-full bg-gradient-to-r from-green-200 to-emerald-200 dark:from-green-800 to-emerald-800"></div>
+                </div>
+              </div>
+              
+              {/* Premium Access Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-white/90 to-white/80 dark:from-gray-900/95 dark:via-gray-900/90 dark:to-gray-900/80 flex items-center justify-center rounded-lg">
+                <div className="text-center p-6 bg-white/90 dark:bg-gray-800/90 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg">
+                  <div className="mb-4">
+                    <div className="w-16 h-16 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Activity className="w-8 h-8 text-white" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                      Daily Protein Goal Progress
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Unlock beautiful doughnut charts to visualize your daily protein intake vs your personal targets
+                    </p>
+                    {usageStats?.isBasic ? (
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mb-4">
+                        Upgrade from Basic (🔰) to Premium (👑) plan
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                        Premium feature - Subscribe to unlock
+                      </p>
+                    )}
+                  </div>
+                  <Button 
+                    onClick={() => window.location.href = "/?tab=tracker&subscribe=true"}
+                    className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium px-6 py-2"
+                  >
+                    Upgrade to Premium
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
