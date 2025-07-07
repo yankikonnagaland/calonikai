@@ -645,10 +645,17 @@ The application follows a client-server architecture with clear separation of co
 - UPDATED: Calendar button styling to match Health Dashboard purple-blue gradient as requested
 - STATUS: OAuth flow starts successfully but fails at callback due to unregistered redirect URI in Google Console
 
+**July 7, 2025 - UPDATED: iOS Subscription Pricing Structure for Competitive Market Position:**
+- UPDATED: Basic subscription plan pricing from $2.99 to $1.99 monthly for increased accessibility
+- UPDATED: Premium subscription plan pricing from $9.99 to $6.99 monthly for better market competitiveness
+- REVISED: App Store Connect configuration guide with new pricing tiers ($1.99 Basic, $6.99 Premium)
+- MAINTAINED: All subscription features and functionality remain unchanged
+- OPTIMIZED: Pricing strategy for broader user adoption while maintaining value proposition
+
 **July 6, 2025 - COMPLETED: iOS In-App Purchases Integration for App Store Monetization:**
 - IMPLEMENTED: Complete iOS In-App Purchase system using expo-in-app-purchases and Apple StoreKit
 - CREATED: IAPService with subscription management, purchase verification, and restoration functionality
-- CONFIGURED: Two subscription tiers - Basic ($2.99/month) and Premium ($9.99/month) with proper App Store Connect setup
+- CONFIGURED: Two subscription tiers with proper App Store Connect setup
 - ADDED: Backend verification endpoints for Apple receipt validation and subscription activation
 - ENHANCED: Mobile app with professional subscription modal supporting iOS purchase flows
 - INTEGRATED: Secure receipt validation using Apple's servers with app-specific shared secret

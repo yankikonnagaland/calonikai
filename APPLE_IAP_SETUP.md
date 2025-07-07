@@ -30,7 +30,7 @@ This guide walks you through setting up iOS In-App Purchases for Calonik.ai mobi
 - **Product ID**: `ai.calonik.basic.monthly`
 - **Subscription Group**: Calonik Subscriptions
 - **Subscription Duration**: 1 Month
-- **Price**: $2.99 (or regional equivalent)
+- **Price**: $1.99 (or regional equivalent)
 
 #### Premium Monthly Subscription  
 - **Type**: Auto-Renewable Subscription
@@ -38,13 +38,13 @@ This guide walks you through setting up iOS In-App Purchases for Calonik.ai mobi
 - **Product ID**: `ai.calonik.premium.monthly`
 - **Subscription Group**: Calonik Subscriptions
 - **Subscription Duration**: 1 Month
-- **Price**: $9.99 (or regional equivalent)
+- **Price**: $6.99 (or regional equivalent)
 
 ### 1.3 Subscription Group Configuration
 1. Create subscription group "Calonik Subscriptions"
 2. Set up subscription levels:
-   - **Level 1**: Basic ($2.99/month)
-   - **Level 2**: Premium ($9.99/month)
+   - **Level 1**: Basic ($1.99/month)
+   - **Level 2**: Premium ($6.99/month)
 3. Enable family sharing if desired
 
 ## Step 2: App Information & Metadata
@@ -126,7 +126,7 @@ Create `mobile/Calonik.storekit` for local testing:
         {
           "adHocOffers": [],
           "codeOffers": [],
-          "displayPrice": "2.99",
+          "displayPrice": "1.99",
           "familyShareable": false,
           "id": "ai.calonik.basic.monthly",
           "internalID": "987654321",
@@ -147,7 +147,7 @@ Create `mobile/Calonik.storekit` for local testing:
         {
           "adHocOffers": [],
           "codeOffers": [],
-          "displayPrice": "9.99",
+          "displayPrice": "6.99",
           "familyShareable": false,
           "id": "ai.calonik.premium.monthly",
           "internalID": "987654322",
