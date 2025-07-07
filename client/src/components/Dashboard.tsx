@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { Calendar, TrendingUp, TrendingDown, Target, Flame, ChevronLeft, ChevronRight, Activity, Utensils, Scale, UserCircle, Copy, Download, X } from "lucide-react";
+import { Calendar, TrendingUp, TrendingDown, Target, Flame, ChevronLeft, ChevronRight, Activity, Utensils, Scale, UserCircle, Copy, Download, X, Crown } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -956,6 +956,21 @@ Powered by Calonik.ai 🚀
     enabled: !!userProfile,
   });
 
+  // Get usage stats to check subscription status
+  const { data: usageStats } = useQuery<{
+    photos: number;
+    meals: number;
+    searches: number;
+    limits: { photos: number; meals: number };
+    remaining: { photos: number; meals: number };
+    isPremium: boolean;
+    isBasic: boolean;
+    subscriptionStatus: string;
+  }>({
+    queryKey: ['/api/usage-stats'],
+    enabled: !!sessionId,
+  });
+
   // Calculate selected date's calories and exercise data
   const selectedSummary = selectedDaySummary || dailySummaries.find(s => s.date === selectedDate);
   const todaySummary = dailySummaries.find(s => s.date === today);
@@ -1211,7 +1226,7 @@ Powered by Calonik.ai 🚀
       {/* Main Content - Daily Summary */}
       <div className="lg:col-span-3 space-y-6">
         {/* Calorie Goal Progress - Moved to Top */}
-        {userProfile && (
+        {userProfile && usageStats?.isPremium ? (
           <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200 dark:border-purple-800">
             <CardHeader>
               <CardTitle className="flex items-center text-xl">
@@ -1299,10 +1314,41 @@ Powered by Calonik.ai 🚀
               )}
             </CardContent>
           </Card>
-        )}
+        ) : userProfile && !usageStats?.isPremium ? (
+          <Card className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200 dark:border-amber-800 relative">
+            <div className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center">
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg text-center max-w-sm">
+                <div className="mx-auto w-12 h-12 bg-gradient-to-r from-amber-500 to-orange-600 rounded-full flex items-center justify-center mb-4">
+                  <Crown className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">Daily Calorie Goal Progress</h3>
+                <p className="text-muted-foreground text-sm mb-4">
+                  Track your calorie goals with beautiful progress charts
+                </p>
+                <Button 
+                  onClick={() => window.location.href = "/?tab=tracker&subscribe=true"}
+                  className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-medium px-6 py-2"
+                >
+                  Upgrade to Premium
+                </Button>
+              </div>
+            </div>
+            <CardHeader>
+              <CardTitle className="flex items-center text-xl blur-sm">
+                <Target className="w-5 h-5 mr-2 text-blue-600" />
+                Daily Calorie Goal Progress
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="blur-sm">
+              <div className="flex items-center justify-center h-64">
+                <div className="w-48 h-48 rounded-full bg-gray-200"></div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
 
         {/* Protein Goal Progress */}
-        {userProfile && (userProfile.targetProtein || userProfile.dailyProteinTarget) && (
+        {userProfile && (userProfile.targetProtein || userProfile.dailyProteinTarget) && usageStats?.isPremium ? (
           <Card className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800">
             <CardHeader>
               <CardTitle className="flex items-center text-xl">
@@ -1390,7 +1436,38 @@ Powered by Calonik.ai 🚀
               )}
             </CardContent>
           </Card>
-        )}
+        ) : userProfile && (userProfile.targetProtein || userProfile.dailyProteinTarget) && !usageStats?.isPremium ? (
+          <Card className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200 dark:border-amber-800 relative">
+            <div className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center">
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg text-center max-w-sm">
+                <div className="mx-auto w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mb-4">
+                  <Crown className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">Daily Protein Goal Progress</h3>
+                <p className="text-muted-foreground text-sm mb-4">
+                  Track your protein intake with beautiful progress charts
+                </p>
+                <Button 
+                  onClick={() => window.location.href = "/?tab=tracker&subscribe=true"}
+                  className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium px-6 py-2"
+                >
+                  Upgrade to Premium
+                </Button>
+              </div>
+            </div>
+            <CardHeader>
+              <CardTitle className="flex items-center text-xl blur-sm">
+                <Activity className="w-5 h-5 mr-2 text-green-600" />
+                Daily Protein Goal Progress
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="blur-sm">
+              <div className="flex items-center justify-center h-64">
+                <div className="w-48 h-48 rounded-full bg-gray-200"></div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
 
         {/* Today's Summary Card */}
         <Card className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-950/20 dark:to-green-950/20">
