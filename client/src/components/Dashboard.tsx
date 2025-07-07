@@ -1224,12 +1224,18 @@ Powered by Calonik.ai 🚀
                 <div className="w-24 h-24 relative">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
+                      <defs>
+                        <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#2563eb" />
+                          <stop offset="100%" stopColor="#9333ea" />
+                        </linearGradient>
+                      </defs>
                       <Pie
                         data={[
                           { 
                             name: 'Progress', 
                             value: Math.min(((selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) / targetCalories) * 100, 100),
-                            color: '#8b5cf6'
+                            color: 'url(#progressGradient)'
                           },
                           { 
                             name: 'Remaining', 
@@ -1245,14 +1251,14 @@ Powered by Calonik.ai 🚀
                         endAngle={450}
                         dataKey="value"
                       >
-                        <Cell fill="#8b5cf6" />
+                        <Cell fill="url(#progressGradient)" />
                         <Cell fill="#e5e7eb" />
                       </Pie>
                     </PieChart>
                   </ResponsiveContainer>
                   {/* Center percentage text */}
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-lg font-bold text-purple-600">
+                    <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                       {Math.round(((selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) / targetCalories) * 100)}%
                     </span>
                   </div>
@@ -1262,7 +1268,7 @@ Powered by Calonik.ai 🚀
                 <div className="flex-1 space-y-2">
                   <div className="flex justify-between text-sm font-medium">
                     <span>Current</span>
-                    <span className="text-purple-600 font-semibold">{Math.round((selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) * 10) / 10} cal</span>
+                    <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-semibold">{Math.round((selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) * 10) / 10} cal</span>
                   </div>
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Target</span>
