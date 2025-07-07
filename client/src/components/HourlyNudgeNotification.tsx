@@ -129,7 +129,7 @@ export default function HourlyNudgeNotification({ userId }: HourlyNudgeNotificat
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Clock className="h-5 w-5" />
-                  <span className="font-semibold">Hourly Move</span>
+                  <span className="font-semibold">Hourly Fun Move</span>
                   <Badge variant="secondary" className="bg-white/20 text-white border-white/20">
                     {getCurrentTimeDisplay()}
                   </Badge>
@@ -167,11 +167,11 @@ export default function HourlyNudgeNotification({ userId }: HourlyNudgeNotificat
                 <div className="flex items-center gap-2 mb-2">
                   <Zap className="h-4 w-4 text-blue-600" />
                   <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                    Quick Benefits
+                    Little Benefits
                   </span>
                 </div>
                 <ul className="text-xs space-y-1 text-blue-700 dark:text-blue-300">
-                  <li>• Boost metabolism & burn calories</li>
+                  <li>• Boost mood & refresh</li>
                   <li>• Improve focus & productivity</li>
                   <li>• Reduce stress & increase energy</li>
                 </ul>
