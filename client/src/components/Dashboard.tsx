@@ -1053,6 +1053,10 @@ Powered by Calonik.ai 🚀
   const netCalories = Math.round((todayCaloriesIn - todayCaloriesOut) * 100) / 100;
   const targetCalories = userProfile?.targetCalories || 2000;
 
+  // Protein calculations
+  const selectedProteinIn = Math.round((selectedSummary?.totalProtein || 0) * 10) / 10;
+  const todayProteinIn = Math.round((todaySummary?.totalProtein || 0) * 10) / 10;
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -1290,6 +1294,97 @@ Powered by Calonik.ai 🚀
                 <div className="bg-red-50 dark:bg-red-950/20 p-3 rounded-lg border border-red-200 dark:border-red-800 mt-4">
                   <p className="text-sm text-red-700 dark:text-red-300 font-medium">
                     You've exceeded your daily calorie goal by {Math.round(((selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) - targetCalories) * 10) / 10} calories
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Protein Goal Progress */}
+        {userProfile && (userProfile.targetProtein || userProfile.dailyProteinTarget) && (
+          <Card className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800">
+            <CardHeader>
+              <CardTitle className="flex items-center text-xl">
+                <Activity className="w-5 h-5 mr-2 text-green-600" />
+                Daily Protein Goal Progress
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Target: {userProfile.targetProtein || userProfile.dailyProteinTarget}g protein | Current: {Math.round((selectedDate === today ? todayProteinIn : selectedProteinIn) * 10) / 10}g protein
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-6">
+                {/* Small Protein Doughnut Chart */}
+                <div className="w-24 h-24 relative">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <defs>
+                        <linearGradient id="proteinGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#059669" />
+                          <stop offset="100%" stopColor="#10b981" />
+                        </linearGradient>
+                      </defs>
+                      <Pie
+                        data={[
+                          { 
+                            name: 'Progress', 
+                            value: Math.min(((selectedDate === today ? todayProteinIn : selectedProteinIn) / (userProfile.targetProtein || userProfile.dailyProteinTarget)) * 100, 100),
+                            color: 'url(#proteinGradient)'
+                          },
+                          { 
+                            name: 'Remaining', 
+                            value: Math.max(100 - ((selectedDate === today ? todayProteinIn : selectedProteinIn) / (userProfile.targetProtein || userProfile.dailyProteinTarget)) * 100, 0),
+                            color: '#e5e7eb'
+                          }
+                        ]}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={28}
+                        outerRadius={40}
+                        startAngle={90}
+                        endAngle={450}
+                        dataKey="value"
+                      >
+                        <Cell fill="url(#proteinGradient)" />
+                        <Cell fill="#e5e7eb" />
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                  {/* Center percentage text */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-lg font-bold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">
+                      {Math.round(((selectedDate === today ? todayProteinIn : selectedProteinIn) / (userProfile.targetProtein || userProfile.dailyProteinTarget)) * 100)}%
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Protein Progress details */}
+                <div className="flex-1 space-y-2">
+                  <div className="flex justify-between text-sm font-medium">
+                    <span>Current</span>
+                    <span className="bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent font-semibold">{Math.round((selectedDate === today ? todayProteinIn : selectedProteinIn) * 10) / 10}g</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Target</span>
+                    <span>{userProfile.targetProtein || userProfile.dailyProteinTarget}g</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Remaining</span>
+                    <span className={(userProfile.targetProtein || userProfile.dailyProteinTarget) - (selectedDate === today ? todayProteinIn : selectedProteinIn) < 0 ? 'text-red-500' : 'text-green-600'}>
+                      {(userProfile.targetProtein || userProfile.dailyProteinTarget) - (selectedDate === today ? todayProteinIn : selectedProteinIn) < 0 
+                        ? `+${Math.round(Math.abs((userProfile.targetProtein || userProfile.dailyProteinTarget) - (selectedDate === today ? todayProteinIn : selectedProteinIn)) * 10) / 10}g over`
+                        : `${Math.round(((userProfile.targetProtein || userProfile.dailyProteinTarget) - (selectedDate === today ? todayProteinIn : selectedProteinIn)) * 10) / 10}g left`
+                      }
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              {(selectedDate === today ? todayProteinIn : selectedProteinIn) > (userProfile.targetProtein || userProfile.dailyProteinTarget) && (
+                <div className="bg-green-50 dark:bg-green-950/20 p-3 rounded-lg border border-green-200 dark:border-green-800 mt-4">
+                  <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+                    Great! You've exceeded your daily protein goal by {Math.round(((selectedDate === today ? todayProteinIn : selectedProteinIn) - (userProfile.targetProtein || userProfile.dailyProteinTarget)) * 10) / 10}g
                   </p>
                 </div>
               )}
