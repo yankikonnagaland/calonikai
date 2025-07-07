@@ -270,10 +270,10 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     // Hot beverages - smaller servings
     if (name.match(/\b(tea|coffee|chai|latte|cappuccino|espresso)\b/)) {
       return {
-        unit: "cup (240ml)",
+        unit: "cup (200ml)",
         quantity: 1,
-        unitOptions: ["small cup (150ml)", "cup (240ml)", "large cup (350ml)", "mug (400ml)", "ml"],
-        reasoning: "Hot beverages served in cups, 240ml is standard"
+        unitOptions: ["small cup (150ml)", "cup (200ml)", "cup (250ml)", "mug (300ml)", "large cup (400ml)", "ml"],
+        reasoning: "Hot beverages served in cups, 200ml is standard"
       };
     }
     

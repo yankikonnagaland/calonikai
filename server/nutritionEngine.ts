@@ -114,10 +114,10 @@ export class SmartNutritionEngine {
       };
     }
     
-    if (this.matchesPattern(itemName, ["tea", "chai", "coffee", "espresso", "latte"])) {
+    if (this.matchesPattern(itemName, ["tea", "chai", "coffee", "espresso", "latte", "cappuccino"])) {
       return {
-        recommended_unit: "cup (240ml)",
-        unit_size_in_g_or_ml: 240,
+        recommended_unit: "cup (200ml)",
+        unit_size_in_g_or_ml: 200,
         notes: "Standard tea/coffee cup size; calculated from base per 100ml"
       };
     }

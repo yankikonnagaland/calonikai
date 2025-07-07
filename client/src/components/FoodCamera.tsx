@@ -738,7 +738,7 @@ export default function FoodCamera({
 
     // 1. BEVERAGES - Enhanced with realistic volumes
     if (name.match(/\b(tea|coffee|chai|latte|cappuccino|espresso)\b/)) {
-      return { unit: "cup (240ml)", quantity: 1 };
+      return { unit: "cup (200ml)", quantity: 1 };
     }
 
     if (name.match(/\b(beer|lager|ale)\b/)) {

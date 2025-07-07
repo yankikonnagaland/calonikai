@@ -980,10 +980,10 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
   }
   
   // Hot beverages - smaller serving sizes
-  if (name.includes("tea") || name.includes("coffee") || name.includes("chai") || name.includes("espresso")) {
+  if (name.includes("tea") || name.includes("coffee") || name.includes("chai") || name.includes("espresso") || name.includes("cappuccino") || name.includes("latte")) {
     return {
-      unit: "cup (240ml)",
-      unitOptions: ["small cup (150ml)", "cup (240ml)", "large cup (350ml)", "mug (400ml)", "ml"],
+      unit: "cup (200ml)",
+      unitOptions: ["small cup (150ml)", "cup (200ml)", "cup (250ml)", "mug (300ml)", "large cup (400ml)", "ml"],
     };
   }
   
