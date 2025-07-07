@@ -1215,7 +1215,7 @@ Powered by Calonik.ai 🚀
                 Daily Calorie Goal Progress
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Target: {targetCalories} calories | Current: {selectedDate === today ? todayCaloriesIn : selectedCaloriesIn} calories
+                Target: {targetCalories} calories | Current: {Math.round((selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) * 10) / 10} calories
               </p>
             </CardHeader>
             <CardContent>
@@ -1262,7 +1262,7 @@ Powered by Calonik.ai 🚀
                 <div className="flex-1 space-y-2">
                   <div className="flex justify-between text-sm font-medium">
                     <span>Current</span>
-                    <span className="text-purple-600 font-semibold">{selectedDate === today ? todayCaloriesIn : selectedCaloriesIn} cal</span>
+                    <span className="text-purple-600 font-semibold">{Math.round((selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) * 10) / 10} cal</span>
                   </div>
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Target</span>
@@ -1272,8 +1272,8 @@ Powered by Calonik.ai 🚀
                     <span>Remaining</span>
                     <span className={targetCalories - (selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) < 0 ? 'text-red-500' : 'text-green-600'}>
                       {targetCalories - (selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) < 0 
-                        ? `+${Math.abs(targetCalories - (selectedDate === today ? todayCaloriesIn : selectedCaloriesIn))} cal over`
-                        : `${targetCalories - (selectedDate === today ? todayCaloriesIn : selectedCaloriesIn)} cal left`
+                        ? `+${Math.round(Math.abs(targetCalories - (selectedDate === today ? todayCaloriesIn : selectedCaloriesIn)) * 10) / 10} cal over`
+                        : `${Math.round((targetCalories - (selectedDate === today ? todayCaloriesIn : selectedCaloriesIn)) * 10) / 10} cal left`
                       }
                     </span>
                   </div>
@@ -1283,7 +1283,7 @@ Powered by Calonik.ai 🚀
               {(selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) > targetCalories && (
                 <div className="bg-red-50 dark:bg-red-950/20 p-3 rounded-lg border border-red-200 dark:border-red-800 mt-4">
                   <p className="text-sm text-red-700 dark:text-red-300 font-medium">
-                    You've exceeded your daily calorie goal by {Math.round((selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) - targetCalories)} calories
+                    You've exceeded your daily calorie goal by {Math.round(((selectedDate === today ? todayCaloriesIn : selectedCaloriesIn) - targetCalories) * 10) / 10} calories
                   </p>
                 </div>
               )}
