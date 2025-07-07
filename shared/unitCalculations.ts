@@ -138,7 +138,8 @@ export const unitToGramMap: Record<string, number> = {
   "glass (250ml)": 250, // Standard glass
   "small glass (200ml)": 200, // Small glass
   "large glass (300ml)": 300, // Large glass
-  "cup (240ml)": 240,   // Standard cup
+  "cup (200ml)": 200,   // Standard cup
+  "cup (240ml)": 240,   // Large cup
   "small cup (150ml)": 150, // Small cup
   "large cup (350ml)": 350, // Large cup
   

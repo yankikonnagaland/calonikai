@@ -206,7 +206,7 @@ function getUnitOptionsForFood(name: string, category: string): string[] {
   // Category-based unit options
   if (category === 'Beverages' || nameLower.includes('tea') || nameLower.includes('coffee') || 
       nameLower.includes('juice') || nameLower.includes('milk')) {
-    return ['100ml', '150ml', '200ml', '240ml', '300ml', 'cup (240ml)', 'glass (200ml)', 'small cup (150ml)'];
+    return ['100ml', '150ml', '200ml', '250ml', '300ml', 'cup (200ml)', 'cup (250ml)', 'small cup (150ml)', 'mug (300ml)', 'large cup (400ml)', 'shot (30ml)', 'ml'];
   }
 
   if (category === 'Fruits') {
@@ -388,7 +388,7 @@ Return ONLY a JSON array with ${limit} relevant food variations. Each food must 
   "carbs": number per 100g, 
   "fat": number per 100g,
   "category": "Main Course|Snacks|Beverages|Fruits|Vegetables|Grains|Dairy|Desserts",
-  "defaultUnit": "serving (100g)|piece (50g)|cup (240ml)|bowl (150g)",
+  "defaultUnit": "serving (100g)|piece (50g)|cup (200ml)|bowl (150g)",
   "smartPortion": "realistic portion like 'medium bowl (200g)' or 'regular serving (150g)'"
 }
 

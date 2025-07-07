@@ -272,8 +272,8 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       return {
         unit: "cup (200ml)",
         quantity: 1,
-        unitOptions: ["small cup (150ml)", "cup (200ml)", "cup (250ml)", "mug (300ml)", "large cup (400ml)", "ml"],
-        reasoning: "Hot beverages served in cups, 200ml is standard"
+        unitOptions: ["small cup (150ml)", "cup (200ml)", "cup (250ml)", "mug (300ml)", "large cup (400ml)", "shot (30ml)", "ml"],
+        reasoning: "Standard coffee/tea servings range from 150–300ml depending on type and café"
       };
     }
     

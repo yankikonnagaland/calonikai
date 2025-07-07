@@ -763,7 +763,7 @@ For "${foodName}" in category "${category}", determine:
 3. Default quantity for typical consumption
 
 Important guidelines:
-- Coffee/Tea beverages: Always include ["small cup (150ml)", "cup (250ml)", "large cup (350ml)", "glass (200ml)", "ml"] as options
+- Coffee/Tea beverages: Always include ["small cup (150ml)", "cup (200ml)", "cup (250ml)", "mug (300ml)", "large cup (400ml)", "shot (30ml)", "ml"] as options
 - Beer: unit="can (500ml)", quantity=1 (because 1 can = 500ml = 5x the 100ml database value)
 - Rice: unit="medium portion (150g)", quantity=1 (because 1 portion = 150g = 1.5x the 100g database value)
 - Apple: unit="medium (120g)", quantity=1 (because 1 apple = 120g = 1.2x the 100g database value)
@@ -983,7 +983,7 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
   if (name.includes("tea") || name.includes("coffee") || name.includes("chai") || name.includes("espresso") || name.includes("cappuccino") || name.includes("latte")) {
     return {
       unit: "cup (200ml)",
-      unitOptions: ["small cup (150ml)", "cup (200ml)", "cup (250ml)", "mug (300ml)", "large cup (400ml)", "ml"],
+      unitOptions: ["small cup (150ml)", "cup (200ml)", "cup (250ml)", "mug (300ml)", "large cup (400ml)", "shot (30ml)", "ml"],
     };
   }
   

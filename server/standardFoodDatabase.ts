@@ -211,8 +211,8 @@ export const STANDARD_FOODS: StandardFood[] = [
     proteinPer100g: 3.4,
     carbsPer100g: 4.8,
     fatPer100g: 1.0,
-    defaultUnit: "cup (240ml)",
-    commonUnits: ["100ml", "200ml", "240ml", "cup (240ml)", "glass (200ml)"],
+    defaultUnit: "cup (200ml)",
+    commonUnits: ["100ml", "150ml", "200ml", "250ml", "cup (200ml)", "small cup (150ml)", "mug (300ml)", "shot (30ml)", "ml"],
     isLiquid: true
   },
   {
@@ -246,8 +246,8 @@ export const STANDARD_FOODS: StandardFood[] = [
     proteinPer100g: 1.5,
     carbsPer100g: 12,
     fatPer100g: 1.0,
-    defaultUnit: "cup (240ml)",
-    commonUnits: ["150ml", "200ml", "240ml", "cup (240ml)", "small cup (150ml)"],
+    defaultUnit: "cup (200ml)",
+    commonUnits: ["100ml", "150ml", "200ml", "250ml", "cup (200ml)", "small cup (150ml)", "mug (300ml)", "shot (30ml)", "ml"],
     isLiquid: true
   },
   {
@@ -257,8 +257,8 @@ export const STANDARD_FOODS: StandardFood[] = [
     proteinPer100g: 1.8,
     carbsPer100g: 13,
     fatPer100g: 1.2,
-    defaultUnit: "cup (240ml)",
-    commonUnits: ["150ml", "200ml", "240ml", "cup (240ml)", "small cup (150ml)"],
+    defaultUnit: "cup (200ml)",
+    commonUnits: ["100ml", "150ml", "200ml", "250ml", "cup (200ml)", "small cup (150ml)", "mug (300ml)", "shot (30ml)", "ml"],
     isLiquid: true
   },
   {
