@@ -123,6 +123,15 @@ The application follows a client-server architecture with clear separation of co
 
 ## Recent Changes
 
+**July 8, 2025 - Critical Data Recovery & Enhanced Food Search Optimization:**
+- ✅ RESOLVED: Critical data overwrite issue for yankikonic@gmail.com - successfully restored 10 lost meal items from July 7th-8th
+- ✅ Extracted meal data from preserved daily summaries and restored to meal_items table with deduplication
+- ✅ Enhanced food search system with intelligent compound dish detection for better results (e.g., "chicken fried rice")
+- ✅ Added 15+ popular compound dishes to standard database: fried rice varieties, biryani, curries, noodles, parathas
+- ✅ Improved Gemini AI prompting to focus on complete prepared dishes rather than individual ingredients
+- ✅ Enhanced duplicate detection and relevance scoring for compound dishes vs simple ingredients
+- ✅ Fixed search logic to prioritize exact dish matches over generic ingredient results
+
 **July 8, 2025 - Complete Native React Native + Expo Mobile App Implementation:**
 - ✅ Built complete native React Native + Expo mobile application with exact web app UI/UX replication
 - ✅ Implemented React Navigation with bottom tab navigation (Tracker, Profile, Exercise, Dashboard)
