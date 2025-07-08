@@ -19,7 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { CheckCircle, CreditCard, Smartphone, Wallet, X, Gift } from "lucide-react";
+import { CheckCircle, CreditCard, Smartphone, Wallet, X, Gift, Crown, Activity, Timer, Flame, Camera, Search, TrendingUp, Utensils } from "lucide-react";
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -381,11 +381,7 @@ function RazorpayCheckout({ onSuccess, selectedPlan = 'premium', referralCode }:
         <Button
           onClick={handleRazorpayPayment}
           disabled={!isScriptLoaded || isProcessing}
-          className={`flex-1 h-12 text-lg font-semibold ${
-            selectedPlan === 'basic'
-              ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
-              : 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700'
-          }`}
+          className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
         >
           {isProcessing ? (
             <div className="flex items-center gap-2">
@@ -394,7 +390,8 @@ function RazorpayCheckout({ onSuccess, selectedPlan = 'premium', referralCode }:
             </div>
           ) : (
             <>
-              Subscribe to {selectedPlan === 'basic' ? 'Basic' : 'Premium'} - ₹{selectedPlan === 'basic' ? '99' : '399'}/month
+              <Crown className="w-4 h-4 mr-2" />
+              Upgrade to {selectedPlan === 'basic' ? 'Basic' : 'Premium'} - ₹{selectedPlan === 'basic' ? '99' : '399'}/month
             </>
           )}
         </Button>
@@ -475,35 +472,35 @@ function SubscriptionContent({
 
   const basicFeatures = [
     {
-      icon: <Smartphone className="w-5 h-5" />,
+      icon: <Camera className="w-4 h-4 text-orange-500" />,
       text: "2 AI photo scans per day",
     },
     {
-      icon: <CreditCard className="w-5 h-5" />,
+      icon: <Search className="w-4 h-4 text-orange-500" />,
       text: "5 food searches per day",
     },
     {
-      icon: <CheckCircle className="w-5 h-5" />,
+      icon: <Utensils className="w-4 h-4 text-orange-500" />,
       text: "Basic meal tracking",
     },
   ];
 
   const premiumFeatures = [
     {
-      icon: <Smartphone className="w-5 h-5" />,
-      text: "AI photo analysis",
+      icon: <Activity className="w-4 h-4 text-orange-500" />,
+      text: "AI-powered exercise analysis",
     },
     {
-      icon: <CreditCard className="w-5 h-5" />,
-      text: "Calories and macro tracking",
+      icon: <Timer className="w-4 h-4 text-orange-500" />,
+      text: "Advanced exercise timer",
     },
     {
-      icon: <Wallet className="w-5 h-5" />,
-      text: "Exercise tracking & analysis",
+      icon: <Flame className="w-4 h-4 text-orange-500" />,
+      text: "Calorie burn tracking",
     },
     {
-      icon: <CheckCircle className="w-5 h-5" />,
-      text: "Hourly fun activities",
+      icon: <TrendingUp className="w-4 h-4 text-orange-500" />,
+      text: "Progress analytics",
     },
   ];
 
@@ -545,14 +542,14 @@ function SubscriptionContent({
         </Card>
       )}
       {/* Premium Features */}
-      <Card>
+      <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span className="text-2xl">🚀</span>
-            Start your fitness journey
+          <CardTitle className="flex items-center gap-2 text-xl">
+            <Crown className="w-6 h-6 text-orange-500" />
+            Premium Subscription Required
           </CardTitle>
-          <CardDescription>
-            Become a disciplined and better version of yourself
+          <CardDescription className="text-muted-foreground">
+            Upgrade to unlock all advanced features
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -562,33 +559,40 @@ function SubscriptionContent({
               onClick={() => setSelectedPlan('basic')}
               className={`p-4 rounded-lg border text-left transition-all ${
                 selectedPlan === 'basic'
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
+                  : 'border-gray-200 hover:border-orange-300'
               }`}
             >
-              <div className="font-semibold text-blue-600">Basic Plan</div>
-              <div className="text-lg font-bold text-[#a50bba]">₹99/month</div>
-              <div className="text-sm text-gray-600">Limited photo search. No exercise Tracking.</div>
+              <div className="font-semibold text-orange-600">Basic Plan</div>
+              <div className="text-lg font-bold text-orange-500">₹99/month</div>
+              <div className="text-sm text-gray-600 space-y-1">
+                <div>❌ Limited photo search</div>
+                <div>❌ Exercise tracking</div>
+                <div>❌ Daily Protein tracking</div>
+                <div>❌ Daily Calorie progress</div>
+                <div>❌ Data visualisation</div>
+              </div>
+
             </button>
             <button
               onClick={() => setSelectedPlan('premium')}
               className={`p-4 rounded-lg border text-left transition-all ${
                 selectedPlan === 'premium'
-                  ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20'
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-red-500 bg-red-50 dark:bg-red-950/20'
+                  : 'border-gray-200 hover:border-red-300'
               }`}
             >
-              <div className="font-semibold text-emerald-600">Premium Plan</div>
-              <div className="text-lg font-bold text-[#c92ad4]">₹399/month</div>
+              <div className="font-semibold text-red-600">Premium Plan</div>
+              <div className="text-lg font-bold text-red-500">₹399/month</div>
               <div className="text-sm text-gray-600">Unlock all features including exercise tracker</div>
             </button>
           </div>
 
-          <div className="grid gap-3">
+          <div className="space-y-2">
             {(selectedPlan === 'basic' ? basicFeatures : premiumFeatures).map((feature, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <div className={selectedPlan === 'basic' ? 'text-blue-500' : 'text-emerald-500'}>{feature.icon}</div>
-                <span>{feature.text}</span>
+              <div key={index} className="flex items-center gap-2">
+                {feature.icon}
+                <span className="text-sm">{feature.text}</span>
               </div>
             ))}
           </div>
