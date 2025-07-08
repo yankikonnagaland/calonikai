@@ -1328,9 +1328,7 @@ Powered by Calonik.ai 🚀
                   <p className="text-sm text-blue-600 dark:text-blue-400">Track your calorie intake vs targets with visual progress</p>
                 </div>
                 <div className="ml-auto">
-                  <Badge variant="outline" className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 text-amber-700">
-                    Premium Feature
-                  </Badge>
+                
                 </div>
               </div>
             </CardHeader>
@@ -1477,9 +1475,7 @@ Powered by Calonik.ai 🚀
                   <p className="text-sm text-green-600 dark:text-green-400">Track your protein intake vs targets with visual progress</p>
                 </div>
                 <div className="ml-auto">
-                  <Badge variant="outline" className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 text-amber-700">
-                    Premium Feature
-                  </Badge>
+                 
                 </div>
               </div>
             </CardHeader>
@@ -1722,9 +1718,7 @@ Powered by Calonik.ai 🚀
                     </div>
                     {!hasHealthTrendsAccess && (
                       <div className="ml-auto">
-                        <Badge variant="outline" className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 text-amber-700">
-                          Premium Feature
-                        </Badge>
+                       
                       </div>
                     )}
                   </div>
