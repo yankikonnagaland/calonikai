@@ -19,7 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { CheckCircle, CreditCard, Smartphone, Wallet, X, Gift, Crown, Activity, Timer, Flame, Camera, Search, TrendingUp, Utensils } from "lucide-react";
+import { CheckCircle, CreditCard, Smartphone, Wallet, X, Gift, Crown } from "lucide-react";
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -470,39 +470,7 @@ function SubscriptionContent({
     }
   };
 
-  const basicFeatures = [
-    {
-      icon: <Camera className="w-4 h-4 text-orange-500" />,
-      text: "2 AI photo scans per day",
-    },
-    {
-      icon: <Search className="w-4 h-4 text-orange-500" />,
-      text: "5 food searches per day",
-    },
-    {
-      icon: <Utensils className="w-4 h-4 text-orange-500" />,
-      text: "Basic meal tracking",
-    },
-  ];
 
-  const premiumFeatures = [
-    {
-      icon: <Activity className="w-4 h-4 text-orange-500" />,
-      text: "AI-powered exercise analysis",
-    },
-    {
-      icon: <Timer className="w-4 h-4 text-orange-500" />,
-      text: "Advanced exercise timer",
-    },
-    {
-      icon: <Flame className="w-4 h-4 text-orange-500" />,
-      text: "Calorie burn tracking",
-    },
-    {
-      icon: <TrendingUp className="w-4 h-4 text-orange-500" />,
-      text: "Progress analytics",
-    },
-  ];
 
   if (isLoading) {
     return (
@@ -588,14 +556,7 @@ function SubscriptionContent({
             </button>
           </div>
 
-          <div className="space-y-2">
-            {(selectedPlan === 'basic' ? basicFeatures : premiumFeatures).map((feature, index) => (
-              <div key={index} className="flex items-center gap-2">
-                {feature.icon}
-                <span className="text-sm">{feature.text}</span>
-              </div>
-            ))}
-          </div>
+
 
           {/* Referral Code Input */}
           <div className="space-y-2">
