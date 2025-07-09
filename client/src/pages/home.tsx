@@ -126,16 +126,11 @@ export default function Home() {
           mealData: JSON.stringify(mealItems || [])
         },
       });
-
-      // Clear the meal after submission
-      await apiRequest(`/api/meal/clear/${sessionId}/${selectedDateString}`, {
-        method: "POST",
-      });
     },
     onSuccess: () => {
       toast({
         title: "Meal Submitted!",
-        description: `Your meal has been added to ${format(selectedDate, 'MMM dd, yyyy')}'s summary.`,
+        description: `Your meal has been saved to ${format(selectedDate, 'MMM dd, yyyy')}'s summary. Current meal items remain for easy tracking.`,
       });
       queryClient.invalidateQueries({ queryKey: [`/api/meal/${sessionId}/${selectedDateString}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/daily-summary/${sessionId}/${selectedDateString}`] });
