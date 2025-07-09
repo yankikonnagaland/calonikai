@@ -43,9 +43,8 @@
     "scheme": "calonik-ai",
     "extra": {
       "eas": {
-        "projectId": "69fbe8d9-3226-4916-a01c-3ac66b4e8da7"
+        "projectId": "your-project-id-here"
       }
-    },
-    "owner": "yanpvuo"
+    }
   }
 }

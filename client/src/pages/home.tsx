@@ -127,14 +127,15 @@ export default function Home() {
         },
       });
 
-      // Clear current meal items after submission - this clears the "Current Meal" section
-      // but preserves the data in the daily summary for historical tracking
-      await apiRequest("POST", `/api/meal/clear/${sessionId}/${selectedDateString}`);
+      // Clear the meal after submission
+      await apiRequest(`/api/meal/clear/${sessionId}/${selectedDateString}`, {
+        method: "POST",
+      });
     },
     onSuccess: () => {
       toast({
         title: "Meal Submitted!",
-        description: `Your meal has been added to ${format(selectedDate, 'MMM dd, yyyy')}'s summary. Current meal cleared.`,
+        description: `Your meal has been added to ${format(selectedDate, 'MMM dd, yyyy')}'s summary.`,
       });
       queryClient.invalidateQueries({ queryKey: [`/api/meal/${sessionId}/${selectedDateString}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/daily-summary/${sessionId}/${selectedDateString}`] });

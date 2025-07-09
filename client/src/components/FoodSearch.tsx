@@ -656,10 +656,12 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
         setAiAnalysis(aiResult);
         console.log(`AI Enhanced Analysis for ${food.name}:`, aiResult);
         
-        // Keep initial unit selection - don't override with AI suggestions per user request
-        // Always keep quantity at 1 per user request
-        setQuantity(1);
-        setQuantityInput("1");
+        // Update unit options with AI suggestions if better than local
+        if (aiResult.aiConfidence > 0.7) {
+          setUnit(aiResult.smartUnit);
+          setQuantity(aiResult.smartQuantity);
+          setUnitOptions(aiResult.unitOptions);
+        }
       }
     } catch (error) {
       console.log("AI analysis failed, using local suggestions");
@@ -676,12 +678,11 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
         throw new Error('Backend unit selection failed');
       })
       .then(unitData => {
-        // Preserve initial unit selection - don't override with backend suggestions per user request
-        // Only update unit options if they provide more options than local suggestions
-        if (unitData.unitOptions && unitData.unitOptions.length > unitOptions.length) {
+        // Only update if we don't have enhanced portion data already
+        if (!(food as any).smartUnit || !(food as any).smartQuantity) {
           setUnitOptions(unitData.unitOptions);
+          setUnit(unitData.unit);
         }
-        // Don't override the unit that was already set
       })
       .catch(error => {
         console.log("Backend unit selection failed, using local data:", error);
@@ -973,7 +974,6 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                 handleSearch();
               }
             }}
-            disabled={isSearching}
             className="flex-1"
           />
           <Button
@@ -1086,25 +1086,17 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100">{selectedFood.name}</h3>
-                <div className="text-sm font-medium text-blue-600 dark:text-blue-400 mt-1">
-                  {(() => {
-                    // Calculate calories based on current quantity and unit
-                    const basePer100g = {
-                      calories: selectedFood.calories,
-                      protein: selectedFood.protein,
-                      carbs: selectedFood.carbs,
-                      fat: selectedFood.fat
-                    };
-                    
-                    const calculatedNutrition = calculateNutritionFromUnit(
-                      selectedFood.name,
-                      unit,
-                      quantity,
-                      basePer100g
-                    );
-                    
-                    return `${Math.round(calculatedNutrition.calories)} calories`;
-                  })()}
+                <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                  {(selectedFood as any).realisticCalories ? (
+                    <>
+                      <span className="text-green-600 dark:text-green-400 font-bold">{(selectedFood as any).realisticCalories} cal</span> 
+                      <span className="text-gray-500"> for {(selectedFood as any).smartQuantity} {(selectedFood as any).smartUnit}</span>
+                      <br />
+                      <span className="text-xs">Base: {selectedFood.calories} cal per {selectedFood.portionSize}</span>
+                    </>
+                  ) : (
+                    <>Base: {selectedFood.calories} cal per {selectedFood.portionSize}</>
+                  )}
                 </div>
               </div>
               <Badge variant="outline" className="bg-white/50">{selectedFood.category}</Badge>
@@ -1123,8 +1115,6 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
               </div>
             )}
             
-            {/* AI Enhanced Analysis - Commented out per user request */}
-            {/* 
             {aiAnalysis && (
               <div className="mb-4 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-md border border-purple-200 dark:border-purple-800">
                 <div className="flex items-center gap-2 mb-2">
@@ -1145,10 +1135,8 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                 </div>
               </div>
             )}
-            */}
 
-            {/* Intelligent Suggestion Display - Commented out per user request */}
-            {/*
+            {/* Intelligent Suggestion Display */}
             <div className="mb-4 p-3 bg-white/60 dark:bg-gray-800/60 rounded-md border border-blue-100 dark:border-blue-900">
               <div className="flex items-center gap-2 mb-2">
                 <span className="w-2 h-2 bg-green-500 rounded-full"></span>
@@ -1169,7 +1157,6 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                 )}
               </div>
             </div>
-            */}
             
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
@@ -1292,8 +1279,44 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                   calculatedNutrition.totalGrams
                 );
                 
-                // Nutrition calculation display removed per user request
-                return null;
+                return (
+                  <div>
+                    <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Nutrition for {formatNutritionDisplay(quantity, unit, calculatedNutrition)}:
+                    </div>
+                    {!validation.isValid && (
+                      <div className="text-xs text-amber-600 dark:text-amber-400 mb-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded border">
+                        ⚠️ {validation.warning}
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="p-3 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 rounded-lg border border-blue-300 dark:border-blue-700">
+                        <div className="text-xl font-bold text-blue-700 dark:text-blue-300">
+                          {calculatedNutrition.calories}
+                        </div>
+                        <div className="text-xs font-medium text-blue-600 dark:text-blue-400">Calories</div>
+                      </div>
+                      <div className="p-3 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/40 dark:to-green-800/40 rounded-lg border border-green-300 dark:border-green-700">
+                        <div className="text-xl font-bold text-green-700 dark:text-green-300">
+                          {calculatedNutrition.protein}g
+                        </div>
+                        <div className="text-xs font-medium text-green-600 dark:text-green-400">Protein</div>
+                      </div>
+                      <div className="p-3 bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/40 dark:to-amber-800/40 rounded-lg border border-amber-300 dark:border-amber-700">
+                        <div className="text-xl font-bold text-amber-700 dark:text-amber-300">
+                          {calculatedNutrition.carbs}g
+                        </div>
+                        <div className="text-xs font-medium text-amber-600 dark:text-amber-400">Carbs</div>
+                      </div>
+                      <div className="p-3 bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/40 dark:to-red-800/40 rounded-lg border border-red-300 dark:border-red-700">
+                        <div className="text-xl font-bold text-red-700 dark:text-red-300">
+                          {calculatedNutrition.fat}g
+                        </div>
+                        <div className="text-xs font-medium text-red-600 dark:text-red-400">Fat</div>
+                      </div>
+                    </div>
+                  </div>
+                );
               })()}
             </div>
 
