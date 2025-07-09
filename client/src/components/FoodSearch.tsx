@@ -1115,6 +1115,8 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
               </div>
             )}
             
+            {/* AI Enhanced Analysis - Commented out per user request */}
+            {/* 
             {aiAnalysis && (
               <div className="mb-4 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-md border border-purple-200 dark:border-purple-800">
                 <div className="flex items-center gap-2 mb-2">
@@ -1135,8 +1137,10 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                 </div>
               </div>
             )}
+            */}
 
-            {/* Intelligent Suggestion Display */}
+            {/* Intelligent Suggestion Display - Commented out per user request */}
+            {/*
             <div className="mb-4 p-3 bg-white/60 dark:bg-gray-800/60 rounded-md border border-blue-100 dark:border-blue-900">
               <div className="flex items-center gap-2 mb-2">
                 <span className="w-2 h-2 bg-green-500 rounded-full"></span>
@@ -1157,6 +1161,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                 )}
               </div>
             </div>
+            */}
             
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
