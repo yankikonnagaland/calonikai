@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Search, Plus, Edit2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, getAuthHeaders } from "@/lib/queryClient";
 import { Food } from "@shared/schema";
 
 interface FoodSearchProps {
@@ -49,7 +49,11 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     setSearchTrigger(searchQuery);
 
     try {
-      const response = await fetch(`/api/enhanced-food-search?q=${encodeURIComponent(searchQuery.trim())}&sessionId=${sessionId}&userId=${sessionId}`);
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/foods/enhanced-search?query=${encodeURIComponent(searchQuery.trim())}`, {
+        headers,
+        credentials: "include"
+      });
       
       if (!response.ok) {
         if (response.status === 429) {
@@ -66,9 +70,9 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       
       const data = await response.json();
       
-      if (data.searchResults && Array.isArray(data.searchResults)) {
+      if (Array.isArray(data)) {
         // Remove duplicates based on name and calories
-        const uniqueResults = data.searchResults.filter((food: Food, index: number, self: Food[]) =>
+        const uniqueResults = data.filter((food: Food, index: number, self: Food[]) =>
           index === self.findIndex((f: Food) => 
             f.name.toLowerCase() === food.name.toLowerCase() && 
             Math.abs(f.calories - food.calories) < 5
@@ -76,7 +80,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
         );
         
         setSearchResults(uniqueResults);
-        setSearchStats(data.searchStats || null);
+        setSearchStats(null);
       } else {
         setSearchResults([]);
         setSearchStats(null);
