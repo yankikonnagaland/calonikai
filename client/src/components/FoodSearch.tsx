@@ -656,14 +656,10 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
         setAiAnalysis(aiResult);
         console.log(`AI Enhanced Analysis for ${food.name}:`, aiResult);
         
-        // Update unit options with AI suggestions if better than local
-        if (aiResult.aiConfidence > 0.7) {
-          setUnit(aiResult.smartUnit);
-          // Always keep quantity at 1 per user request
-          setQuantity(1);
-          setQuantityInput("1");
-          setUnitOptions(aiResult.unitOptions);
-        }
+        // Keep initial unit selection - don't override with AI suggestions per user request
+        // Always keep quantity at 1 per user request
+        setQuantity(1);
+        setQuantityInput("1");
       }
     } catch (error) {
       console.log("AI analysis failed, using local suggestions");
@@ -680,11 +676,12 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
         throw new Error('Backend unit selection failed');
       })
       .then(unitData => {
-        // Only update if we don't have enhanced portion data already
-        if (!(food as any).smartUnit || !(food as any).smartQuantity) {
+        // Preserve initial unit selection - don't override with backend suggestions per user request
+        // Only update unit options if they provide more options than local suggestions
+        if (unitData.unitOptions && unitData.unitOptions.length > unitOptions.length) {
           setUnitOptions(unitData.unitOptions);
-          setUnit(unitData.unit);
         }
+        // Don't override the unit that was already set
       })
       .catch(error => {
         console.log("Backend unit selection failed, using local data:", error);
