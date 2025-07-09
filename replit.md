@@ -695,7 +695,8 @@ The application follows a client-server architecture with clear separation of co
 - ✅ Added graceful error handling for database connectivity and foreign key constraints
 - ✅ FIXED: Critical meal preservation issue - new food items now add to existing meals instead of replacing them
 - ✅ Removed automatic meal clearing from submitMealMutation in home.tsx
-- ✅ Updated toast message to clarify that meals remain for easy tracking after submission
+- ✅ Removed automatic meal clearing from MealSummary.tsx onSuccess callback
+- ✅ Updated toast messages to clarify that meals remain for easy tracking after submission
 
 **July 7, 2025 - UPDATED: iOS Subscription Pricing Structure for Competitive Market Position:**
 - UPDATED: Basic subscription plan pricing from $2.99 to $1.99 monthly for increased accessibility

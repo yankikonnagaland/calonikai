@@ -153,14 +153,6 @@ export default function MealSummary({
     onSuccess: async () => {
       const targetDate = selectedDate || new Date().toISOString().split('T')[0];
       
-      // First clear the meal for the specific date, then invalidate queries
-      try {
-        await apiRequest("DELETE", `/api/meal/clear/${sessionId}/${targetDate}`);
-        console.log("Meal cleared successfully after submission for date:", targetDate);
-      } catch (error) {
-        console.error("Error clearing meal after submission:", error);
-      }
-      
       // Invalidate all relevant queries to refresh the UI
       queryClient.invalidateQueries({ queryKey: [`/api/meal/${sessionId}/${targetDate}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/daily-summaries/${sessionId}`] });
@@ -169,7 +161,7 @@ export default function MealSummary({
       
       toast({
         title: "Success",
-        description: "Meal submitted and current meal cleared",
+        description: "Meal submitted successfully. Current meal items remain for easy tracking.",
       });
     },
     onError: (error: any) => {
