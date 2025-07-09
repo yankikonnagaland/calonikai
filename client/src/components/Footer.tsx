@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import calonikLogo from "@assets/Calonik Logo Icon 1_1752046956986.png";
 
 export default function Footer() {
   return (
@@ -7,11 +8,13 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand Section */}
           <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">C</span>
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <div className="flex items-center space-x-3 mb-4">
+              <img 
+                src={calonikLogo} 
+                alt="Calonik.ai Logo" 
+                className="w-10 h-10 object-contain"
+              />
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
                 Calonik.ai
               </span>
             </div>

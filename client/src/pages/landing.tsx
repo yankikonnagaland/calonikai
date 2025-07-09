@@ -1,5 +1,5 @@
 import { Apple, Camera, BarChart3, Crown, Check, Zap, LogIn, AlertTriangle, Copy, X } from "lucide-react";
-import calonikLogo from "@assets/CALONIK LOGO TRANSPARENT_1751559015747.png";
+import calonikLogo from "@assets/Calonik Logo Icon 1_1752046956986.png";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
