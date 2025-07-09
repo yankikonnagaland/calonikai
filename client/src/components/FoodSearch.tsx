@@ -14,41 +14,16 @@ import SubscriptionModal from "./SubscriptionModal";
 import { DailyLimitNotification } from "./DailyLimitNotification";
 import calonikLogo from "@assets/CALONIK LOGO TRANSPARENT_1751559015747.png";
 
-// AI Food Analysis Hook
-const useAIFoodAnalysis = () => {
-  const analyzeFood = useCallback(async (foodName: string): Promise<{
-    enhancedCategory: string;
-    smartUnit: string;
-    smartQuantity: number;
-    unitOptions: string[];
-    aiConfidence: number;
-    reasoning: string;
-  } | null> => {
-    try {
-      const response = await apiRequest("POST", "/api/ai-food-analysis", {
-        foodName: foodName
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        return {
-          enhancedCategory: data.category,
-          smartUnit: data.smartUnit,
-          smartQuantity: data.smartQuantity,
-          unitOptions: data.unitOptions,
-          aiConfidence: data.aiConfidence || 0.8, // Default confidence
-          reasoning: data.reasoning
-        };
-      }
-      
-      return null;
-    } catch (error) {
-      console.log("AI analysis unavailable, using local intelligence");
-      return null;
-    }
-  }, []);
-
-  return { analyzeFood };
+// Get unit options from enhanced search results or backend
+const getUnitOptions = async (foodName: string, category: string): Promise<string[]> => {
+  try {
+    const response = await apiRequest("GET", `/api/unit-selection/${encodeURIComponent(foodName.toLowerCase())}?category=${encodeURIComponent(category || '')}`);
+    const data = await response.json();
+    return data.unitOptions || ["serving"];
+  } catch (error) {
+    console.log("Unit options unavailable, using default");
+    return ["serving"];
+  }
 };
 
 interface FoodSearchProps {
@@ -70,15 +45,6 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchTrigger, setSearchTrigger] = useState(""); // Trigger for manual search
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const [aiAnalysis, setAiAnalysis] = useState<{
-    enhancedCategory: string;
-    smartUnit: string;
-    smartQuantity: number;
-    unitOptions: string[];
-    aiConfidence: number;
-    reasoning: string;
-  } | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showDailyLimitNotification, setShowDailyLimitNotification] = useState(false);
   
   const { toast } = useToast();
@@ -86,7 +52,6 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
   const queryClient = useQueryClient();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const suggestionTimeoutRef = useRef<NodeJS.Timeout>();
-  const { analyzeFood } = useAIFoodAnalysis();
 
   // Get user's daily usage stats
   const { data: usageStats } = useQuery({
@@ -227,29 +192,22 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     },
   });
 
-  const getIntelligentFoodSuggestion = async (food: Food) => {
+  // Simple function to get unit options from the server
+  const getUnitOptions = async (foodName: string, category: string = "") => {
     try {
-      const response = await fetch("/api/intelligent-food-analysis", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          foodName: food.name,
-          category: food.category || "",
-          calories: food.calories,
-          portionSize: food.portionSize
-        })
-      });
-      
+      const response = await fetch(`/api/unit-selection/${encodeURIComponent(foodName)}?category=${encodeURIComponent(category)}`);
       if (!response.ok) {
-        throw new Error("Failed to get intelligent food analysis");
+        throw new Error('Failed to fetch unit options');
       }
-      
-      return await response.json();
+      const data = await response.json();
+      return data.unitOptions || ["serving", "piece", "cup", "grams"];
     } catch (error) {
-      // Enhanced intelligent fallback based on food analysis
-      return getIntelligentUnits(food);
+      console.log("Unit options API failed:", error);
+      return ["serving", "piece", "cup", "grams"];
     }
   };
+
+
 
   const getIntelligentUnits = (food: Food) => {
     const name = food.name.toLowerCase();
@@ -631,65 +589,24 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       clearTimeout(suggestionTimeoutRef.current);
     }
     
-    // Set immediate default values using local intelligence for instant display
-    const localSuggestion = getIntelligentUnits(food);
-    
-    // Use enhanced portion data if available from AI detection
-    if ((food as any).smartUnit && (food as any).smartQuantity) {
-      console.log(`Using enhanced portion data for ${food.name}: ${(food as any).smartQuantity} ${(food as any).smartUnit}`);
-      setUnit((food as any).smartUnit);
-      setQuantity(1); // Always reset to 1
-      setUnitOptions([(food as any).smartUnit, ...localSuggestion.unitOptions.filter(opt => opt !== (food as any).smartUnit)]);
+    // Use enhanced search results unit options if available (from enhanced search API)
+    const enhancedFood = food as any;
+    if (enhancedFood.unitOptions && Array.isArray(enhancedFood.unitOptions)) {
+      setUnitOptions(enhancedFood.unitOptions);
+      setUnit(enhancedFood.defaultUnit || enhancedFood.unitOptions[0] || "serving");
     } else {
-      setUnit(localSuggestion.unit);
-      setQuantity(1); // Always reset to 1
-      setUnitOptions(localSuggestion.unitOptions);
-    }
-    
-    // Start AI analysis in the background for enhanced recommendations
-    setIsAnalyzing(true);
-    setAiAnalysis(null);
-    
-    try {
-      const aiResult = await analyzeFood(food.name);
-      if (aiResult) {
-        setAiAnalysis(aiResult);
-        console.log(`AI Enhanced Analysis for ${food.name}:`, aiResult);
-        
-        // Update unit options with AI suggestions if better than local
-        if (aiResult.aiConfidence > 0.7) {
-          setUnit(aiResult.smartUnit);
-          setQuantity(aiResult.smartQuantity);
-          setUnitOptions(aiResult.unitOptions);
-        }
+      // Fallback to backend unit selection
+      try {
+        const unitOptions = await getUnitOptions(food.name, food.category);
+        setUnitOptions(unitOptions);
+        setUnit(unitOptions[0] || "serving");
+      } catch (error) {
+        console.log("Unit selection failed, using default:", error);
+        setUnitOptions(["serving", "piece", "cup", "grams"]);
+        setUnit("serving");
       }
-    } catch (error) {
-      console.log("AI analysis failed, using local suggestions");
-    } finally {
-      setIsAnalyzing(false);
     }
-    
-    // Fetch backend unit options asynchronously (non-blocking for better UX)
-    fetch(`/api/unit-selection/${encodeURIComponent(food.name)}?category=${encodeURIComponent(food.category)}`)
-      .then(response => {
-        if (response.ok) {
-          return response.json();
-        }
-        throw new Error('Backend unit selection failed');
-      })
-      .then(unitData => {
-        // Only update if we don't have enhanced portion data already
-        if (!(food as any).smartUnit || !(food as any).smartQuantity) {
-          setUnitOptions(unitData.unitOptions);
-          setUnit(unitData.unit);
-        }
-      })
-      .catch(error => {
-        console.log("Backend unit selection failed, using local data:", error);
-        // Local data already set above - no action needed
-      });
-    
-  }, [onFoodSelect, analyzeFood]);
+  }, [onFoodSelect]);
 
   const handleInputFocus = () => {
     if (searchQuery.length > 0 && searchResults.length > 0) {
