@@ -155,9 +155,7 @@ export default function MealSummary({
       
       // Clear current meal items after submission - this clears the "Current Meal" section
       // but preserves the data in the daily summary for historical tracking
-      await apiRequest(`/api/meal/clear/${sessionId}/${targetDate}`, {
-        method: "POST",
-      });
+      await apiRequest("POST", `/api/meal/clear/${sessionId}/${targetDate}`);
       
       // Invalidate all relevant queries to refresh the UI with updated daily summary
       queryClient.invalidateQueries({ queryKey: [`/api/meal/${sessionId}/${targetDate}`] });

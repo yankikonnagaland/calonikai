@@ -129,9 +129,7 @@ export default function Home() {
 
       // Clear current meal items after submission - this clears the "Current Meal" section
       // but preserves the data in the daily summary for historical tracking
-      await apiRequest(`/api/meal/clear/${sessionId}/${selectedDateString}`, {
-        method: "POST",
-      });
+      await apiRequest("POST", `/api/meal/clear/${sessionId}/${selectedDateString}`);
     },
     onSuccess: () => {
       toast({
