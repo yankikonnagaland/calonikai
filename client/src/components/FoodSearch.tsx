@@ -659,7 +659,9 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
         // Update unit options with AI suggestions if better than local
         if (aiResult.aiConfidence > 0.7) {
           setUnit(aiResult.smartUnit);
-          setQuantity(aiResult.smartQuantity);
+          // Always keep quantity at 1 per user request
+          setQuantity(1);
+          setQuantityInput("1");
           setUnitOptions(aiResult.unitOptions);
         }
       }
@@ -1086,18 +1088,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100">{selectedFood.name}</h3>
-                <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                  {(selectedFood as any).realisticCalories ? (
-                    <>
-                      <span className="text-green-600 dark:text-green-400 font-bold">{(selectedFood as any).realisticCalories} cal</span> 
-                      <span className="text-gray-500"> for {(selectedFood as any).smartQuantity} {(selectedFood as any).smartUnit}</span>
-                      <br />
-                      <span className="text-xs">Base: {selectedFood.calories} cal per {selectedFood.portionSize}</span>
-                    </>
-                  ) : (
-                    <>Base: {selectedFood.calories} cal per {selectedFood.portionSize}</>
-                  )}
-                </div>
+                {/* Calorie calculation display removed per user request */}
               </div>
               <Badge variant="outline" className="bg-white/50">{selectedFood.category}</Badge>
             </div>
@@ -1284,44 +1275,8 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                   calculatedNutrition.totalGrams
                 );
                 
-                return (
-                  <div>
-                    <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Nutrition for {formatNutritionDisplay(quantity, unit, calculatedNutrition)}:
-                    </div>
-                    {!validation.isValid && (
-                      <div className="text-xs text-amber-600 dark:text-amber-400 mb-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded border">
-                        ⚠️ {validation.warning}
-                      </div>
-                    )}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      <div className="p-3 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 rounded-lg border border-blue-300 dark:border-blue-700">
-                        <div className="text-xl font-bold text-blue-700 dark:text-blue-300">
-                          {calculatedNutrition.calories}
-                        </div>
-                        <div className="text-xs font-medium text-blue-600 dark:text-blue-400">Calories</div>
-                      </div>
-                      <div className="p-3 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/40 dark:to-green-800/40 rounded-lg border border-green-300 dark:border-green-700">
-                        <div className="text-xl font-bold text-green-700 dark:text-green-300">
-                          {calculatedNutrition.protein}g
-                        </div>
-                        <div className="text-xs font-medium text-green-600 dark:text-green-400">Protein</div>
-                      </div>
-                      <div className="p-3 bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/40 dark:to-amber-800/40 rounded-lg border border-amber-300 dark:border-amber-700">
-                        <div className="text-xl font-bold text-amber-700 dark:text-amber-300">
-                          {calculatedNutrition.carbs}g
-                        </div>
-                        <div className="text-xs font-medium text-amber-600 dark:text-amber-400">Carbs</div>
-                      </div>
-                      <div className="p-3 bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/40 dark:to-red-800/40 rounded-lg border border-red-300 dark:border-red-700">
-                        <div className="text-xl font-bold text-red-700 dark:text-red-300">
-                          {calculatedNutrition.fat}g
-                        </div>
-                        <div className="text-xs font-medium text-red-600 dark:text-red-400">Fat</div>
-                      </div>
-                    </div>
-                  </div>
-                );
+                // Nutrition calculation display removed per user request
+                return null;
               })()}
             </div>
 
