@@ -1049,14 +1049,9 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                         </div>
                         <div className="text-xs text-muted-foreground mt-1">
                           <div className="flex items-center justify-between">
-                            {enhancedFood.realisticCalories ? (
-                              <span>
-                                <span className="font-medium text-green-600 dark:text-green-400">{enhancedFood.realisticCalories} cal</span> 
-                                <span className="text-gray-400 dark:text-gray-500"> ({enhancedFood.portionDisplay || enhancedFood.defaultUnit})</span> • {food.protein}g protein
-                              </span>
-                            ) : (
-                              <span>{food.calories} cal per 100g • {food.protein}g protein</span>
-                            )}
+                            <span>
+                              {food.protein}g protein
+                            </span>
                             <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full">
                               {enhancedFood.defaultUnit || enhancedFood.smartUnit || getIntelligentUnits(food).unit}
                             </span>
@@ -1086,9 +1081,6 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100">{selectedFood.name}</h3>
-                <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                  {selectedFood.calories} cal per {selectedFood.portionSize}
-                </div>
               </div>
               <Badge variant="outline" className="bg-white/50">{selectedFood.category}</Badge>
             </div>
