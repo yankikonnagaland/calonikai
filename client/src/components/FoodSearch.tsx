@@ -1,30 +1,15 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Plus, Sparkles } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Loader2, Search, Plus, Edit2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
-import type { Food } from "@shared/schema";
-import { calculateNutritionFromUnit, formatNutritionDisplay, validateCalorieCalculation, extractGramFromUnit } from "@shared/unitCalculations";
-import SubscriptionModal from "./SubscriptionModal";
-import { DailyLimitNotification } from "./DailyLimitNotification";
-import calonikLogo from "@assets/CALONIK LOGO TRANSPARENT_1751559015747.png";
-
-// Get unit options from enhanced search results or backend
-const getUnitOptions = async (foodName: string, category: string): Promise<string[]> => {
-  try {
-    const response = await apiRequest("GET", `/api/unit-selection/${encodeURIComponent(foodName.toLowerCase())}?category=${encodeURIComponent(category || '')}`);
-    const data = await response.json();
-    return data.unitOptions || ["serving"];
-  } catch (error) {
-    console.log("Unit options unavailable, using default");
-    return ["serving"];
-  }
-};
+import { Food } from "@shared/schema";
 
 interface FoodSearchProps {
   sessionId: string;
@@ -37,125 +22,102 @@ interface FoodSearchProps {
 
 export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMealAdded, onRedirectToDashboard, editingFood }: FoodSearchProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchTrigger, setSearchTrigger] = useState(""); // Separate trigger for search
+  const [searchResults, setSearchResults] = useState<Food[]>([]);
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [quantityInput, setQuantityInput] = useState("1"); // Temporary input state for editing
+  const [quantityInput, setQuantityInput] = useState("1");
   const [unit, setUnit] = useState("serving");
-  const [unitOptions, setUnitOptions] = useState<string[]>(["serving", "piece", "cup"]);
+  const [unitOptions, setUnitOptions] = useState<string[]>(["serving", "piece", "cup", "grams"]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [searchTrigger, setSearchTrigger] = useState(""); // Trigger for manual search
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const [showDailyLimitNotification, setShowDailyLimitNotification] = useState(false);
-  
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchStats, setSearchStats] = useState<any>(null);
+  const [isManualSearch, setIsManualSearch] = useState(false);
+  const suggestionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
-  const { user } = useAuth();
   const queryClient = useQueryClient();
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const suggestionTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Get user's daily usage stats
-  const { data: usageStats } = useQuery({
-    queryKey: ['/api/usage-stats'],
-    enabled: !!user,
-    refetchInterval: 5000, // Refresh every 5 seconds for real-time updates
-  });
-
-  // Handle manual search trigger
-  const handleSearch = () => {
-    if (searchQuery.trim().length > 0) {
-      setSearchTrigger(searchQuery.trim());
-      setShowSuggestions(true);
+  // Handle search functionality
+  const handleSearch = useCallback(async () => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setSearchStats(null);
+      return;
     }
-  };
 
-  // Handle Enter key press to trigger search
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
+    setIsLoading(true);
+    setSearchTrigger(searchQuery);
 
-  // Handle external food selection from parent (pencil button editing)
-  useEffect(() => {
-    if (onFoodSelect) {
-      onFoodSelect(selectedFood);
-    }
-  }, [onFoodSelect]);
-
-  // Handle editing food prop changes from parent component
-  useEffect(() => {
-    if (editingFood && editingFood.isEditing) {
-      // Pre-populate the form with editing data
-      setSearchQuery(editingFood.name || "");
-      setQuantity(editingFood.quantity || 1);
-      setUnit(editingFood.unit || "serving");
-      setShowSuggestions(false);
+    try {
+      const response = await fetch(`/api/enhanced-food-search?q=${encodeURIComponent(searchQuery.trim())}&sessionId=${sessionId}&userId=${sessionId}`);
       
-      // Set the selected food for the nutrition display
-      setSelectedFood(editingFood);
-      
-      // Focus the search input and select text for easy replacement
-      setTimeout(() => {
-        if (searchInputRef.current) {
-          searchInputRef.current.focus();
-          searchInputRef.current.select();
-        }
-      }, 200);
-    }
-  }, [editingFood]);
-
-  // Sync quantityInput with quantity state
-  useEffect(() => {
-    setQuantityInput(quantity.toString());
-  }, [quantity]);
-
-  const { data: rawSearchResults = [], isLoading: isSearching } = useQuery<Food[]>({
-    queryKey: [`/api/foods/enhanced-search`, searchTrigger],
-    queryFn: async () => {
-      console.log("Making enhanced search request for:", searchTrigger);
-      try {
-        const response = await apiRequest("GET", `/api/foods/enhanced-search?query=${encodeURIComponent(searchTrigger)}`);
-        
-        // Check if response indicates daily limit reached
+      if (!response.ok) {
         if (response.status === 429) {
-          setShowDailyLimitNotification(true);
-          throw new Error("Daily food search limit reached");
+          const data = await response.json();
+          toast({
+            title: "Search limit reached",
+            description: data.message || "You've reached your daily search limit. Please upgrade to continue.",
+            variant: "destructive",
+          });
+          return;
         }
-        
-        const results = await response.json();
-        console.log("Enhanced search results:", results);
-        
-        // Frontend deduplication as extra safety
-        const uniqueResults = results.filter((food: Food, index: number, self: Food[]) =>
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.searchResults && Array.isArray(data.searchResults)) {
+        // Remove duplicates based on name and calories
+        const uniqueResults = data.searchResults.filter((food: Food, index: number, self: Food[]) =>
           index === self.findIndex((f: Food) => 
             f.name.toLowerCase() === food.name.toLowerCase() && 
-            f.category === food.category
+            Math.abs(f.calories - food.calories) < 5
           )
         );
         
-        return uniqueResults;
-      } catch (error: any) {
-        if (error.message.includes("429") || error.message.includes("limit")) {
-          setShowDailyLimitNotification(true);
-        }
-        throw error;
+        setSearchResults(uniqueResults);
+        setSearchStats(data.searchStats || null);
+      } else {
+        setSearchResults([]);
+        setSearchStats(null);
       }
-    },
-    enabled: searchTrigger.length > 0,
-    retry: false, // Don't retry on limit errors
-  });
+    } catch (error) {
+      console.error("Search failed:", error);
+      setSearchResults([]);
+      setSearchStats(null);
+      toast({
+        title: "Search failed",
+        description: "Unable to search for foods. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchQuery, sessionId, toast]);
 
-  // Use deduplicated results
-  const searchResults = rawSearchResults;
+  // Handle manual search button click
+  const handleManualSearch = useCallback(() => {
+    if (searchQuery.trim()) {
+      setIsManualSearch(true);
+      handleSearch();
+    }
+  }, [searchQuery, handleSearch]);
 
-  // Automatically reset quantity to 1 and unit to first option after search results are displayed
+  // Handle Enter key press
+  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleManualSearch();
+    }
+  }, [handleManualSearch]);
+
+  // Auto-reset form after successful search
   useEffect(() => {
-    if (searchResults && searchResults.length > 0 && !editingFood?.isEditing) {
-      // Reset quantity to 1
+    if (searchResults.length > 0 && !editingFood?.isEditing) {
       setQuantity(1);
       setQuantityInput("1");
       
-      // Reset unit to first option from the first food item
+      // Set unit based on search results
       const firstFood = searchResults[0] as any; // Enhanced search results have unitOptions
       if (firstFood && firstFood.unitOptions && Array.isArray(firstFood.unitOptions) && firstFood.unitOptions.length > 0) {
         setUnit(firstFood.unitOptions[0]);
@@ -205,371 +167,6 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       console.log("Unit options API failed:", error);
       return ["serving", "piece", "cup", "grams"];
     }
-  };
-
-
-
-  const getIntelligentUnits = (food: Food) => {
-    const name = food.name.toLowerCase();
-    const category = food.category?.toLowerCase() || "";
-    
-    // === BEVERAGES ===
-    
-    // Water - zero calories
-    if (name.includes("water")) {
-      return {
-        unit: "glass (250ml)",
-        quantity: 1,
-        unitOptions: ["glass (250ml)", "bottle (500ml)", "bottle (1000ml)", "ml"],
-        reasoning: "Water is typically consumed in glasses or bottles"
-      };
-    }
-    
-    // Hot beverages - smaller servings
-    if (name.match(/\b(tea|coffee|chai|latte|cappuccino|espresso)\b/)) {
-      return {
-        unit: "cup (200ml)",
-        quantity: 1,
-        unitOptions: ["small cup (150ml)", "cup (200ml)", "cup (250ml)", "mug (300ml)", "large cup (400ml)", "shot (30ml)", "ml"],
-        reasoning: "Standard coffee/tea servings range from 150–300ml depending on type and café"
-      };
-    }
-    
-    // Cold beverages and soft drinks
-    if (name.match(/\b(juice|cola|soda|soft drink|coke|pepsi)\b/)) {
-      return {
-        unit: "glass (250ml)",
-        quantity: 1,
-        unitOptions: ["glass (250ml)", "can (330ml)", "bottle (500ml)", "bottle (600ml)", "ml"],
-        reasoning: "Cold drinks in glasses or cans/bottles"
-      };
-    }
-    
-    // Dairy beverages
-    if (name.match(/\b(milk|lassi|shake|smoothie|milkshake)\b/)) {
-      return {
-        unit: "glass (250ml)",
-        quantity: 1,
-        unitOptions: ["glass (200ml)", "glass (250ml)", "cup (300ml)", "large glass (400ml)", "ml"],
-        reasoning: "Dairy beverages typically served in glasses"
-      };
-    }
-    
-    // Beer
-    if (name.includes("beer")) {
-      return {
-        unit: "bottle (650ml)",
-        quantity: 1,
-        unitOptions: ["glass (250ml)", "can (330ml)", "bottle (500ml)", "bottle (650ml)", "pint (568ml)"],
-        reasoning: "Beer commonly served in bottles, 650ml is large bottle size"
-      };
-    }
-    
-    // Wine
-    if (name.includes("wine")) {
-      return {
-        unit: "glass (150ml)",
-        quantity: 1,
-        unitOptions: ["glass (150ml)", "glass (200ml)", "bottle (750ml)", "ml"],
-        reasoning: "Wine served in 150ml standard glasses"
-      };
-    }
-    
-    // Spirits
-    if (name.match(/\b(whiskey|vodka|rum|gin|spirit)\b/)) {
-      return {
-        unit: "shot (30ml)",
-        quantity: 1,
-        unitOptions: ["shot (30ml)", "double (60ml)", "ml"],
-        reasoning: "Spirits measured in 30ml shots"
-      };
-    }
-    
-    // 2. GRAINS & RICE DISHES - Enhanced with realistic portions
-    if (name.match(/\b(rice|biryani|pulao|pilaf|quinoa|oats|muesli|cereal|porridge|khichdi)\b/)) {
-      const isSpecialRice = name.match(/\b(biryani|pulao|pilaf)\b/);
-      return {
-        unit: isSpecialRice ? "medium portion (200g)" : "medium portion (150g)",
-        quantity: 1,
-        unitOptions: ["small portion (100g)", "medium portion (150g)", "large portion (200g)", "bowl", "cup", "grams"],
-        reasoning: isSpecialRice ? "Special rice dishes are served in larger 200g portions" : "Plain rice typically served in 150g portions"
-      };
-    }
-    
-    // 3. CURRIES & LIQUID DISHES - Enhanced with realistic portions
-    if (name.match(/\b(curry|dal|daal|soup|stew|gravy|sambhar|rasam|kadhi)\b/)) {
-      const isDal = name.match(/\b(dal|daal)\b/);
-      const isSoup = name.match(/\b(soup|rasam)\b/);
-      
-      if (isDal) {
-        return {
-          unit: "medium bowl (200g)",
-          quantity: 1,
-          unitOptions: ["small bowl (150g)", "medium bowl (200g)", "large bowl (300g)", "grams"],
-          reasoning: "Dal is typically served in 200g portions as main accompaniment"
-        };
-      } else if (isSoup) {
-        return {
-          unit: "bowl (250ml)",
-          quantity: 1,
-          unitOptions: ["small bowl (200ml)", "bowl (250ml)", "large bowl (350ml)", "grams"],
-          reasoning: "Soups are liquid-based, measured in ml portions"
-        };
-      } else {
-        return {
-          unit: "serving (150g)",
-          quantity: 1,
-          unitOptions: ["small serving (100g)", "serving (150g)", "large serving (200g)", "grams"],
-          reasoning: "Curries are typically served in 150g portions with rice"
-        };
-      }
-    }
-    
-    // 4. BREAD & FLATBREADS - Enhanced with realistic sizes
-    if (name.match(/\b(roti|chapati|naan|bread|toast|paratha|puri|kulcha|dosa|uttapam|idli|vada)\b/)) {
-      if (name.match(/\b(roti|chapati)\b/)) {
-        return {
-          unit: "medium roti (50g)",
-          quantity: 1,
-          unitOptions: ["small roti (35g)", "medium roti (50g)", "large roti (70g)"],
-          reasoning: "Rotis are typically eaten 2 at a time, medium size is 50g each"
-        };
-      } else if (name.match(/\b(naan|paratha)\b/)) {
-        return {
-          unit: "piece (80g)",
-          quantity: 1,
-          unitOptions: ["small (60g)", "piece (80g)", "large (100g)"],
-          reasoning: "Naan and paratha are larger, typically 80g each"
-        };
-      } else if (name.match(/\b(idli|vada)\b/)) {
-        return {
-          unit: "piece (30g)",
-          quantity: 1,
-          unitOptions: ["piece (30g)", "small (25g)", "large (40g)"],
-          reasoning: "Idli/vada are small, typically served 3 pieces (30g each)"
-        };
-      } else if (name.match(/\b(dosa|uttapam)\b/)) {
-        return {
-          unit: "piece (100g)",
-          quantity: 1,
-          unitOptions: ["small (80g)", "piece (100g)", "large (120g)"],
-          reasoning: "Dosas are large, typically 100g each"
-        };
-      } else {
-        return {
-          unit: "slice (25g)",
-          quantity: 1,
-          unitOptions: ["slice (25g)", "piece", "small", "medium"],
-          reasoning: "Bread slices are typically 25g each, eaten 2 at a time"
-        };
-      }
-    }
-    
-    // 5. FRUITS - Enhanced with realistic weights
-    if (category.includes("fruit") || 
-        name.match(/\b(apple|banana|orange|mango|grapes|strawberry|pineapple|watermelon|papaya|guava|pomegranate)\b/)) {
-      // Whole fruits vs cut fruits
-      if (name.includes("slice") || name.includes("chopped") || name.includes("cut")) {
-        return {
-          unit: "cup (150g)",
-          quantity: 1,
-          unitOptions: ["cup (150g)", "bowl (200g)", "serving (100g)"],
-          reasoning: "Cut fruits measured by volume, 150g per cup"
-        };
-      } else {
-        // Specific fruit weights
-        if (name.includes("apple") || name.includes("orange")) {
-          return {
-            unit: "piece (180g)",
-            quantity: 1,
-            unitOptions: ["small (120g)", "piece (180g)", "large (250g)"],
-            reasoning: "Medium apple/orange weighs about 180g"
-          };
-        } else if (name.includes("banana")) {
-          return {
-            unit: "piece (120g)",
-            quantity: 1,
-            unitOptions: ["small (80g)", "piece (120g)", "large (150g)"],
-            reasoning: "Medium banana weighs about 120g"
-          };
-        } else if (name.includes("mango")) {
-          return {
-            unit: "piece (200g)",
-            quantity: 1,
-            unitOptions: ["small (150g)", "piece (200g)", "large (300g)"],
-            reasoning: "Medium mango weighs about 200g"
-          };
-        } else {
-          return {
-            unit: "piece (150g)",
-            quantity: 1,
-            unitOptions: ["small (100g)", "piece (150g)", "large (200g)"],
-            reasoning: "Medium fruit weighs about 150g"
-          };
-        }
-      }
-    }
-    
-    // 6. VEGETABLES - Enhanced with realistic portions
-    if (category.includes("vegetable") || 
-        name.match(/\b(potato|onion|tomato|carrot|spinach|cabbage|peas|beans|cauliflower|broccoli)\b/)) {
-      
-      // Leafy vegetables
-      if (name.match(/\b(spinach|cabbage|lettuce|kale)\b/)) {
-        return {
-          unit: "cup (100g)",
-          quantity: 1,
-          unitOptions: ["cup (100g)", "handful (50g)", "large portion (150g)"],
-          reasoning: "Leafy vegetables measured by volume, 100g per cup"
-        };
-      }
-      
-      // Root vegetables
-      if (name.match(/\b(potato|onion|carrot|radish|beetroot)\b/)) {
-        return {
-          unit: "medium (100g)",
-          quantity: 1,
-          unitOptions: ["small (50g)", "medium (100g)", "large (150g)", "pieces"],
-          reasoning: "Root vegetables vary in size, medium is about 100g"
-        };
-      }
-      
-      return {
-        unit: "serving (100g)",
-        quantity: 1,
-        unitOptions: ["small serving (50g)", "serving (100g)", "large serving (150g)"],
-        reasoning: "Standard vegetable serving is 100g"
-      };
-    }
-    
-    // 7. PROTEIN FOODS - Enhanced with realistic portions
-    if (name.match(/\b(chicken|mutton|beef|pork|fish|paneer|egg|tofu)\b/)) {
-      
-      if (name.match(/\b(egg|omelette)\b/)) {
-        return {
-          unit: "piece (50g)",
-          quantity: 1,
-          unitOptions: ["1 piece (50g)", "2 pieces (100g)", "3 pieces (150g)"],
-          reasoning: "Eggs are typically eaten 1-2 at a time, 50g each"
-        };
-      }
-      
-      if (name.includes("paneer") || name.includes("tofu")) {
-        return {
-          unit: "medium portion (100g)",
-          quantity: 1,
-          unitOptions: ["small portion (50g)", "medium portion (100g)", "large portion (150g)"],
-          reasoning: "Paneer/tofu typically served in 100g portions"
-        };
-      }
-      
-      // Meat dishes
-      return {
-        unit: "medium portion (120g)",
-        quantity: 1,
-        unitOptions: ["small portion (80g)", "medium portion (120g)", "large portion (180g)", "piece"],
-        reasoning: "Meat dishes typically served in 120g portions"
-      };
-    }
-    
-    // 8. PASTA & NOODLES - Enhanced with realistic portions
-    if (name.match(/\b(pasta|noodles|spaghetti|macaroni|maggi|ramen|hakka)\b/)) {
-      return {
-        unit: "medium portion (150g)",
-        quantity: 1,
-        unitOptions: ["small portion (100g)", "medium portion (150g)", "large portion (200g)", "bowl"],
-        reasoning: "Pasta/noodles typically served in 150g cooked portions"
-      };
-    }
-    
-    // 9. SNACKS & SWEETS - Enhanced with realistic portions
-    if (name.match(/\b(samosa|pakora|vada|bhaji|sweet|laddu|barfi|halwa)\b/)) {
-      
-      if (name.match(/\b(sweet|laddu|barfi|halwa)\b/)) {
-        return {
-          unit: "piece (30g)",
-          quantity: 1,
-          unitOptions: ["1 piece (30g)", "2 pieces (60g)", "small portion (50g)", "medium portion (80g)"],
-          reasoning: "Traditional sweets are small, typically 30g each"
-        };
-      }
-      
-      // Fried snacks
-      return {
-        unit: "piece (40g)",
-        quantity: 1,
-        unitOptions: ["1 piece (40g)", "2 pieces (80g)", "3 pieces (120g)", "pieces"],
-        reasoning: "Fried snacks like samosa/pakora are about 40g each"
-      };
-    }
-    
-    // 10. NUTS & DRY FRUITS - Enhanced with pieces and realistic portions
-    if (name.match(/\b(almond|cashew|walnut|peanut|raisin|dates|nuts)\b/)) {
-      // Individual nuts - default to pieces
-      if (name.match(/\b(almond|cashew|walnut|peanut)\b/)) {
-        return {
-          unit: "pieces",
-          quantity: 10,
-          unitOptions: ["pieces", "handful (30g)", "small handful (15g)", "large handful (45g)", "grams"],
-          reasoning: "Individual nuts typically counted in pieces, about 10 pieces = 1 serving"
-        };
-      }
-      
-      // Dried fruits and mixed nuts - default to handful
-      return {
-        unit: "handful (30g)",
-        quantity: 1,
-        unitOptions: ["handful (30g)", "small handful (15g)", "large handful (45g)", "tablespoon (10g)", "pieces"],
-        reasoning: "Dried fruits typically consumed in handfuls, about 30g"
-      };
-    }
-    
-    // 11. FAST FOOD - Enhanced with realistic portions
-    if (name.match(/\b(burger|sandwich|pizza|wrap|roll)\b/)) {
-      
-      if (name.includes("pizza")) {
-        return {
-          unit: "slice (80g)",
-          quantity: 1,
-          unitOptions: ["1 slice (80g)", "2 slices (160g)", "3 slices (240g)", "slices"],
-          reasoning: "Pizza slices are about 80g each, typically eaten 2 slices"
-        };
-      }
-      
-      if (name.includes("burger")) {
-        return {
-          unit: "medium (180g)",
-          quantity: 1,
-          unitOptions: ["small (120g)", "medium (180g)", "large (250g)", "pieces"],
-          reasoning: "Medium burger weighs about 180g"
-        };
-      }
-      
-      return {
-        unit: "piece (150g)",
-        quantity: 1,
-        unitOptions: ["small (100g)", "piece (150g)", "large (200g)"],
-        reasoning: "Sandwiches/wraps typically weigh 150g"
-      };
-    }
-    
-    // 12. CHIPS & PACKAGED SNACKS
-    if (name.match(/\b(chips|biscuit|cookie|wafer|namkeen)\b/)) {
-      return {
-        unit: "small pack (30g)",
-        quantity: 1,
-        unitOptions: ["small pack (30g)", "medium pack (50g)", "large pack (80g)", "piece"],
-        reasoning: "Packaged snacks come in standard pack sizes"
-      };
-    }
-    
-    // === DEFAULT ===
-    return {
-      unit: "medium (100g)",
-      quantity: 1,
-      unitOptions: ["small (80g)", "medium (100g)", "large (150g)", "grams", "pieces"],
-      reasoning: "Standard serving size for most foods"
-    };
   };
 
   const handleFoodSelect = useCallback(async (food: Food) => {
@@ -764,226 +361,129 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
         else if (name.includes("peanut")) multiplier = 0.008; // ~0.8g per peanut
         else if (name.includes("walnut")) multiplier = 0.025; // ~2.5g per walnut half
         else multiplier = 0.015; // Default for mixed nuts
-        console.log(`Nuts piece calculation for ${name}: using multiplier ${multiplier} (should be ~${Math.round(food.calories * multiplier)} cal per piece)`);
-        return multiplier; // Return immediately to avoid other calculations overriding
+        console.log(`Nuts piece calculation for ${name}: using multiplier ${multiplier} (should be ~${Math.round(multiplier * food.calories)} cal)`);
       }
-      // Handful calculations already handled by weight extraction above
-    }
-
-    // MEAT & PROTEIN - Enhanced piece-based calculations for consistent portioning
-    if (name.match(/\b(chicken|mutton|fish|beef|pork|lamb|turkey|duck)\b/) && unitLower.includes("piece")) {
-      // Meat pieces should be realistic portions - not too large or too small
-      if (name.includes("chicken")) multiplier = 0.8; // Chicken piece ~80g
-      else if (name.includes("fish")) multiplier = 1.0; // Fish piece ~100g
-      else if (name.includes("pork")) multiplier = 0.75; // Pork piece ~75g  
-      else if (name.includes("beef")) multiplier = 0.9; // Beef piece ~90g
-      else multiplier = 0.75; // Default meat piece ~75g
-      console.log(`Meat piece calculation for ${name}: using multiplier ${multiplier} (should be ~${Math.round(food.calories * multiplier)} cal per piece)`);
-      return multiplier;
     }
     
-    console.log(`Unit multiplier for ${name} - ${unit}: ${multiplier}`);
-    return Math.max(0.01, multiplier); // Ensure minimum multiplier
+    console.log(`Final multiplier for ${name} - ${unit}: ${multiplier}`);
+    return multiplier;
   };
 
-  const handleAddToMeal = () => {
+  // Calculate nutrition values based on quantity and unit
+  const calculateNutrition = (baseValue: number, quantity: number, unit: string, food: Food) => {
+    const multiplier = getUnitMultiplier(unit, food);
+    const result = baseValue * multiplier * quantity;
+    console.log(`Nutrition calculation: ${baseValue} × ${multiplier} × ${quantity} = ${result}`);
+    return Math.round(result * 10) / 10; // Round to 1 decimal place
+  };
+
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setQuantityInput(value);
+    
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue) && numValue > 0) {
+      setQuantity(numValue);
+    }
+  };
+
+  const handleAddToMeal = async () => {
     if (!selectedFood) return;
     
-    // Calculate the exact nutrition shown in the food search display
-    const basePer100g = (() => {
-      if ((selectedFood as any).smartCalories && (selectedFood as any).smartProtein) {
-        return {
-          calories: (selectedFood as any).smartCalories,
-          protein: (selectedFood as any).smartProtein,
-          carbs: (selectedFood as any).smartCarbs,
-          fat: (selectedFood as any).smartFat
-        };
-      } else {
-        return {
-          calories: selectedFood.calories,
-          protein: selectedFood.protein,
-          carbs: selectedFood.carbs,
-          fat: selectedFood.fat
-        };
-      }
-    })();
-    
-    const calculatedNutrition = calculateNutritionFromUnit(
-      selectedFood.name,
-      unit,
-      quantity,
-      basePer100g
-    );
-    
-    const mealItemData = {
+    const mealItem = {
       foodId: selectedFood.id,
-      quantity: Math.max(0.1, Math.round(quantity * 10) / 10),
-      unit,
-      sessionId,
-      date: selectedDate || new Date().toISOString().split('T')[0],
-      // Include food name for AI-generated foods (ID -1 or > 9000000) to preserve original name
-      ...((selectedFood.id === -1 || selectedFood.id > 9000000) && { foodName: selectedFood.name }),
-      // Pass the exact calories and nutrition from the search display
-      frontendCalories: calculatedNutrition.calories,
-      frontendProtein: calculatedNutrition.protein,
-      frontendCarbs: calculatedNutrition.carbs,
-      frontendFat: calculatedNutrition.fat,
-      frontendTotalGrams: calculatedNutrition.totalGrams,
+      quantity: quantity,
+      unit: unit,
+      sessionId: sessionId,
+      foodName: selectedFood.name,
+      date: selectedDate || new Date().toISOString().split('T')[0]
     };
     
-    console.log("FoodSearch: Current unit value:", unit);
-    console.log("FoodSearch: Calculated nutrition:", calculatedNutrition);
-    console.log("FoodSearch: Complete meal item data:", mealItemData);
-    console.log("FoodSearch: Sending meal item:", mealItemData);
-    
-    addMealMutation.mutate(mealItemData);
-    
-    // Clear selection after adding
-    setSelectedFood(null);
-    onFoodSelect(null);
-    setQuantity(1);
-    setUnit("serving");
+    addMealMutation.mutate(mealItem);
   };
 
-  const shouldShowSuggestions = showSuggestions && searchTrigger.length > 0 && searchResults.length > 0;
-  
-  console.log("Search debug:", {
-    searchQuery,
-    searchTrigger,
-    showSuggestions,
-    searchResultsLength: searchResults.length,
-    shouldShowSuggestions
-  });
+  const nutritionDisplay = selectedFood ? {
+    calories: calculateNutrition(selectedFood.calories, quantity, unit, selectedFood),
+    protein: calculateNutrition(selectedFood.protein, quantity, unit, selectedFood),
+    carbs: calculateNutrition(selectedFood.carbs, quantity, unit, selectedFood),
+    fat: calculateNutrition(selectedFood.fat, quantity, unit, selectedFood),
+  } : null;
 
   return (
     <Card className="search-container" data-food-search-card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Search className="h-5 w-5" />
-            Food Search
-          </div>
-          {user && usageStats && (
-            <Badge
-              variant="outline"
-              className="ml-auto text-xs border-purple-300 bg-[#1b2027]"
-            >
-              {usageStats.remaining?.meals || 0} credits left
+          <span className="flex items-center gap-2">
+            <Search className="w-5 h-5" />
+            Search Foods
+          </span>
+          {editingFood?.isEditing && (
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <Edit2 className="w-3 h-3" />
+              Editing
             </Badge>
           )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="relative flex gap-2">
-          <Input
-            ref={searchInputRef}
-            type="text"
-            placeholder="Search for food..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              // Suggestions will be shown via useEffect when results come in
-            }}
-            onFocus={handleInputFocus}
-            onBlur={handleInputBlur}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                handleSearch();
-              }
-            }}
-            className="flex-1"
-          />
-          <Button
-            onClick={handleSearch}
-            disabled={!searchQuery.trim() || isSearching}
-            variant="default"
-            size="sm"
-            className="px-4 whitespace-nowrap"
-          >
-            {isSearching ? (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                <span>Searching...</span>
-              </div>
-            ) : (
-              "Search"
-            )}
-          </Button>
-
-          
-          {shouldShowSuggestions && (
-            <div 
-              className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto"
-              onMouseDown={(e) => e.preventDefault()} // Prevent input blur when clicking
+        {/* Search Input */}
+        <div className="relative">
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              placeholder="Search for food items..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
+              onKeyPress={handleKeyPress}
+              className="flex-1"
+            />
+            <Button 
+              onClick={handleManualSearch}
+              disabled={!searchQuery.trim() || isLoading}
+              className="px-4"
             >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Search className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
+          
+          {/* Search Results Dropdown */}
+          {showSuggestions && searchTrigger.length > 0 && searchResults.length > 0 && (
+            <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border rounded-md shadow-lg max-h-60 overflow-y-auto">
               {searchResults.map((food: Food, index) => {
                 const enhancedFood = food as any;
-                const isAiFood = enhancedFood.aiGenerated || food.id === -1 || food.name.includes("(Not Found)");
-                const accuracy = enhancedFood.accuracyBadge || enhancedFood.accuracy || 'medium';
-                const source = enhancedFood.sourceBadge || enhancedFood.source || 'database';
-                const isVerified = enhancedFood.isVerified;
                 
                 return (
                   <div
                     key={`${food.id}-${index}`}
-                    className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border-b last:border-b-0 transition-colors"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      handleFoodSelect(food);
-                    }}
+                    className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b last:border-b-0"
+                    onClick={() => handleFoodSelect(food)}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{food.name}</span>
-                          {/* Accuracy Badge */}
-                          {accuracy === 'high' && (
-                            <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-1 rounded-full font-medium">
-                              ✓ High Accuracy
-                            </span>
-                          )}
-                          {accuracy === 'medium' && (
-                            <span className="text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 px-2 py-1 rounded-full font-medium">
-                              ~ Medium
-                            </span>
-                          )}
-                          {accuracy === 'low' && (
-                            <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-2 py-1 rounded-full font-medium">
-                              ! Review Needed
-                            </span>
-                          )}
-                          {/* Source Badge */}
-                          {source === 'standard' && (
-                            <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full font-medium">
-                              📊 Standardized
-                            </span>
-                          )}
-                          {isVerified && (
-                            <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-1 rounded-full font-medium">
-                              ✅ Verified
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          <div className="flex items-center justify-between">
-                            <span>
-                              {food.protein}g protein
-                            </span>
-                            <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full">
-                              {enhancedFood.defaultUnit || enhancedFood.smartUnit || getIntelligentUnits(food).unit}
-                            </span>
-                          </div>
-                          <div className="mt-1 flex items-center gap-1">
-                            <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded-full">
+                        <div className="font-medium text-sm">{food.name}</div>
+                        <div className="text-xs text-gray-500">
+                          {Math.round(food.calories)} cal
+                          {food.category && (
+                            <Badge variant="outline" className="ml-2 text-xs">
                               {food.category}
-                            </span>
-                            {enhancedFood.gramEquivalent && (
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                • {enhancedFood.gramEquivalent}
-                              </span>
-                            )}
-                          </div>
+                            </Badge>
+                          )}
                         </div>
+                      </div>
+                      <div className="text-right">
+                        {enhancedFood.accuracy && (
+                          <div className="text-xs">
+                            {enhancedFood.accuracy === 'high' && <Badge className="bg-green-100 text-green-800">✅ Verified</Badge>}
+                            {enhancedFood.accuracy === 'medium' && <Badge className="bg-yellow-100 text-yellow-800">📊 Database</Badge>}
+                            {enhancedFood.accuracy === 'low' && <Badge className="bg-blue-100 text-blue-800">🤖 AI-Generated</Badge>}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -993,223 +493,85 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
           )}
         </div>
 
+        {/* Food Selection Form */}
         {selectedFood && (
-          <div className="p-5 bg-gradient-to-br from-blue-50 to-green-50 dark:from-blue-950/20 dark:to-green-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100">{selectedFood.name}</h3>
-              </div>
-              <Badge variant="outline" className="bg-white/50">{selectedFood.category}</Badge>
+          <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold">{selectedFood.name}</h3>
+              <Badge variant="outline">{selectedFood.category}</Badge>
             </div>
             
-            {/* AI Analysis Display */}
-            {isAnalyzing && (
-              <div className="mb-4 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-md border border-purple-200 dark:border-purple-800">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="w-4 h-4 text-purple-500 animate-pulse" />
-                  <span className="text-sm font-medium text-purple-700 dark:text-purple-300">AI Analysis in progress...</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="quantity">Quantity</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  value={quantityInput}
+                  onChange={handleQuantityChange}
+                  min="0.1"
+                  step="0.1"
+                  className="mt-1"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="unit">Unit</Label>
+                <Select value={unit} onValueChange={setUnit}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {unitOptions.map((option) => (
+                      <SelectItem key={option} value={option}>{option}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            {/* Nutrition Display */}
+            {nutritionDisplay && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="bg-white dark:bg-gray-800 p-3 rounded">
+                  <div className="font-semibold text-orange-600">{nutritionDisplay.calories}</div>
+                  <div className="text-gray-600">Calories</div>
                 </div>
-                <div className="text-xs text-purple-600 dark:text-purple-400">
-                  Analyzing food category and optimal serving suggestions
+                <div className="bg-white dark:bg-gray-800 p-3 rounded">
+                  <div className="font-semibold text-blue-600">{nutritionDisplay.protein}g</div>
+                  <div className="text-gray-600">Protein</div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 p-3 rounded">
+                  <div className="font-semibold text-green-600">{nutritionDisplay.carbs}g</div>
+                  <div className="text-gray-600">Carbs</div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 p-3 rounded">
+                  <div className="font-semibold text-purple-600">{nutritionDisplay.fat}g</div>
+                  <div className="text-gray-600">Fat</div>
                 </div>
               </div>
             )}
             
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">
-                  Quantity
-                </label>
-                <Input
-                  type="text"
-                  value={quantityInput}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    // Allow empty string or valid numbers
-                    if (value === "" || /^\d*\.?\d*$/.test(value)) {
-                      setQuantityInput(value);
-                      
-                      // Update quantity state only for valid non-empty values
-                      if (value !== "") {
-                        const numValue = parseFloat(value);
-                        if (!isNaN(numValue) && numValue > 0) {
-                          if (unit.toLowerCase().includes("piece")) {
-                            setQuantity(Math.round(numValue));
-                          } else {
-                            setQuantity(numValue);
-                          }
-                        }
-                      }
-                    }
-                  }}
-                  onFocus={(e) => {
-                    e.target.select(); // Select all text for easy replacement
-                  }}
-                  onBlur={(e) => {
-                    const value = e.target.value;
-                    if (value === "" || isNaN(parseFloat(value)) || parseFloat(value) <= 0) {
-                      // Reset to 1 if empty or invalid
-                      setQuantityInput("1");
-                      setQuantity(1);
-                    } else {
-                      const numValue = parseFloat(value);
-                      if (unit.toLowerCase().includes("piece")) {
-                        const roundedValue = Math.round(numValue);
-                        setQuantityInput(roundedValue.toString());
-                        setQuantity(roundedValue);
-                      } else {
-                        setQuantityInput(numValue.toString());
-                        setQuantity(numValue);
-                      }
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    // Prevent non-numeric characters except backspace, delete, arrow keys, etc.
-                    if (!/[\d\.\-]/.test(e.key) && 
-                        !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key) &&
-                        !(e.ctrlKey || e.metaKey)) {
-                      e.preventDefault();
-                    }
-                  }}
-                  className="mt-1 bg-white dark:bg-gray-800 text-lg font-semibold h-12 text-center"
-                  placeholder="1"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 block">
-                  Unit
-                </label>
-                <select
-                  value={unit}
-                  onChange={(e) => setUnit(e.target.value)}
-                  className="w-full mt-1 px-3 py-2 h-12 border border-input rounded-md bg-white dark:bg-gray-800 text-lg font-semibold focus:ring-2 focus:ring-blue-500 transition-all"
-                >
-                  {unitOptions.map(option => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Accurate Nutrition Display with Gram Equivalent */}
-            <div className="mb-4">
-              {(() => {
-                // Calculate per-100g values from smart portion data if available
-                let basePer100g = {
-                  calories: selectedFood.calories || 0,
-                  protein: selectedFood.protein || 0,
-                  carbs: selectedFood.carbs || 0,
-                  fat: selectedFood.fat || 0
-                };
-                
-                // Always use the original per-100g values from database
-                // Smart portion data is for display purposes only, not for recalculating base values
-                const hasRealisticData = (selectedFood as any).realisticCalories !== undefined;
-                if (hasRealisticData) {
-                  const smartUnit = (selectedFood as any).smartUnit;
-                  const smartGrams = smartUnit ? extractGramFromUnit(smartUnit) || 70 : 70;
-                  const smartCalories = (selectedFood as any).realisticCalories || 0;
-                  
-                  console.log(`Smart portion calculation for ${selectedFood.name}:`, {
-                    smartGrams,
-                    smartCalories,
-                    calculatedPer100g: basePer100g,
-                    originalPer100g: {
-                      calories: selectedFood.calories,
-                      protein: selectedFood.protein,
-                      carbs: selectedFood.carbs,
-                      fat: selectedFood.fat
-                    }
-                  });
-                }
-                
-                const calculatedNutrition = calculateNutritionFromUnit(
-                  selectedFood.name,
-                  unit,
-                  quantity,
-                  basePer100g
-                );
-                
-                const validation = validateCalorieCalculation(
-                  selectedFood.name,
-                  calculatedNutrition.calories,
-                  calculatedNutrition.totalGrams
-                );
-                
-                return (
-                  <div>
-                    <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Nutrition for {formatNutritionDisplay(quantity, unit, calculatedNutrition)}:
-                    </div>
-                    {!validation.isValid && (
-                      <div className="text-xs text-amber-600 dark:text-amber-400 mb-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded border">
-                        ⚠️ {validation.warning}
-                      </div>
-                    )}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      <div className="p-3 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 rounded-lg border border-blue-300 dark:border-blue-700">
-                        <div className="text-xl font-bold text-blue-700 dark:text-blue-300">
-                          {calculatedNutrition.calories}
-                        </div>
-                        <div className="text-xs font-medium text-blue-600 dark:text-blue-400">Calories</div>
-                      </div>
-                      <div className="p-3 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/40 dark:to-green-800/40 rounded-lg border border-green-300 dark:border-green-700">
-                        <div className="text-xl font-bold text-green-700 dark:text-green-300">
-                          {calculatedNutrition.protein}g
-                        </div>
-                        <div className="text-xs font-medium text-green-600 dark:text-green-400">Protein</div>
-                      </div>
-                      <div className="p-3 bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/40 dark:to-amber-800/40 rounded-lg border border-amber-300 dark:border-amber-700">
-                        <div className="text-xl font-bold text-amber-700 dark:text-amber-300">
-                          {calculatedNutrition.carbs}g
-                        </div>
-                        <div className="text-xs font-medium text-amber-600 dark:text-amber-400">Carbs</div>
-                      </div>
-                      <div className="p-3 bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/40 dark:to-red-800/40 rounded-lg border border-red-300 dark:border-red-700">
-                        <div className="text-xl font-bold text-red-700 dark:text-red-300">
-                          {calculatedNutrition.fat}g
-                        </div>
-                        <div className="text-xs font-medium text-red-600 dark:text-red-400">Fat</div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-
             <Button 
-              onClick={handleAddToMeal} 
-              className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-all duration-200" 
+              onClick={handleAddToMeal}
               disabled={addMealMutation.isPending}
+              className="w-full"
             >
               {addMealMutation.isPending ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Adding to Meal...
-                </div>
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Adding...
+                </>
               ) : (
-                <div className="flex items-center gap-2">
-                  <Plus className="w-4 h-4" />
-                  Add {quantity} {unit} to Meal
-                </div>
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add to Meal
+                </>
               )}
             </Button>
           </div>
         )}
       </CardContent>
-      
-      {/* Daily Limit Notification */}
-      <DailyLimitNotification
-        show={showDailyLimitNotification}
-        message="Daily food search limit reached."
-        onDismiss={() => setShowDailyLimitNotification(false)}
-      />
-      
-      {/* Subscription Modal */}
-      <SubscriptionModal
-        isOpen={showSubscriptionModal}
-        onClose={() => setShowSubscriptionModal(false)}
-      />
     </Card>
   );
 }
