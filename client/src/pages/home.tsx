@@ -127,15 +127,13 @@ export default function Home() {
         },
       });
 
-      // Clear the meal after submission
-      await apiRequest(`/api/meal/clear/${sessionId}/${selectedDateString}`, {
-        method: "POST",
-      });
+      // DO NOT clear meals after submission - preserve all meal data
+      // Meals should remain visible in today's nutrition summary
     },
     onSuccess: () => {
       toast({
         title: "Meal Submitted!",
-        description: `Your meal has been added to ${format(selectedDate, 'MMM dd, yyyy')}'s summary.`,
+        description: `Your meal has been added to ${format(selectedDate, 'MMM dd, yyyy')}'s summary. All food items remain visible.`,
       });
       queryClient.invalidateQueries({ queryKey: [`/api/meal/${sessionId}/${selectedDateString}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/daily-summary/${sessionId}/${selectedDateString}`] });
