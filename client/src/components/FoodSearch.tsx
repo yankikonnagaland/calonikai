@@ -1087,7 +1087,24 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
               <div>
                 <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100">{selectedFood.name}</h3>
                 <div className="text-sm font-medium text-blue-600 dark:text-blue-400 mt-1">
-                  {selectedFood.calories} calories per 100g
+                  {(() => {
+                    // Calculate calories based on current quantity and unit
+                    const basePer100g = {
+                      calories: selectedFood.calories,
+                      protein: selectedFood.protein,
+                      carbs: selectedFood.carbs,
+                      fat: selectedFood.fat
+                    };
+                    
+                    const calculatedNutrition = calculateNutritionFromUnit(
+                      selectedFood.name,
+                      unit,
+                      quantity,
+                      basePer100g
+                    );
+                    
+                    return `${Math.round(calculatedNutrition.calories)} calories`;
+                  })()}
                 </div>
               </div>
               <Badge variant="outline" className="bg-white/50">{selectedFood.category}</Badge>
