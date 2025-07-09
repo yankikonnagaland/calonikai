@@ -153,8 +153,11 @@ export default function MealSummary({
     onSuccess: async () => {
       const targetDate = selectedDate || new Date().toISOString().split('T')[0];
       
-      // DO NOT clear meals after submission - preserve all meal data
-      // The meal data should remain visible in the nutrition summary
+      // Clear current meal items after submission - this clears the "Current Meal" section
+      // but preserves the data in the daily summary for historical tracking
+      await apiRequest(`/api/meal/clear/${sessionId}/${targetDate}`, {
+        method: "POST",
+      });
       
       // Invalidate all relevant queries to refresh the UI with updated daily summary
       queryClient.invalidateQueries({ queryKey: [`/api/meal/${sessionId}/${targetDate}`] });
@@ -164,7 +167,7 @@ export default function MealSummary({
       
       toast({
         title: "Success",
-        description: "Meal submitted successfully! Your food items remain in today's summary.",
+        description: "Meal submitted successfully! Current meal cleared.",
       });
     },
     onError: (error: any) => {

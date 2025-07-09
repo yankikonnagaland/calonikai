@@ -127,13 +127,16 @@ export default function Home() {
         },
       });
 
-      // DO NOT clear meals after submission - preserve all meal data
-      // Meals should remain visible in today's nutrition summary
+      // Clear current meal items after submission - this clears the "Current Meal" section
+      // but preserves the data in the daily summary for historical tracking
+      await apiRequest(`/api/meal/clear/${sessionId}/${selectedDateString}`, {
+        method: "POST",
+      });
     },
     onSuccess: () => {
       toast({
         title: "Meal Submitted!",
-        description: `Your meal has been added to ${format(selectedDate, 'MMM dd, yyyy')}'s summary. All food items remain visible.`,
+        description: `Your meal has been added to ${format(selectedDate, 'MMM dd, yyyy')}'s summary. Current meal cleared.`,
       });
       queryClient.invalidateQueries({ queryKey: [`/api/meal/${sessionId}/${selectedDateString}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/daily-summary/${sessionId}/${selectedDateString}`] });
