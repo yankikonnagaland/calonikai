@@ -973,6 +973,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                 handleSearch();
               }
             }}
+            disabled={isSearching}
             className="flex-1"
           />
           <Button
@@ -1085,7 +1086,9 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100">{selectedFood.name}</h3>
-                {/* Calorie calculation display removed per user request */}
+                <div className="text-sm font-medium text-blue-600 dark:text-blue-400 mt-1">
+                  {selectedFood.calories} calories per 100g
+                </div>
               </div>
               <Badge variant="outline" className="bg-white/50">{selectedFood.category}</Badge>
             </div>
