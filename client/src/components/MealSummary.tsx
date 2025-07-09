@@ -153,7 +153,7 @@ export default function MealSummary({
     onSuccess: async () => {
       const targetDate = selectedDate || new Date().toISOString().split('T')[0];
       
-      // Clear the meal for the specific date after submission
+      // First clear the meal for the specific date, then invalidate queries
       try {
         await apiRequest("DELETE", `/api/meal/clear/${sessionId}/${targetDate}`);
         console.log("Meal cleared successfully after submission for date:", targetDate);
