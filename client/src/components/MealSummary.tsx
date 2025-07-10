@@ -96,10 +96,16 @@ export default function MealSummary({
         const existingSummaryResponse = await fetch(`/api/daily-summary/${sessionId}/${targetDate}`);
         if (existingSummaryResponse.ok) {
           const summaryData = await existingSummaryResponse.json();
+          console.log("Fetched existing summary:", summaryData);
           // Only use existing summary if it has actual data (not null response)
           if (summaryData && summaryData.id) {
             existingSummary = summaryData;
+            console.log("Found existing summary with ID:", summaryData.id, "calories:", summaryData.totalCalories);
+          } else {
+            console.log("No existing summary found or summary is null");
           }
+        } else {
+          console.log("Failed to fetch existing summary - response not OK:", existingSummaryResponse.status);
         }
       } catch (error) {
         console.warn("Failed to fetch existing summary:", error);
@@ -114,27 +120,40 @@ export default function MealSummary({
       };
       
       // If there's existing data, append new meals to existing meals
-      if (existingSummary && existingSummary.mealData) {
-        try {
-          const existingMeals = JSON.parse(existingSummary.mealData);
-          if (Array.isArray(existingMeals) && existingMeals.length > 0) {
-            // Append current meal items to existing meals (not replace)
-            combinedMealData = [...existingMeals, ...mealItems];
+      if (existingSummary) {
+        console.log("Found existing summary, processing mealData:", existingSummary.mealData);
+        
+        if (existingSummary.mealData) {
+          try {
+            const existingMeals = JSON.parse(existingSummary.mealData);
+            console.log("Parsed existing meals:", existingMeals);
             
-            // Add new meal nutrition to existing totals
-            combinedTotals.calories += (existingSummary.totalCalories || 0);
-            combinedTotals.protein += (existingSummary.totalProtein || 0);
-            combinedTotals.carbs += (existingSummary.totalCarbs || 0);
-            combinedTotals.fat += (existingSummary.totalFat || 0);
-            
-            console.log("Appending to existing summary:", {
-              existingCalories: existingSummary.totalCalories,
-              newMealCalories: totals.calories,
-              combinedCalories: combinedTotals.calories
-            });
+            if (Array.isArray(existingMeals) && existingMeals.length > 0) {
+              // Append current meal items to existing meals (not replace)
+              combinedMealData = [...existingMeals, ...mealItems];
+              
+              // Add new meal nutrition to existing totals
+              combinedTotals.calories += (existingSummary.totalCalories || 0);
+              combinedTotals.protein += (existingSummary.totalProtein || 0);
+              combinedTotals.carbs += (existingSummary.totalCarbs || 0);
+              combinedTotals.fat += (existingSummary.totalFat || 0);
+              
+              console.log("✅ CUMULATIVE: Appending to existing summary:", {
+                existingCalories: existingSummary.totalCalories,
+                newMealCalories: totals.calories,
+                combinedCalories: combinedTotals.calories,
+                existingMealsCount: existingMeals.length,
+                newMealsCount: mealItems.length,
+                totalMealsCount: combinedMealData.length
+              });
+            } else {
+              console.log("Existing meals array is empty, treating as new daily summary");
+            }
+          } catch (error) {
+            console.warn("Failed to parse existing meal data:", error);
           }
-        } catch (error) {
-          console.warn("Failed to parse existing meal data:", error);
+        } else {
+          console.log("Existing summary has no mealData, treating as new daily summary");
         }
       } else {
         console.log("Creating new daily summary with current meal totals:", totals);
