@@ -207,15 +207,67 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       console.log("Sending meal item:", mealItem);
       return apiRequest("POST", "/api/meal", mealItem);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Invalidate meal queries
       queryClient.invalidateQueries({ queryKey: [`/api/meal/${sessionId}/${selectedDate}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/daily-summary`] });
+      
+      // After adding food to meal, auto-submit to daily summary to prevent overwrites
+      try {
+        const mealItems = await apiRequest("GET", `/api/meal/${sessionId}/${selectedDate}`);
+        
+        if (mealItems && mealItems.length > 0) {
+          const totals = mealItems.reduce((acc: any, item: any) => {
+            // Use stored frontend nutrition if available, otherwise calculate
+            const calories = item.frontendCalories || (item.food.calories * item.quantity);
+            const protein = item.frontendProtein || (item.food.protein * item.quantity);
+            const carbs = item.frontendCarbs || (item.food.carbs * item.quantity);
+            const fat = item.frontendFat || (item.food.fat * item.quantity);
+            
+            acc.calories += calories;
+            acc.protein += protein;
+            acc.carbs += carbs;
+            acc.fat += fat;
+            return acc;
+          }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+          
+          const dailySummary = {
+            sessionId,
+            date: selectedDate || new Date().toISOString().split('T')[0],
+            totalCalories: Math.round(totals.calories * 100) / 100,
+            totalProtein: Math.round(totals.protein * 100) / 100,
+            totalCarbs: Math.round(totals.carbs * 100) / 100,
+            totalFat: Math.round(totals.fat * 100) / 100,
+            caloriesBurned: 0,
+            netCalories: Math.round(totals.calories * 100) / 100,
+            mealData: JSON.stringify(mealItems)
+          };
+          
+          // Auto-submit to daily summary
+          await apiRequest("POST", "/api/daily-summary", dailySummary);
+          
+          // Clear the current meal after auto-submission
+          const targetDate = selectedDate || new Date().toISOString().split('T')[0];
+          await apiRequest("DELETE", `/api/meal/clear/${sessionId}/${targetDate}`);
+          
+          // Invalidate queries to refresh UI
+          queryClient.invalidateQueries({ queryKey: [`/api/meal/${sessionId}/${selectedDate}`] });
+          queryClient.invalidateQueries({ queryKey: [`/api/daily-summaries/${sessionId}`] });
+          queryClient.invalidateQueries({ queryKey: [`/api/daily-summary/${sessionId}/${selectedDate}`] });
+          queryClient.invalidateQueries({ queryKey: [`/api/analytics/user-progress`] });
+          
+          console.log("✅ Auto-submitted meal to daily summary to prevent overwrites");
+        }
+      } catch (error) {
+        console.error("Failed to auto-submit meal to daily summary:", error);
+      }
+      
       if (onMealAdded) {
         onMealAdded();
       }
       toast({
         title: "Success",
-        description: "Food added to your meal",
+        description: "Food added to your daily summary",
       });
     },
     onError: () => {
