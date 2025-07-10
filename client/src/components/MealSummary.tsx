@@ -113,22 +113,31 @@ export default function MealSummary({
         fat: totals.fat
       };
       
-      // If there's existing data, combine it with new meals
+      // If there's existing data, append new meals to existing meals
       if (existingSummary && existingSummary.mealData) {
         try {
           const existingMeals = JSON.parse(existingSummary.mealData);
           if (Array.isArray(existingMeals) && existingMeals.length > 0) {
+            // Append current meal items to existing meals (not replace)
             combinedMealData = [...existingMeals, ...mealItems];
             
-            // Simply add existing totals to new totals
+            // Add new meal nutrition to existing totals
             combinedTotals.calories += (existingSummary.totalCalories || 0);
             combinedTotals.protein += (existingSummary.totalProtein || 0);
             combinedTotals.carbs += (existingSummary.totalCarbs || 0);
             combinedTotals.fat += (existingSummary.totalFat || 0);
+            
+            console.log("Appending to existing summary:", {
+              existingCalories: existingSummary.totalCalories,
+              newMealCalories: totals.calories,
+              combinedCalories: combinedTotals.calories
+            });
           }
         } catch (error) {
           console.warn("Failed to parse existing meal data:", error);
         }
+      } else {
+        console.log("Creating new daily summary with current meal totals:", totals);
       }
       
       const dailySummary = {
