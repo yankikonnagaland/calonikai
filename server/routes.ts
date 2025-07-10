@@ -2682,10 +2682,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const today = new Date().toISOString().split("T")[0];
 
       // Use Replit user ID if authenticated, otherwise use session ID
+      const sessionId = req.user?.id || req.body.sessionId;
+      const date = req.body.date || today;
+      
       const summaryData = {
         ...req.body,
-        sessionId: req.user?.id || req.body.sessionId,
-        date: req.body.date || today,
+        sessionId,
+        date,
       };
 
       const validation = insertDailySummarySchema.safeParse(summaryData);
@@ -2698,7 +2701,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
       }
 
-      const summary = await storage.saveDailySummary(validation.data);
+      // CUMULATIVE LOGIC: Fetch existing summary first
+      const existingSummary = await storage.getDailySummary(sessionId, date);
+      
+      let cumulativeSummary = validation.data;
+      
+      if (existingSummary) {
+        console.log("🔄 BACKEND CUMULATIVE: Found existing summary, merging meals...");
+        
+        // Parse existing meals
+        let existingMeals = [];
+        if (existingSummary.mealData) {
+          try {
+            existingMeals = JSON.parse(existingSummary.mealData);
+            if (!Array.isArray(existingMeals)) {
+              existingMeals = [];
+            }
+          } catch (error) {
+            console.warn("Failed to parse existing mealData:", error);
+            existingMeals = [];
+          }
+        }
+        
+        // Parse new meals
+        let newMeals = [];
+        if (validation.data.mealData) {
+          try {
+            newMeals = JSON.parse(validation.data.mealData);
+            if (!Array.isArray(newMeals)) {
+              newMeals = [];
+            }
+          } catch (error) {
+            console.warn("Failed to parse new mealData:", error);
+            newMeals = [];
+          }
+        }
+        
+        // Combine meals and nutrition
+        const combinedMeals = [...existingMeals, ...newMeals];
+        
+        cumulativeSummary = {
+          ...validation.data,
+          totalCalories: (existingSummary.totalCalories || 0) + (validation.data.totalCalories || 0),
+          totalProtein: (existingSummary.totalProtein || 0) + (validation.data.totalProtein || 0),
+          totalCarbs: (existingSummary.totalCarbs || 0) + (validation.data.totalCarbs || 0),
+          totalFat: (existingSummary.totalFat || 0) + (validation.data.totalFat || 0),
+          caloriesBurned: Math.max(existingSummary.caloriesBurned || 0, validation.data.caloriesBurned || 0),
+          netCalories: ((existingSummary.totalCalories || 0) + (validation.data.totalCalories || 0)) - Math.max(existingSummary.caloriesBurned || 0, validation.data.caloriesBurned || 0),
+          mealData: JSON.stringify(combinedMeals)
+        };
+        
+        console.log("✅ BACKEND CUMULATIVE: Combined summary:", {
+          existingCalories: existingSummary.totalCalories,
+          newCalories: validation.data.totalCalories,
+          finalCalories: cumulativeSummary.totalCalories,
+          existingMealsCount: existingMeals.length,
+          newMealsCount: newMeals.length,
+          finalMealsCount: combinedMeals.length
+        });
+      } else {
+        console.log("📝 BACKEND: Creating new daily summary");
+      }
+
+      const summary = await storage.saveDailySummary(cumulativeSummary);
       console.log("Daily summary saved successfully:", summary.id);
       res.json(summary);
     } catch (error) {

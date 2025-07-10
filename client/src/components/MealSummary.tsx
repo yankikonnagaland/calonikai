@@ -90,85 +90,18 @@ export default function MealSummary({
       const targetDate = selectedDate || new Date().toISOString().split('T')[0]; // Use selected date or today
       const totalCaloriesBurned = exercises.reduce((sum, ex) => sum + ex.caloriesBurned, 0);
       
-      // Get existing daily summary to append to instead of replacing
-      let existingSummary = null;
-      try {
-        const existingSummaryResponse = await fetch(`/api/daily-summary/${sessionId}/${targetDate}`);
-        if (existingSummaryResponse.ok) {
-          const summaryData = await existingSummaryResponse.json();
-          console.log("Fetched existing summary:", summaryData);
-          // Only use existing summary if it has actual data (not null response)
-          if (summaryData && summaryData.id) {
-            existingSummary = summaryData;
-            console.log("Found existing summary with ID:", summaryData.id, "calories:", summaryData.totalCalories);
-          } else {
-            console.log("No existing summary found or summary is null");
-          }
-        } else {
-          console.log("Failed to fetch existing summary - response not OK:", existingSummaryResponse.status);
-        }
-      } catch (error) {
-        console.warn("Failed to fetch existing summary:", error);
-      }
-      
-      let combinedMealData = [...mealItems]; // Start with current meal items
-      let combinedTotals = {
-        calories: totals.calories,
-        protein: totals.protein,
-        carbs: totals.carbs,
-        fat: totals.fat
-      };
-      
-      // If there's existing data, append new meals to existing meals
-      if (existingSummary) {
-        console.log("Found existing summary, processing mealData:", existingSummary.mealData);
-        
-        if (existingSummary.mealData) {
-          try {
-            const existingMeals = JSON.parse(existingSummary.mealData);
-            console.log("Parsed existing meals:", existingMeals);
-            
-            if (Array.isArray(existingMeals) && existingMeals.length > 0) {
-              // Append current meal items to existing meals (not replace)
-              combinedMealData = [...existingMeals, ...mealItems];
-              
-              // Add new meal nutrition to existing totals
-              combinedTotals.calories += (existingSummary.totalCalories || 0);
-              combinedTotals.protein += (existingSummary.totalProtein || 0);
-              combinedTotals.carbs += (existingSummary.totalCarbs || 0);
-              combinedTotals.fat += (existingSummary.totalFat || 0);
-              
-              console.log("✅ CUMULATIVE: Appending to existing summary:", {
-                existingCalories: existingSummary.totalCalories,
-                newMealCalories: totals.calories,
-                combinedCalories: combinedTotals.calories,
-                existingMealsCount: existingMeals.length,
-                newMealsCount: mealItems.length,
-                totalMealsCount: combinedMealData.length
-              });
-            } else {
-              console.log("Existing meals array is empty, treating as new daily summary");
-            }
-          } catch (error) {
-            console.warn("Failed to parse existing meal data:", error);
-          }
-        } else {
-          console.log("Existing summary has no mealData, treating as new daily summary");
-        }
-      } else {
-        console.log("Creating new daily summary with current meal totals:", totals);
-      }
+      console.log("📤 FRONTEND: Sending current meal data to backend for cumulative processing...");
       
       const dailySummary = {
         sessionId,
         date: targetDate,
-        totalCalories: Math.round(combinedTotals.calories * 100) / 100,
-        totalProtein: Math.round(combinedTotals.protein * 100) / 100,
-        totalCarbs: Math.round(combinedTotals.carbs * 100) / 100,
-        totalFat: Math.round(combinedTotals.fat * 100) / 100,
+        totalCalories: Math.round(totals.calories * 100) / 100,
+        totalProtein: Math.round(totals.protein * 100) / 100,
+        totalCarbs: Math.round(totals.carbs * 100) / 100,
+        totalFat: Math.round(totals.fat * 100) / 100,
         caloriesBurned: totalCaloriesBurned,
-        netCalories: Math.round((combinedTotals.calories - totalCaloriesBurned) * 100) / 100,
-        mealData: JSON.stringify(combinedMealData)
+        netCalories: Math.round((totals.calories - totalCaloriesBurned) * 100) / 100,
+        mealData: JSON.stringify(mealItems)
       };
       
       console.log("Submitting daily summary:", dailySummary);
