@@ -172,11 +172,14 @@ export default function Dashboard({ sessionId }: DashboardProps) {
       console.log('📊 Original daily summary:', selectedDaySummary);
       console.log('📊 Updated daily summary to send:', updatedSummary);
       
-      // Save updated summary to backend
+      // Save updated summary to backend with replace flag
       const response = await fetch('/api/daily-summary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedSummary)
+        body: JSON.stringify({
+          ...updatedSummary,
+          replaceExisting: true  // Flag to indicate this should replace, not add
+        })
       });
       
       if (response.ok) {
