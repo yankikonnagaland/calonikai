@@ -99,10 +99,15 @@ export default function Dashboard({ sessionId }: DashboardProps) {
       }
       
       const currentMeals = JSON.parse(selectedDaySummary.mealData);
+      console.log("🔍 Dashboard Removal Debug:");
+      console.log("Current meals in daily summary:", currentMeals);
+      console.log("Trying to remove meal ID:", mealId);
+      console.log("Food name:", foodName);
       
       // Check if the meal actually exists
       const mealExists = currentMeals.some((meal: any) => meal.id === mealId);
       if (!mealExists) {
+        console.log("❌ Meal not found in daily summary");
         toast({
           title: "Item not found",
           description: `${foodName} has already been removed.`,
@@ -110,7 +115,11 @@ export default function Dashboard({ sessionId }: DashboardProps) {
         return;
       }
       
+      const mealToRemove = currentMeals.find((meal: any) => meal.id === mealId);
+      console.log("📋 Meal to remove:", mealToRemove);
+      
       const updatedMeals = currentMeals.filter((meal: any) => meal.id !== mealId);
+      console.log("📋 Updated meals after removal:", updatedMeals);
       
       // Recalculate totals based on remaining meals
       let totalCalories = 0;
@@ -159,7 +168,9 @@ export default function Dashboard({ sessionId }: DashboardProps) {
         mealData: JSON.stringify(updatedMeals)
       };
       
-      console.log('Updating daily summary with:', updatedSummary);
+      console.log('🧮 Calculated totals:', { totalCalories, totalProtein, totalCarbs, totalFat });
+      console.log('📊 Original daily summary:', selectedDaySummary);
+      console.log('📊 Updated daily summary to send:', updatedSummary);
       
       // Save updated summary to backend
       const response = await fetch('/api/daily-summary', {
