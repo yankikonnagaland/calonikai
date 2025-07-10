@@ -631,22 +631,11 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       clearTimeout(suggestionTimeoutRef.current);
     }
     
-    // Set immediate default values using local intelligence for instant display
-    const localSuggestion = getIntelligentUnits(food);
+    // Set basic default values first (will be overridden by AI)
+    setUnit("serving (100g)");
+    setUnitOptions(["serving (100g)", "grams", "pieces"]);
     
-    // Use enhanced portion data if available from AI detection
-    if ((food as any).smartUnit && (food as any).smartQuantity) {
-      console.log(`Using enhanced portion data for ${food.name}: ${(food as any).smartQuantity} ${(food as any).smartUnit}`);
-      setUnit((food as any).smartUnit);
-      setQuantity(1); // Always reset to 1
-      setUnitOptions([(food as any).smartUnit, ...localSuggestion.unitOptions.filter(opt => opt !== (food as any).smartUnit)]);
-    } else {
-      setUnit(localSuggestion.unit);
-      setQuantity(1); // Always reset to 1
-      setUnitOptions(localSuggestion.unitOptions);
-    }
-    
-    // Start AI analysis in the background for enhanced recommendations
+    // Start AI analysis immediately for unit recommendations
     setIsAnalyzing(true);
     setAiAnalysis(null);
     
@@ -656,38 +645,17 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
         setAiAnalysis(aiResult);
         console.log(`AI Enhanced Analysis for ${food.name}:`, aiResult);
         
-        // Update unit options with AI suggestions if better than local
-        if (aiResult.aiConfidence > 0.7) {
-          setUnit(aiResult.smartUnit);
-          setQuantity(aiResult.smartQuantity);
-          setUnitOptions(aiResult.unitOptions);
-        }
+        // Always use AI recommendations (disabled Smart Suggestion)
+        setUnit(aiResult.smartUnit);
+        setQuantity(aiResult.smartQuantity);
+        setUnitOptions(aiResult.unitOptions);
       }
     } catch (error) {
-      console.log("AI analysis failed, using local suggestions");
+      console.log("AI analysis failed, using basic defaults");
+      // Keep basic defaults if AI fails
     } finally {
       setIsAnalyzing(false);
     }
-    
-    // Fetch backend unit options asynchronously (non-blocking for better UX)
-    fetch(`/api/unit-selection/${encodeURIComponent(food.name)}?category=${encodeURIComponent(food.category)}`)
-      .then(response => {
-        if (response.ok) {
-          return response.json();
-        }
-        throw new Error('Backend unit selection failed');
-      })
-      .then(unitData => {
-        // Only update if we don't have enhanced portion data already
-        if (!(food as any).smartUnit || !(food as any).smartQuantity) {
-          setUnitOptions(unitData.unitOptions);
-          setUnit(unitData.unit);
-        }
-      })
-      .catch(error => {
-        console.log("Backend unit selection failed, using local data:", error);
-        // Local data already set above - no action needed
-      });
     
   }, [onFoodSelect, analyzeFood]);
 
@@ -1136,27 +1104,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
               </div>
             )}
 
-            {/* Intelligent Suggestion Display */}
-            <div className="mb-4 p-3 bg-white/60 dark:bg-gray-800/60 rounded-md border border-blue-100 dark:border-blue-900">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Smart Suggestion</span>
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                {(selectedFood as any).portionExplanation ? (
-                  <>
-                    <span className="font-medium">{(selectedFood as any).portionExplanation}</span>
-                    <br />
-                    <span className="text-xs italic">Smart portion size for realistic tracking</span>
-                  </>
-                ) : (
-                  <>
-                    Recommended: <span className="font-medium">{quantity} {unit}</span> - 
-                    {getIntelligentUnits(selectedFood).reasoning}
-                  </>
-                )}
-              </div>
-            </div>
+
             
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
