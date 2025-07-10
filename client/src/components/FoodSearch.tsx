@@ -635,16 +635,19 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     const localSuggestion = getIntelligentUnits(food);
     
     // Use enhanced portion data if available from AI detection
-    if ((food as any).smartUnit && (food as any).smartQuantity) {
+    /*if */
+      ((food as any).smartUnit && (food as any).smartQuantity) {
       console.log(`Using enhanced portion data for ${food.name}: ${(food as any).smartQuantity} ${(food as any).smartUnit}`);
       setUnit((food as any).smartUnit);
       setQuantity(1); // Always reset to 1
       setUnitOptions([(food as any).smartUnit, ...localSuggestion.unitOptions.filter(opt => opt !== (food as any).smartUnit)]);
-    } else {
+    } 
+    /*else {
       setUnit(localSuggestion.unit);
       setQuantity(1); // Always reset to 1
       setUnitOptions(localSuggestion.unitOptions);
-    }
+    }*/
+//testing removing local suggestion
     
     // Start AI analysis in the background for enhanced recommendations
     setIsAnalyzing(true);
