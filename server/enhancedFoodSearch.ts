@@ -31,37 +31,20 @@ export interface EnhancedFoodResult {
 export async function enhancedFoodSearch(query: string, limit: number = 10): Promise<EnhancedFoodResult[]> {
   const results: EnhancedFoodResult[] = [];
   const normalizedQuery = query.toLowerCase().trim();
-  
-  // Check if this is a compound dish (multiple food words)
-  const isCompoundDish = normalizedQuery.split(' ').length >= 2 && 
-    !normalizedQuery.match(/^(chicken|mutton|fish|egg|paneer|dal|rice|roti)\s+(curry|fry|gravy)$/);
 
-  // 1. PRIORITY: Check standardized database first - but be more selective for compound dishes
-  let standardResults = STANDARD_FOODS
-    .filter(food => {
-      const foodNameLower = food.name.toLowerCase();
-      
-      // For compound dishes, prioritize exact matches or very close matches
-      if (isCompoundDish) {
-        return foodNameLower.includes(normalizedQuery) || 
-               normalizedQuery.includes(foodNameLower) ||
-               // Check if it contains most of the search words
-               normalizedQuery.split(' ').filter(word => 
-                 word.length > 2 && foodNameLower.includes(word)
-               ).length >= normalizedQuery.split(' ').length - 1;
-      }
-      
-      // For simple searches, use existing logic
-      return foodNameLower.includes(normalizedQuery) ||
-             normalizedQuery.split(' ').some(word => 
-               foodNameLower.includes(word) && word.length > 2
-             );
-    })
-    .slice(0, isCompoundDish ? 2 : 5); // Limit standard results for compound dishes
+  // 1. PRIORITY: Check standardized database first
+  const standardResults = STANDARD_FOODS
+    .filter(food => 
+      food.name.toLowerCase().includes(normalizedQuery) ||
+      normalizedQuery.split(' ').some(word => 
+        food.name.toLowerCase().includes(word) && word.length > 2
+      )
+    )
+    .slice(0, 5);
 
   for (const standardFood of standardResults) {
     const enhancedResult: EnhancedFoodResult = {
-      id: Math.floor(Math.random() * 1000000) + 9000000,
+      id: Math.floor(Math.random() * 1000000) + 9000000, // Unique ID for standard foods
       name: standardFood.name,
       calories: standardFood.caloriesPer100g,
       protein: standardFood.proteinPer100g,
@@ -75,6 +58,7 @@ export async function enhancedFoodSearch(query: string, limit: number = 10): Pro
       isVerified: true
     };
 
+    // Calculate realistic calories for default unit
     const nutrition = calculateAccurateNutrition(standardFood.name, 1, standardFood.defaultUnit);
     enhancedResult.realisticCalories = nutrition.calories;
     enhancedResult.gramEquivalent = `(${nutrition.totalGrams}g)`;
@@ -82,31 +66,20 @@ export async function enhancedFoodSearch(query: string, limit: number = 10): Pro
     results.push(enhancedResult);
   }
 
-  // 2. SECONDARY: Search database foods with compound dish awareness
+  // 2. SECONDARY: Search database foods with accuracy scoring
   try {
     const dbFoods = await storage.searchFoods(query);
     
     for (const dbFood of dbFoods) {
-      // For compound dishes, be more strict about duplicates
-      if (isCompoundDish) {
-        // Skip if we have an exact or very similar match
-        if (results.some(r => 
-          r.name.toLowerCase() === dbFood.name.toLowerCase() ||
-          Math.abs(r.name.length - dbFood.name.length) < 3 &&
-          r.name.toLowerCase().includes(dbFood.name.toLowerCase().split(' ')[0])
-        )) {
-          continue;
-        }
-      } else {
-        // Use existing duplicate logic for simple searches
-        if (results.some(r => 
-          r.name.toLowerCase().includes(dbFood.name.toLowerCase().split(' ')[0]) ||
-          dbFood.name.toLowerCase().includes(r.name.toLowerCase().split(' ')[0])
-        )) {
-          continue;
-        }
+      // Skip if we already have a standard version
+      if (results.some(r => 
+        r.name.toLowerCase().includes(dbFood.name.toLowerCase().split(' ')[0]) ||
+        dbFood.name.toLowerCase().includes(r.name.toLowerCase().split(' ')[0])
+      )) {
+        continue;
       }
 
+      // Score database food accuracy
       const accuracy = scoreFoodAccuracy(dbFood);
       
       const enhancedResult: EnhancedFoodResult = {
@@ -130,14 +103,10 @@ export async function enhancedFoodSearch(query: string, limit: number = 10): Pro
     console.error('Database search error:', error);
   }
 
-  // 3. TIER-3: Enhanced Gemini AI Fallback with compound dish priority
-  const shouldUseAI = isCompoundDish ? 
-    results.length === 0 || !results.some(r => r.name.toLowerCase().includes(normalizedQuery)) :
-    results.length < 3;
-
-  if (shouldUseAI && query.length > 2) {
+  // 3. TIER-3: Gemini AI Fallback for unknown foods
+  if (results.length < 3 && query.length > 2) {
     try {
-      console.log(`Tier-3 fallback: Using Gemini AI for "${query}" (compound dish: ${isCompoundDish}, found ${results.length} results)`);
+      console.log(`Tier-3 fallback: Using Gemini AI for "${query}" (only ${results.length} results found)`);
       const aiResults = await generateAIFoodResults(query, limit - results.length);
       results.push(...aiResults);
     } catch (error) {
@@ -145,68 +114,26 @@ export async function enhancedFoodSearch(query: string, limit: number = 10): Pro
     }
   }
 
-  // 4. Enhanced sorting with compound dish relevance
+  // 4. Sort by accuracy and relevance
   results.sort((a, b) => {
-    // For compound dishes, prioritize name similarity first
-    if (isCompoundDish) {
-      const aRelevance = calculateRelevanceScore(a.name, normalizedQuery);
-      const bRelevance = calculateRelevanceScore(b.name, normalizedQuery);
-      if (aRelevance !== bRelevance) return bRelevance - aRelevance;
-    }
-    
-    // Then prioritize accuracy
+    // Prioritize accuracy
     const accuracyWeight = { 'high': 3, 'medium': 2, 'low': 1 };
     const aScore = accuracyWeight[a.accuracy];
     const bScore = accuracyWeight[b.accuracy];
     
     if (aScore !== bScore) return bScore - aScore;
     
-    // Then by exact match
+    // Then by relevance (exact match > partial match)
     const aExact = a.name.toLowerCase() === normalizedQuery ? 1 : 0;
     const bExact = b.name.toLowerCase() === normalizedQuery ? 1 : 0;
     
     if (aExact !== bExact) return bExact - aExact;
     
+    // Finally by name length (shorter = more specific)
     return a.name.length - b.name.length;
   });
 
   return results.slice(0, limit);
-}
-
-/**
- * Calculate relevance score for compound dishes
- */
-function calculateRelevanceScore(foodName: string, query: string): number {
-  const foodWords = foodName.toLowerCase().split(' ');
-  const queryWords = query.toLowerCase().split(' ');
-  
-  let score = 0;
-  
-  // Exact match bonus
-  if (foodName.toLowerCase() === query.toLowerCase()) score += 100;
-  
-  // Substring match bonus
-  if (foodName.toLowerCase().includes(query.toLowerCase())) score += 50;
-  
-  // Word match scoring
-  for (const queryWord of queryWords) {
-    if (queryWord.length < 3) continue;
-    
-    for (const foodWord of foodWords) {
-      if (foodWord === queryWord) score += 20;
-      else if (foodWord.includes(queryWord)) score += 10;
-      else if (queryWord.includes(foodWord)) score += 5;
-    }
-  }
-  
-  // Word order bonus (if words appear in similar order)
-  let orderBonus = 0;
-  for (let i = 0; i < Math.min(queryWords.length, foodWords.length); i++) {
-    if (queryWords[i] === foodWords[i]) orderBonus += 5;
-  }
-  score += orderBonus;
-  
-  return score;
 }
 
 /**
@@ -450,49 +377,29 @@ async function generateAIFoodResults(query: string, limit: number, sessionId?: s
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
     
-    const isCompoundDish = query.split(' ').length >= 2;
-    
     const prompt = `
-You are a nutrition expert specializing in Indian and international foods. Generate accurate nutrition data for: "${query}"
-
-${isCompoundDish ? `
-COMPOUND DISH SEARCH: This appears to be a specific recipe/dish. Focus on:
-- The EXACT dish requested ("${query}")
-- Common variations of this specific dish
-- Regional/style variations (e.g., "Restaurant Style", "Home Style", "South Indian Style")
-- Different preparation methods if relevant
-
-DO NOT return individual ingredients. Focus on the complete prepared dish.
-` : `
-SIMPLE FOOD SEARCH: This appears to be a basic ingredient/food. Focus on:
-- Different varieties and preparations
-- Regional variations
-- Common forms (fresh, cooked, processed)
-`}
+You are a nutrition expert specializing in Indian foods. Generate accurate nutrition data for the food query: "${query}"
 
 Return ONLY a JSON array with ${limit} relevant food variations. Each food must have:
 {
-  "name": "Exact food name (e.g., 'Chicken Fried Rice', 'Vegetable Fried Rice', 'Egg Fried Rice')",
+  "name": "Exact food name",
   "calories": number per 100g,
   "protein": number per 100g,
   "carbs": number per 100g, 
   "fat": number per 100g,
   "category": "Main Course|Snacks|Beverages|Fruits|Vegetables|Grains|Dairy|Desserts",
-  "defaultUnit": "serving (150g)|bowl (200g)|plate (250g)|cup (200ml)|piece (50g)",
-  "smartPortion": "realistic portion like 'medium plate (250g)' or 'regular serving (200g)'"
+  "defaultUnit": "serving (100g)|piece (50g)|cup (200ml)|bowl (150g)",
+  "smartPortion": "realistic portion like 'medium bowl (200g)' or 'regular serving (150g)'"
 }
 
 Requirements:
-- Use accurate USDA/IFCT nutrition values for prepared dishes
-- For Indian dishes, use authentic Indian nutrition data
-- Provide realistic portion sizes appropriate for the dish type
+- Use accurate USDA/IFCT nutrition values
+- Focus on Indian food variations if applicable
+- Provide realistic portion sizes for defaultUnit
 - Categories must match the exact list above
 - Return ONLY the JSON array, no other text
-- Prioritize the most common and relevant variations
 
-Examples:
-- For "chicken fried rice": [{"name":"Chicken Fried Rice","calories":163,"protein":8.2,"carbs":20.8,"fat":4.9,"category":"Main Course","defaultUnit":"plate (250g)","smartPortion":"medium plate (250g)"}]
-- For "dal": [{"name":"Toor Dal (Cooked)","calories":109,"protein":8.5,"carbs":18.5,"fat":0.4,"category":"Main Course","defaultUnit":"bowl (200g)","smartPortion":"medium bowl (200g)"}]
+Example for "rice": [{"name":"Basmati Rice (Cooked)","calories":121,"protein":2.5,"carbs":25,"fat":0.2,"category":"Grains","defaultUnit":"bowl (150g)","smartPortion":"medium bowl (150g)"}]
 `;
 
     const response = await ai.models.generateContent({
