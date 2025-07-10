@@ -683,6 +683,18 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       clearTimeout(suggestionTimeoutRef.current);
     }
     
+    // OPTIMIZATION: Check for pre-loaded AI analysis first
+    const enhancedFood = food as any;
+    if (enhancedFood.aiAnalysis) {
+      console.log("🚀 INSTANT UNIT SELECTION: Using pre-loaded AI analysis for", food.name, enhancedFood.aiAnalysis);
+      setAiAnalysis(enhancedFood.aiAnalysis);
+      setUnit(enhancedFood.aiAnalysis.smartUnit);
+      setQuantity(enhancedFood.aiAnalysis.smartQuantity);
+      setUnitOptions(enhancedFood.aiAnalysis.unitOptions);
+      setIsAnalyzing(false);
+      return; // Skip all API calls since we have instant data
+    }
+    
     // Set immediate default values using local intelligence for instant display
     const localSuggestion = getIntelligentUnits(food);
     
@@ -698,7 +710,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       setUnitOptions(localSuggestion.unitOptions);
     }
     
-    // Start AI analysis in the background for enhanced recommendations
+    // Start AI analysis in the background only if not pre-loaded
     setIsAnalyzing(true);
     setAiAnalysis(null);
     

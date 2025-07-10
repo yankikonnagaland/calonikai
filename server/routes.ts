@@ -1682,8 +1682,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.trackUsage(userId, "food_search");
       }
 
-      // Use enhanced search system
-      const results = await enhancedFoodSearch(query, 10);
+      // Use enhanced search system with session context for AI pre-loading
+      const results = await enhancedFoodSearch(query, 10, userId);
       
       console.log(`Enhanced search for "${query}": found ${results.length} results with accuracy scores`);
       
@@ -1694,7 +1694,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         portionDisplay: `${result.defaultUnit} ${result.gramEquivalent || ''}`.trim(),
         accuracyBadge: result.accuracy,
         sourceBadge: result.source,
-        isVerified: result.isVerified
+        isVerified: result.isVerified,
+        // Include pre-loaded AI analysis for instant unit selection
+        aiAnalysis: result.aiAnalysis
       })));
       
     } catch (error) {

@@ -23,12 +23,21 @@ export interface EnhancedFoodResult {
   isVerified: boolean;
   realisticCalories?: number;
   gramEquivalent?: string;
+  // Pre-loaded AI analysis for smooth unit selection
+  aiAnalysis?: {
+    enhancedCategory: string;
+    smartUnit: string;
+    smartQuantity: number;
+    unitOptions: string[];
+    aiConfidence: number;
+    reasoning: string;
+  };
 }
 
 /**
- * Enhanced food search with accuracy prioritization
+ * Enhanced food search with accuracy prioritization and AI pre-loading
  */
-export async function enhancedFoodSearch(query: string, limit: number = 10): Promise<EnhancedFoodResult[]> {
+export async function enhancedFoodSearch(query: string, limit: number = 10, userId?: string): Promise<EnhancedFoodResult[]> {
   const results: EnhancedFoodResult[] = [];
   const normalizedQuery = query.toLowerCase().trim();
 
@@ -66,7 +75,7 @@ export async function enhancedFoodSearch(query: string, limit: number = 10): Pro
     results.push(enhancedResult);
   }
 
-  // 2. SECONDARY: Search database foods with accuracy scoring
+  // 2. SECONDARY: Search database foods with accuracy scoring and pre-load AI analysis
   try {
     const dbFoods = await storage.searchFoods(query);
     
@@ -97,6 +106,23 @@ export async function enhancedFoodSearch(query: string, limit: number = 10): Pro
         isVerified: accuracy.score > 0.7
       };
 
+      // Pre-load AI analysis for smooth unit selection (only for top results)
+      if (results.length < 3) { // Limit AI pre-loading to top 3 results for performance
+        try {
+          const aiAnalysis = await preloadAIAnalysis(dbFood.name, userId);
+          if (aiAnalysis) {
+            console.log(`✨ Pre-loaded AI analysis for ${dbFood.name}: ${aiAnalysis.smartUnit}`);
+            enhancedResult.aiAnalysis = aiAnalysis;
+            // Update unit options with AI suggestions
+            const combinedUnits = [...new Set([...enhancedResult.unitOptions, ...aiAnalysis.unitOptions])];
+            enhancedResult.unitOptions = combinedUnits;
+            enhancedResult.defaultUnit = aiAnalysis.smartUnit;
+          }
+        } catch (error) {
+          console.log(`AI analysis pre-loading failed for ${dbFood.name}, using fallback`);
+        }
+      }
+
       results.push(enhancedResult);
     }
   } catch (error) {
@@ -107,7 +133,7 @@ export async function enhancedFoodSearch(query: string, limit: number = 10): Pro
   if (results.length < 3 && query.length > 2) {
     try {
       console.log(`Tier-3 fallback: Using Gemini AI for "${query}" (only ${results.length} results found)`);
-      const aiResults = await generateAIFoodResults(query, limit - results.length);
+      const aiResults = await generateAIFoodResults(query, limit - results.length, userId);
       results.push(...aiResults);
     } catch (error) {
       console.error('Gemini AI search error:', error);
@@ -371,7 +397,7 @@ function estimateTokens(text: string): number {
 /**
  * TIER-3: Generate AI food results using Gemini 1.5 Flash
  */
-async function generateAIFoodResults(query: string, limit: number, sessionId?: string, userId?: string): Promise<EnhancedFoodResult[]> {
+async function generateAIFoodResults(query: string, limit: number, userId?: string): Promise<EnhancedFoodResult[]> {
   const startTime = Date.now();
   
   try {
@@ -416,12 +442,12 @@ Example for "rice": [{"name":"Basmati Rice (Cooked)","calories":121,"protein":2.
     const outputTokens = estimateTokens(responseText);
     
     // Track AI usage
-    if (sessionId) {
+    if (userId) {
       await trackAiUsage(
-        sessionId,
-        userId || null,
+        userId,
+        null,
         'gemini',
-        'gemini-1.5-flash',
+        'gemini-2.5-flash',
         'food_search',
         query,
         responseTime,
@@ -521,4 +547,87 @@ Example for "rice": [{"name":"Basmati Rice (Cooked)","calories":121,"protein":2.
 function extractGramFromSmartPortion(portion: string): number | null {
   const gramMatch = portion.match(/\((\d+(?:\.\d+)?)g\)/);
   return gramMatch ? parseFloat(gramMatch[1]) : null;
+}
+
+/**
+ * Pre-load AI analysis for smooth unit selection during search
+ */
+async function preloadAIAnalysis(foodName: string, sessionId?: string, userId?: string): Promise<{
+  enhancedCategory: string;
+  smartUnit: string;
+  smartQuantity: number;
+  unitOptions: string[];
+  aiConfidence: number;
+  reasoning: string;
+} | null> {
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+    
+    const prompt = `Analyze this food for smart portion recommendations: "${foodName}"
+
+Please provide:
+1. Enhanced category (Indian cuisine context): Grains, Protein, Dairy, Fruits, Vegetables, Snacks, Beverages, etc.
+2. Smart default unit with realistic portion size
+3. Smart quantity (typically 1 for default portions)
+4. List of 3-4 realistic unit options for this food
+5. Confidence level (0.0 to 1.0)
+6. Brief reasoning for the recommendations
+
+Focus on Indian eating patterns and realistic portions. Respond with JSON only.`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "object",
+          properties: {
+            enhancedCategory: { type: "string" },
+            smartUnit: { type: "string" },
+            smartQuantity: { type: "number" },
+            unitOptions: { 
+              type: "array",
+              items: { type: "string" }
+            },
+            aiConfidence: { type: "number" },
+            reasoning: { type: "string" }
+          },
+          required: ["enhancedCategory", "smartUnit", "smartQuantity", "unitOptions", "aiConfidence", "reasoning"]
+        }
+      },
+      contents: prompt,
+    });
+
+    const aiData = JSON.parse(response.text || "{}");
+    
+    // Track AI usage for cost monitoring
+    if (userId) {
+      await trackAiUsage(
+        userId,
+        null,
+        'gemini',
+        'gemini-2.5-flash',
+        'pre_load_unit_analysis',
+        foodName,
+        100, // Approximate response time
+        true,
+        undefined,
+        estimateTokens(prompt),
+        estimateTokens(response.text || "")
+      );
+    }
+    
+    return {
+      enhancedCategory: aiData.enhancedCategory || "Food",
+      smartUnit: aiData.smartUnit || "serving (100g)",
+      smartQuantity: aiData.smartQuantity || 1,
+      unitOptions: aiData.unitOptions || ["serving (100g)", "grams"],
+      aiConfidence: aiData.aiConfidence || 0.8,
+      reasoning: aiData.reasoning || "Standard food analysis"
+    };
+    
+  } catch (error) {
+    console.error(`Pre-load AI analysis failed for ${foodName}:`, error);
+    return null;
+  }
 }
