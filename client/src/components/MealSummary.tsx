@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Utensils, Trash2, X, Target, Flame, CheckCircle, Pencil } from "lucide-react";
+import { Utensils, Trash2, X, Target, Flame, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -15,7 +15,6 @@ interface MealSummaryProps {
   onClear: () => void;
   isSubmitting: boolean;
   isClearing: boolean;
-  onEditMeal?: (mealItem: MealItemWithFood) => void;
 }
 
 export default function MealSummary({ 
@@ -24,8 +23,7 @@ export default function MealSummary({
   onSubmit, 
   onClear, 
   isSubmitting, 
-  isClearing,
-  onEditMeal
+  isClearing
 }: MealSummaryProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -497,15 +495,6 @@ export default function MealSummary({
                     })()}
                   </div>
                   <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onEditMeal?.(item)}
-                      className="edit-meal-button text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/20 p-1"
-                      title="Edit this meal item"
-                    >
-                      <Pencil className="w-3 h-3" />
-                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
