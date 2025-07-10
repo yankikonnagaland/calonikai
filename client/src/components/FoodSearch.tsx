@@ -268,7 +268,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     }
     
     // Hot beverages - smaller servings
-    if (name.match(/\b(tea|coffee|chai|latte|cappuccino|espresso)\b/)) {
+    if (name.match(/\b(tea|coffee|chai|latte|cappuccino|espresso|americano)\b/)) {
       return {
         unit: "cup (200ml)",
         quantity: 1,
