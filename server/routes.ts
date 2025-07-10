@@ -1525,7 +1525,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Unit selection endpoint - enhanced with comprehensive Indian measurements
+  // Unit selection endpoint - enhanced with smart AI-powered recommendations
   app.get("/api/unit-selection/:foodName", async (req, res) => {
     try {
       const { foodName } = req.params;
@@ -1533,7 +1533,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Getting unit selection for: ${foodName}, category: ${category}`);
       
-      // Always use the comprehensive local unit selection with Indian measurements
+      // PRIORITY 1: Use food-specific smart logic matching the food search enhancement
+      const name = foodName.toLowerCase();
+      console.log(`🔍 Checking food name: "${name}" for smart unit logic`);
+      
+      // For specific foods like momos, dumplings, etc., use targeted recommendations
+      if (name.includes("momo") || name.includes("dumpling")) {
+        console.log(`🥟 Applying momo/dumpling specific units for unit selection: ${foodName}`);
+        return res.json({
+          unit: "8 pieces",
+          unitOptions: ["6 pieces", "8 pieces", "10 pieces", "piece (25g)", "medium portion (150g)", "grams"]
+        });
+      } else if (name.includes("samosa") || name.includes("pakora")) {
+        console.log(`🥟 Applying snack specific units for unit selection: ${foodName}`);
+        return res.json({
+          unit: "4 pieces", 
+          unitOptions: ["2 pieces", "4 pieces", "6 pieces", "piece (30g)", "small portion (100g)", "grams"]
+        });
+      } else if (name.includes("idli") || name.includes("dosa")) {
+        console.log(`🥞 Applying South Indian food units for unit selection: ${foodName}`);
+        return res.json({
+          unit: name.includes("idli") ? "3 pieces" : "1 piece",
+          unitOptions: name.includes("idli") 
+            ? ["2 pieces", "3 pieces", "4 pieces", "piece (30g)", "grams"]
+            : ["1 piece", "half piece", "piece (100g)", "grams"]
+        });
+      }
+      
+      // PRIORITY 2: Use local unit selection for other foods
       const unitSelection = getLocalUnitSelection(foodName, category);
       console.log(`Initial unit selection for ${foodName}:`, unitSelection);
       
