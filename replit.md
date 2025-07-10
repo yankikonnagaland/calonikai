@@ -664,6 +664,18 @@ The application follows a client-server architecture with clear separation of co
 - MAINTAINED: All subscription features and functionality remain unchanged
 - OPTIMIZED: Pricing strategy for broader user adoption while maintaining value proposition
 
+**July 10, 2025 - RESOLVED: AI Unit Selection Override Bug & Smart Recommendations System:**
+- ✅ FIXED critical bug where AI-recommended units (e.g., "8 pieces" for momos) were overridden by local fallback logic defaulting to "cup(200ml)"
+- ✅ Enhanced food enhancement process to prioritize AI-analyzed units over getLocalUnitSelection fallback
+- ✅ Implemented food-specific smart unit logic for Indian foods: momos (8 pieces), samosas (4 pieces), idli (3 pieces), dosa (1 piece)
+- ✅ Improved AI prompts for food search to generate proper categories ("Dumplings", "Snacks") instead of generic "AI Detected"
+- ✅ Updated unit recommendation system to include realistic gram weights and multiple portion options
+- ✅ Applied comprehensive fix affecting all food searches, not just new AI-generated entries
+- ✅ Removed problematic database entries with "AI Detected" category to allow fresh AI generation with improved logic
+- ✅ Verified solution: "Steamed Momos" now correctly shows "8 pieces" with unit options ["6 pieces","8 pieces","10 pieces","piece (25g)","medium portion (150g)","grams"]
+- ✅ System logs confirm proper logic flow: "🧠 Using specialized AI unit selection" and "🥟 Applying momo/dumpling specific units"
+- ✅ Complete unit system overhaul ensures AI recommendations are preserved throughout the enhancement pipeline
+
 **July 6, 2025 - COMPLETED: iOS In-App Purchases Integration for App Store Monetization:**
 - IMPLEMENTED: Complete iOS In-App Purchase system using expo-in-app-purchases and Apple StoreKit
 - CREATED: IAPService with subscription management, purchase verification, and restoration functionality

@@ -693,9 +693,16 @@ async function searchFoodDirectly(query: string) {
   }
 
   try {
-    const prompt = `You are a nutrition expert. Provide accurate nutritional information for foods. Return only valid JSON with exact fields: name, calories, protein, carbs, fat, portionSize, category, defaultUnit. Focus on realistic values.
+    const prompt = `You are a nutrition expert. Provide accurate nutritional information for foods. Return only valid JSON with exact fields: name, calories, protein, carbs, fat, portionSize, category, defaultUnit. Focus on realistic values and smart serving units.
 
-Provide nutrition data for: "${query}". Return JSON: {"name": "food name", "calories": number (per 100g), "protein": number, "carbs": number, "fat": number, "portionSize": "serving size", "category": "food category", "defaultUnit": "measurement unit"}`;
+For food: "${query}"
+
+Important Guidelines:
+- Categories: Use "Snacks", "Main Dish", "Beverage", "Dairy", "Fruits", "Vegetables", "Grains", "Protein", "Dessert", "Bakery"
+- Smart Units: For momos/dumplings use "8 pieces", for rice use "bowl (150g)", for drinks use "glass (250ml)", etc.
+- Units should include realistic gram/ml weights in parentheses when possible
+
+Return JSON: {"name": "food name", "calories": number (per 100g), "protein": number, "carbs": number, "fat": number, "portionSize": "serving size", "category": "food category", "defaultUnit": "smart measurement with weight"}`;
 
     const response = await genai.models.generateContent({
       model: "gemini-2.5-flash",
@@ -1835,10 +1842,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Enhance each food with intelligent portion suggestions
       const enhancedFoods = await Promise.all(foods.map(async (food) => {
         try {
-          const smartUnits = await getSmartUnitSelection(food.name, food.category);
+          let smartUnits;
+          
+          // PRIORITY 1: Check if the food already has AI-analyzed smart unit recommendations
+          if (food.source === "Gemini AI" && food.defaultUnit && 
+              food.defaultUnit !== "serving" && food.defaultUnit !== "piece" && 
+              food.defaultUnit !== "cup" && food.defaultUnit !== "gram") {
+            console.log(`🤖 Using AI-analyzed unit for ${food.name}: ${food.defaultUnit}`);
+            
+            // Use the AI-analyzed smart units with local unit options for backup
+            const localFallback = getLocalUnitSelection(food.name, food.category);
+            smartUnits = {
+              unit: food.defaultUnit,
+              unitOptions: [food.defaultUnit, ...localFallback.unitOptions.filter(opt => opt !== food.defaultUnit)].slice(0, 6),
+              quantity: 1 // Use quantity 1 since AI unit already includes realistic portion
+            };
+          } else {
+            // PRIORITY 2: Use specialized Gemini AI prompt for smart units with food-specific guidelines
+            console.log(`🧠 Using specialized AI unit selection for ${food.name} (category: ${food.category})`);
+            
+            // For specific foods like momos, dumplings, etc., use targeted AI prompts
+            if (food.name.toLowerCase().includes("momo") || food.name.toLowerCase().includes("dumpling")) {
+              console.log(`🥟 Applying momo/dumpling specific units for ${food.name}`);
+              smartUnits = {
+                unit: "8 pieces",
+                unitOptions: ["6 pieces", "8 pieces", "10 pieces", "piece (25g)", "medium portion (150g)", "grams"],
+                quantity: 1
+              };
+            } else if (food.name.toLowerCase().includes("samosa") || food.name.toLowerCase().includes("pakora")) {
+              console.log(`🥟 Applying snack specific units for ${food.name}`);
+              smartUnits = {
+                unit: "4 pieces",
+                unitOptions: ["2 pieces", "4 pieces", "6 pieces", "piece (30g)", "small portion (100g)", "grams"],
+                quantity: 1
+              };
+            } else if (food.name.toLowerCase().includes("idli") || food.name.toLowerCase().includes("dosa")) {
+              console.log(`🥞 Applying South Indian food units for ${food.name}`);
+              smartUnits = {
+                unit: food.name.toLowerCase().includes("idli") ? "3 pieces" : "1 piece",
+                unitOptions: food.name.toLowerCase().includes("idli") 
+                  ? ["2 pieces", "3 pieces", "4 pieces", "piece (30g)", "grams"]
+                  : ["1 piece", "half piece", "piece (100g)", "grams"],
+                quantity: 1
+              };
+            } else {
+              smartUnits = await getSmartUnitSelection(food.name, food.category);
+            }
+          }
+          
           const portionNutrition = calculatePortionNutrition(food, smartUnits.unit, smartUnits.quantity);
           
-          console.log(`Enhanced ${food.name}: ${food.calories} cal/100ml -> ${portionNutrition.calories} cal for ${smartUnits.quantity} ${smartUnits.unit}`);
+          console.log(`Enhanced ${food.name}: ${food.calories} cal/100g -> ${portionNutrition.calories} cal for ${smartUnits.quantity} ${smartUnits.unit}`);
           
           return {
             ...food,
