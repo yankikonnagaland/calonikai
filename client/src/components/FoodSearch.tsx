@@ -614,6 +614,38 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
     };
   };
 
+  // Generate intelligent unit options based on AI recommendation
+  const generateUnitOptionsFromAI = (aiSmartUnit: string, food: Food): string[] => {
+    const unitOptions = [aiSmartUnit]; // Start with AI recommendation
+    const unitLower = aiSmartUnit.toLowerCase();
+    
+    // Extract unit type and add variations
+    if (unitLower.includes('cup')) {
+      unitOptions.push('1/2 cup', '1 cup', '2 cups', 'ml', 'grams');
+    } else if (unitLower.includes('bowl')) {
+      unitOptions.push('small bowl', 'medium bowl', 'large bowl', 'grams');
+    } else if (unitLower.includes('piece')) {
+      unitOptions.push('1 piece', '2 pieces', '3 pieces', 'grams');
+    } else if (unitLower.includes('slice')) {
+      unitOptions.push('1 slice', '2 slices', '3 slices', 'grams');
+    } else if (unitLower.includes('ml') || unitLower.includes('glass')) {
+      unitOptions.push('100ml', '150ml', '200ml', '250ml', '300ml', 'cup');
+    } else if (unitLower.includes('serving')) {
+      unitOptions.push('small serving', 'medium serving', 'large serving', 'grams');
+    } else if (unitLower.includes('tablespoon') || unitLower.includes('tbsp')) {
+      unitOptions.push('1 tbsp', '2 tbsp', '1 tsp', 'grams');
+    } else if (unitLower.includes('handful')) {
+      unitOptions.push('small handful', 'large handful', 'pieces', 'grams');
+    } else {
+      // Default fallback options
+      unitOptions.push('grams', 'pieces', 'serving');
+    }
+    
+    // Remove duplicates and ensure AI recommendation stays first
+    const uniqueOptions = [aiSmartUnit, ...unitOptions.filter(opt => opt !== aiSmartUnit)];
+    return [...new Set(uniqueOptions)];
+  };
+
   const handleFoodSelect = useCallback(async (food: Food) => {
     // Immediately update UI state for instant responsiveness
     setSelectedFood(food);
@@ -645,10 +677,13 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
         setAiAnalysis(aiResult);
         console.log(`AI Enhanced Analysis for ${food.name}:`, aiResult);
         
+        // Generate smart unit options based on AI recommendation
+        const smartUnitOptions = generateUnitOptionsFromAI(aiResult.smartUnit, food);
+        
         // Always use AI recommendations (disabled Smart Suggestion)
         setUnit(aiResult.smartUnit);
         setQuantity(aiResult.smartQuantity);
-        setUnitOptions(aiResult.unitOptions);
+        setUnitOptions(smartUnitOptions);
       }
     } catch (error) {
       console.log("AI analysis failed, using basic defaults");
