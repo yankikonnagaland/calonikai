@@ -1,8 +1,17 @@
 // iOS In-App Purchase Service for Calonik.ai
 // This service handles subscription purchases through Apple's StoreKit
 
-import * as InAppPurchases from 'expo-in-app-purchases';
-import { Alert } from 'react-native';
+import { Platform, Alert } from 'react-native';
+
+// Conditionally import InAppPurchases only on iOS
+let InAppPurchases = null;
+if (Platform.OS === 'ios') {
+  try {
+    InAppPurchases = require('expo-in-app-purchases');
+  } catch (error) {
+    console.log('InAppPurchases not available on this platform');
+  }
+}
 
 // Product IDs configured in App Store Connect
 export const SUBSCRIPTION_PRODUCTS = {
@@ -19,6 +28,12 @@ class IAPService {
 
   // Initialize the IAP service
   async initialize(userId) {
+    // Only initialize on iOS
+    if (Platform.OS !== 'ios' || !InAppPurchases) {
+      console.log('IAP Service not available on this platform');
+      return false;
+    }
+    
     try {
       this.currentUser = userId;
       
@@ -57,6 +72,12 @@ class IAPService {
 
   // Purchase a subscription
   async purchaseSubscription(productId) {
+    // Only allow purchases on iOS
+    if (Platform.OS !== 'ios' || !InAppPurchases) {
+      Alert.alert('Not Available', 'In-app purchases are only available on iOS devices');
+      return { success: false, error: 'Platform not supported' };
+    }
+    
     try {
       if (!this.isConnected) {
         throw new Error('IAP service not connected');

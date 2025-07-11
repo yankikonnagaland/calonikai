@@ -1,4 +1,7 @@
-# Quick APK Build Instructions
+# Quick APK Build Instructions - CONFLICT RESOLVED ✅
+
+## iOS In-App Purchase Conflict Fixed
+The iOS-only in-app purchase feature that was causing Android build conflicts has been resolved with platform-specific code separation.
 
 ## Fastest Way to Get Your Android APK
 
