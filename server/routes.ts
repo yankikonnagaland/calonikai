@@ -2618,7 +2618,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 },
               },
               {
-                text: 'Analyze this food image and identify all visible food items. For each food, estimate the actual portion and provide nutritional data per 100g. Return JSON: {"foods": [{"name": "food name", "calories": number (per 100g), "protein": number, "carbs": number, "fat": number, "confidence": number (0-100), "estimatedQuantity": "serving description"}], "suggestions": ["tips or recommendations"]}',
+                text: 'Analyze this food image and identify all visible food items. For each food, estimate the actual portion and provide nutritional data per 100g. Return JSON: {"foods": [{"name": "food name", "calories": number (per 100g), "protein": number, "carbs": number, "fat": number, "confidence": number (0-100), "estimatedQuantity": "serving description"}]}',
               },
             ],
           },
