@@ -1249,10 +1249,18 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
   }
   
   // Chips and packaged snacks
-  if (name.includes("chips") || name.includes("biscuit") || name.includes("cookie") || name.includes("wafer")) {
+  if (name.includes("chips") || name.includes("wafer")) {
     return {
       unit: "small pack (30g)",
       unitOptions: ["small pack (30g)", "medium pack (50g)", "large pack (80g)", "piece", "grams"],
+    };
+  }
+  
+  // Biscuits and cookies - enhanced with realistic piece-based measurements
+  if (name.includes("biscuit") || name.includes("cookie") || name.includes("cracker")) {
+    return {
+      unit: "piece",
+      unitOptions: ["piece (15g)", "2 pieces (30g)", "3 pieces (45g)", "4 pieces (60g)", "5 pieces (75g)", "medium portion (50g)", "grams"],
     };
   }
 
@@ -1912,6 +1920,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 unitOptions: food.name.toLowerCase().includes("idli") 
                   ? ["2 pieces", "3 pieces", "4 pieces", "piece (30g)", "grams"]
                   : ["1 piece", "half piece", "piece (100g)", "grams"],
+                quantity: 1
+              };
+            } else if (food.name.toLowerCase().includes("biscuit") || food.name.toLowerCase().includes("cookie") || food.name.toLowerCase().includes("cracker")) {
+              console.log(`🍪 Applying biscuit/cookie specific units for ${food.name}`);
+              smartUnits = {
+                unit: "piece",
+                unitOptions: ["piece (15g)", "2 pieces (30g)", "3 pieces (45g)", "4 pieces (60g)", "5 pieces (75g)", "medium portion (50g)", "grams"],
                 quantity: 1
               };
             } else {

@@ -692,6 +692,14 @@ The application follows a client-server architecture with clear separation of co
 - ✅ Hidden nutrition display text "Nutrition for X quantity (Xg) = X cal:" from UI while preserving calculations
 - ✅ Completely cleaned food search interface for minimal, focused user experience
 
+**July 11, 2025 - ENHANCED: Biscuit/Cookie Unit Selection with Realistic Portion Options:**
+- ✅ Applied improved unit options to all biscuit, cookie, and cracker searches based on AI-generated "Good Day Biscuit" success pattern
+- ✅ Enhanced unit selection logic with realistic piece-based measurements: "piece (15g)", "2 pieces (30g)", "3 pieces (45g)", "4 pieces (60g)", "5 pieces (75g)", "medium portion (50g)", "grams"
+- ✅ Separated biscuit/cookie handling from generic chips/wafers for more appropriate unit options
+- ✅ Updated both AI-enhanced search route and local unit selection function for consistent user experience
+- ✅ Improved user experience with portion-based measurements that match actual consumption patterns
+- ✅ Applied specialized unit logic in routes.ts for biscuit/cookie category with 🍪 logging indicator
+
 **July 10, 2025 - RESOLVED: AI Unit Selection Override Bug & Smart Recommendations System:**
 - ✅ FIXED critical bug where AI-recommended units (e.g., "8 pieces" for momos) were overridden by local fallback logic defaulting to "cup(200ml)"
 - ✅ Enhanced food enhancement process to prioritize AI-analyzed units over getLocalUnitSelection fallback
