@@ -1143,18 +1143,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100">{selectedFood.name}</h3>
-                <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                  {(selectedFood as any).realisticCalories ? (
-                    <>
-                      <span className="text-green-600 dark:text-green-400 font-bold">{(selectedFood as any).realisticCalories} cal</span> 
-                      <span className="text-gray-500"> for {(selectedFood as any).smartQuantity} {(selectedFood as any).smartUnit}</span>
-                      <br />
-                      <span className="text-xs">Base: {selectedFood.calories} cal per {selectedFood.portionSize}</span>
-                    </>
-                  ) : (
-                    <>Base: {selectedFood.calories} cal per {selectedFood.portionSize}</>
-                  )}
-                </div>
+                {/* Calorie display text hidden but calculations still work in background */}
               </div>
               <Badge variant="outline" className="bg-white/50">{selectedFood.category}</Badge>
             </div>
@@ -1188,7 +1177,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                   <div className="mb-1">
                     <span className="font-medium">Recommended:</span> {aiAnalysis.smartQuantity} {aiAnalysis.smartUnit}
                   </div>
-                  <div className="text-xs italic">{aiAnalysis.reasoning}</div>
+
                 </div>
               </div>
             )}

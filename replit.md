@@ -674,6 +674,8 @@ The application follows a client-server architecture with clear separation of co
 - ✅ Enhanced search performance with instant unit selection for pre-loaded results
 - ✅ Cost optimization: Selective AI pre-loading for top 3 results only
 - ✅ Complete removal of reasoning field from AI responses for faster API calls
+- ✅ Hidden calorie display text ("20 cal for", "Base: 20 cal per") from UI while maintaining background functionality
+- ✅ Cleaned UI by removing verbose calorie explanations while preserving accurate nutrition calculations
 
 **July 10, 2025 - RESOLVED: AI Unit Selection Override Bug & Smart Recommendations System:**
 - ✅ FIXED critical bug where AI-recommended units (e.g., "8 pieces" for momos) were overridden by local fallback logic defaulting to "cup(200ml)"
