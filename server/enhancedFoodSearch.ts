@@ -77,15 +77,33 @@ export async function enhancedFoodSearch(query: string, limit: number = 10, user
   // 2. SECONDARY: Search database foods with accuracy scoring and pre-load AI analysis
   try {
     const dbFoods = await storage.searchFoods(query);
+    console.log(`🔍 Database search for "${query}" returned ${dbFoods.length} results:`, dbFoods.map(f => f.name));
     
     for (const dbFood of dbFoods) {
+      // Filter out irrelevant database results (previously stored bad AI data)
+      const dbFoodNameLower = dbFood.name.toLowerCase();
+      const queryLower = query.toLowerCase();
+      
+      // Check if this database food is relevant to the search
+      const isRelevantToQuery = dbFoodNameLower.includes(queryLower);
+      const irrelevantFoods = ['pizza', 'nachos', 'pretzels', 'wings', 'fries', 'popcorn', 'cheese curds', 'sausage', 'brownie'];
+      const isKnownIrrelevant = irrelevantFoods.some(food => dbFoodNameLower.includes(food)) && !dbFoodNameLower.includes(queryLower);
+      
+      if (!isRelevantToQuery || isKnownIrrelevant) {
+        console.log(`🚫 FILTERING OUT irrelevant database result: "${dbFood.name}" for query "${query}"`);
+        continue;
+      }
+      
       // Skip if we already have a standard version
       if (results.some(r => 
         r.name.toLowerCase().includes(dbFood.name.toLowerCase().split(' ')[0]) ||
         dbFood.name.toLowerCase().includes(r.name.toLowerCase().split(' ')[0])
       )) {
+        console.log(`⏭️ SKIPPING duplicate: "${dbFood.name}" (already have similar result)`);
         continue;
       }
+      
+      console.log(`✅ KEEPING relevant database result: "${dbFood.name}" for query "${query}"`);;
 
       // Score database food accuracy
       const accuracy = scoreFoodAccuracy(dbFood);
@@ -411,20 +429,24 @@ async function generateAIFoodResults(query: string, limit: number, userId?: stri
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
     
-    const prompt = `Generate ${limit} foods that match the search term "${query}". Only include foods whose names contain or are directly related to "${query}".
+    const prompt = `CRITICAL: Generate ONLY ${limit} food items that literally contain "${query}" in their name.
 
-IMPORTANT: Only generate foods that are actually called "${query}" or contain "${query}" in their name. Do NOT generate foods that merely go well with "${query}".
+STRICT RULES:
+1. Every food name MUST contain the word "${query}"
+2. NO foods that just "go with" ${query}
+3. NO snack foods unless they contain "${query}" in the name
 
-Examples:
-- For "beer": Generate "Beer", "Light Beer", "Craft Beer", "Non-alcoholic Beer" - NOT pizza or snacks
-- For "chicken": Generate "Chicken Breast", "Chicken Thigh", "Grilled Chicken" - NOT side dishes
-- For "rice": Generate "White Rice", "Brown Rice", "Basmati Rice" - NOT curry or dal
+For "${query}" search, ONLY generate foods like:
+- "${query}" (the base food)
+- "Light ${query}", "Diet ${query}", "Organic ${query}"
+- "${query} varieties" that contain the word "${query}"
 
-JSON array format:
-[{"name":"Food Name","calories":X,"protein":Y,"carbs":Z,"fat":W,"category":"Beverages","defaultUnit":"bottle","smartPortion":"bottle (330ml)"}]
+FORBIDDEN: Pizza, Nachos, Pretzels, Wings, Fries (unless they contain "${query}" in the name)
 
-Categories: Snacks, Grains, Protein, Dairy, Fruits, Vegetables, Beverages, Desserts
-Values per 100g. Keep concise. Only return foods that match the search term directly.
+JSON format:
+[{"name":"MUST contain ${query}","calories":X,"protein":Y,"carbs":Z,"fat":W,"category":"Category","defaultUnit":"unit","smartPortion":"portion"}]
+
+Generate ONLY foods containing "${query}" in their actual name:`;
 
     const response = await ai.models.generateContent({
       model: "gemini-1.5-flash",
@@ -478,20 +500,23 @@ Values per 100g. Keep concise. Only return foods that match the search term dire
     for (const item of aiData) {
       if (!item.name || !item.calories) continue;
       
-      // Filter out irrelevant AI results that don't match the search query
+      // Strict filtering: Only allow foods that actually contain the search query in their name
       const itemNameLower = item.name.toLowerCase();
       const queryLower = query.toLowerCase();
-      const queryWords = queryLower.split(' ').filter(w => w.length > 1);
       
-      // Check if the AI result actually relates to the search query
-      const isRelevant = queryWords.some(word => itemNameLower.includes(word)) || 
-                        itemNameLower.includes(queryLower) ||
-                        queryLower.includes(itemNameLower);
+      // STRICT CHECK: The food name must contain the exact search query word
+      const containsQuery = itemNameLower.includes(queryLower);
       
-      if (!isRelevant) {
-        console.log(`Filtering out irrelevant AI result: "${item.name}" for query "${query}"`);
+      // Additional check: Reject known irrelevant foods
+      const irrelevantFoods = ['pizza', 'nachos', 'pretzels', 'wings', 'fries', 'popcorn', 'cheese curds', 'sausage', 'brownie', 'nuts'];
+      const isIrrelevantFood = irrelevantFoods.some(food => itemNameLower.includes(food)) && !itemNameLower.includes(queryLower);
+      
+      if (!containsQuery || isIrrelevantFood) {
+        console.log(`🚫 FILTERING OUT irrelevant AI result: "${item.name}" for query "${query}" (containsQuery: ${containsQuery}, isIrrelevant: ${isIrrelevantFood})`);
         continue;
       }
+      
+      console.log(`✅ KEEPING relevant AI result: "${item.name}" for query "${query}"`);;
       
       const enhancedResult: EnhancedFoodResult = {
         id: Math.floor(Math.random() * 1000000) + 8000000, // Unique ID for AI foods
