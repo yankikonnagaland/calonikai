@@ -678,6 +678,9 @@ The application follows a client-server architecture with clear separation of co
 - ✅ Cleaned UI by removing verbose calorie explanations while preserving accurate nutrition calculations
 - ✅ Hidden AI Enhanced Analysis and Smart Suggestion cards from UI while keeping AI functionality active in background
 - ✅ Streamlined food selection interface by removing verbose AI analysis display cards
+- ✅ Hidden "AI Detected" category badges from food selection UI
+- ✅ Hidden nutrition display text "Nutrition for X quantity (Xg) = X cal:" from UI while preserving calculations
+- ✅ Completely cleaned food search interface for minimal, focused user experience
 
 **July 10, 2025 - RESOLVED: AI Unit Selection Override Bug & Smart Recommendations System:**
 - ✅ FIXED critical bug where AI-recommended units (e.g., "8 pieces" for momos) were overridden by local fallback logic defaulting to "cup(200ml)"

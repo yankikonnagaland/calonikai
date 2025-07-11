@@ -1145,7 +1145,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                 <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100">{selectedFood.name}</h3>
                 {/* Calorie display text hidden but calculations still work in background */}
               </div>
-              <Badge variant="outline" className="bg-white/50">{selectedFood.category}</Badge>
+              {/* Category badge hidden from UI */}
             </div>
             
             {/* AI Analysis and Smart Suggestions working in background but hidden from UI */}
@@ -1273,9 +1273,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
                 
                 return (
                   <div>
-                    <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Nutrition for {formatNutritionDisplay(quantity, unit, calculatedNutrition)}:
-                    </div>
+                    {/* Nutrition display text hidden but calculations still work in background */}
                     {!validation.isValid && (
                       <div className="text-xs text-amber-600 dark:text-amber-400 mb-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded border">
                         ⚠️ {validation.warning}
