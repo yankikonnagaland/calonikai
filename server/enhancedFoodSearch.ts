@@ -30,7 +30,6 @@ export interface EnhancedFoodResult {
     smartQuantity: number;
     unitOptions: string[];
     aiConfidence: number;
-    reasoning: string;
   };
 }
 
@@ -403,30 +402,13 @@ async function generateAIFoodResults(query: string, limit: number, userId?: stri
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
     
-    const prompt = `
-You are a nutrition expert specializing in Indian foods. Generate accurate nutrition data for the food query: "${query}"
+    const prompt = `Generate ${limit} foods for "${query}":
 
-Return ONLY a JSON array with ${limit} relevant food variations. Each food must have:
-{
-  "name": "Exact food name",
-  "calories": number per 100g,
-  "protein": number per 100g,
-  "carbs": number per 100g, 
-  "fat": number per 100g,
-  "category": "Main Course|Snacks|Beverages|Fruits|Vegetables|Grains|Dairy|Desserts",
-  "defaultUnit": "serving (100g)|piece (50g)|cup (200ml)|bowl (150g)",
-  "smartPortion": "realistic portion like 'medium bowl (200g)' or 'regular serving (150g)'"
-}
+JSON array format:
+[{"name":"Food Name","calories":X,"protein":Y,"carbs":Z,"fat":W,"category":"Snacks","defaultUnit":"piece","smartPortion":"piece (50g)"}]
 
-Requirements:
-- Use accurate USDA/IFCT nutrition values
-- Focus on Indian food variations if applicable
-- Provide realistic portion sizes for defaultUnit
-- Categories must match the exact list above
-- Return ONLY the JSON array, no other text
-
-Example for "rice": [{"name":"Basmati Rice (Cooked)","calories":121,"protein":2.5,"carbs":25,"fat":0.2,"category":"Grains","defaultUnit":"bowl (150g)","smartPortion":"medium bowl (150g)"}]
-`;
+Categories: Snacks, Grains, Protein, Dairy, Fruits, Vegetables, Beverages, Desserts
+Values per 100g. Keep concise.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-1.5-flash",
@@ -558,22 +540,20 @@ async function preloadAIAnalysis(foodName: string, sessionId?: string, userId?: 
   smartQuantity: number;
   unitOptions: string[];
   aiConfidence: number;
-  reasoning: string;
 } | null> {
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
     
-    const prompt = `Analyze this food for smart portion recommendations: "${foodName}"
+    const prompt = `Food: "${foodName}"
 
-Please provide:
-1. Enhanced category (Indian cuisine context): Grains, Protein, Dairy, Fruits, Vegetables, Snacks, Beverages, etc.
-2. Smart default unit with realistic portion size
-3. Smart quantity (typically 1 for default portions)
-4. List of 3-4 realistic unit options for this food
-5. Confidence level (0.0 to 1.0)
-6. Brief reasoning for the recommendations
+Return JSON only:
+- enhancedCategory: Category (Snacks/Grains/Protein/Dairy/Fruits/Vegetables/Beverages)
+- smartUnit: Best default unit
+- smartQuantity: Default quantity (usually 1)
+- unitOptions: 3-4 realistic units
+- aiConfidence: 0.8-1.0
 
-Focus on Indian eating patterns and realistic portions. Respond with JSON only.`;
+Keep minimal.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
@@ -589,10 +569,9 @@ Focus on Indian eating patterns and realistic portions. Respond with JSON only.`
               type: "array",
               items: { type: "string" }
             },
-            aiConfidence: { type: "number" },
-            reasoning: { type: "string" }
+            aiConfidence: { type: "number" }
           },
-          required: ["enhancedCategory", "smartUnit", "smartQuantity", "unitOptions", "aiConfidence", "reasoning"]
+          required: ["enhancedCategory", "smartUnit", "smartQuantity", "unitOptions", "aiConfidence"]
         }
       },
       contents: prompt,
@@ -622,8 +601,7 @@ Focus on Indian eating patterns and realistic portions. Respond with JSON only.`
       smartUnit: aiData.smartUnit || "serving (100g)",
       smartQuantity: aiData.smartQuantity || 1,
       unitOptions: aiData.unitOptions || ["serving (100g)", "grams"],
-      aiConfidence: aiData.aiConfidence || 0.8,
-      reasoning: aiData.reasoning || "Standard food analysis"
+      aiConfidence: aiData.aiConfidence || 0.8
     };
     
   } catch (error) {

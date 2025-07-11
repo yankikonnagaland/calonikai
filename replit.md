@@ -664,6 +664,17 @@ The application follows a client-server architecture with clear separation of co
 - MAINTAINED: All subscription features and functionality remain unchanged
 - OPTIMIZED: Pricing strategy for broader user adoption while maintaining value proposition
 
+**July 11, 2025 - OPTIMIZED: AI API Performance & Reduced Token Usage:**
+- ✅ Streamlined AI prompts to reduce unnecessary descriptive text generation
+- ✅ Removed verbose reasoning fields from AI analysis responses (e.g., "Samosa is a very common fried pastry...")
+- ✅ Optimized food generation prompts from 400+ tokens to ~50 tokens (87% reduction)
+- ✅ Updated AI analysis prompt to focus only on essential unit selection data
+- ✅ Implemented 4-tier priority system for unit selection (Pre-loaded AI > AI-enhanced > Enhanced portion > Smart fallback)
+- ✅ Fixed unit recommendation logic to prioritize AI analysis over Smart suggestions
+- ✅ Enhanced search performance with instant unit selection for pre-loaded results
+- ✅ Cost optimization: Selective AI pre-loading for top 3 results only
+- ✅ Complete removal of reasoning field from AI responses for faster API calls
+
 **July 10, 2025 - RESOLVED: AI Unit Selection Override Bug & Smart Recommendations System:**
 - ✅ FIXED critical bug where AI-recommended units (e.g., "8 pieces" for momos) were overridden by local fallback logic defaulting to "cup(200ml)"
 - ✅ Enhanced food enhancement process to prioritize AI-analyzed units over getLocalUnitSelection fallback
