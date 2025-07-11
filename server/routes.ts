@@ -1931,7 +1931,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             } else if (food.name.toLowerCase().includes("biscuit") || food.name.toLowerCase().includes("cookie") || food.name.toLowerCase().includes("cracker")) {
               console.log(`🍪 Applying biscuit/cookie specific units for ${food.name}`);
               smartUnits = {
-                unit: "piece",
+                unit: "piece (15g)",
                 unitOptions: ["piece (15g)", "2 pieces (30g)", "3 pieces (45g)", "4 pieces (60g)", "5 pieces (75g)", "medium portion (50g)", "grams"],
                 quantity: 1
               };
@@ -1946,6 +1946,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           return {
             ...food,
+            defaultUnit: smartUnits.unit,
+            unitOptions: smartUnits.unitOptions,
             smartUnit: smartUnits.unit,
             smartQuantity: smartUnits.quantity,
             smartUnitOptions: smartUnits.unitOptions,
