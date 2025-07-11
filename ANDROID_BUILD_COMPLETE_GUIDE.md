@@ -138,7 +138,7 @@ eas build --profile development --platform android
     "production": {
       "distribution": "store",
       "android": {
-        "buildType": "aab"
+        "buildType": "app-bundle"
       }
     },
     "apk": {
@@ -180,7 +180,7 @@ eas build --profile development --platform android
 - **Size**: Larger (includes all architectures)
 - **Command**: `eas build --platform android --profile apk`
 
-### AAB Profile (Production)
+### App Bundle Profile (Production)
 - **Output**: `.aab` (Android App Bundle)
 - **Use**: Google Play Store submission
 - **Size**: Smaller (optimized by Play Store)
