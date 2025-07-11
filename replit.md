@@ -692,6 +692,14 @@ The application follows a client-server architecture with clear separation of co
 - ✅ Hidden nutrition display text "Nutrition for X quantity (Xg) = X cal:" from UI while preserving calculations
 - ✅ Completely cleaned food search interface for minimal, focused user experience
 
+**July 11, 2025 - ADDED: Pork Curry Specific Unit Options with Piece Calculations:**
+- ✅ Added specific unit options for pork curry searches: "small piece (25g)" and "medium piece (50g)"
+- ✅ Updated getLocalUnitSelection function to provide pork curry-specific units with accurate gram measurements
+- ✅ Enhanced calculatePortionNutrition function to handle small piece (25g = 62.5 cal) and medium piece (50g = 125 cal) calculations
+- ✅ Added dual calculation logic in both main portion calculator and meal removal calculator for consistency
+- ✅ Pork curry now shows comprehensive unit options: small piece (25g), medium piece (50g), serving (100g), bowl, grams
+- ✅ Accurate calorie calculations: small piece = 0.25 multiplier, medium piece = 0.50 multiplier based on 250 cal/100g base
+
 **July 11, 2025 - ENHANCED: Biscuit/Cookie Unit Selection with Realistic Portion Options:**
 - ✅ Applied improved unit options to all biscuit, cookie, and cracker searches based on AI-generated "Good Day Biscuit" success pattern
 - ✅ Enhanced unit selection logic with realistic piece-based measurements: "piece (15g)", "2 pieces (30g)", "3 pieces (45g)", "4 pieces (60g)", "5 pieces (75g)", "medium portion (50g)", "grams"

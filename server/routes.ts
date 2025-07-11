@@ -937,6 +937,12 @@ function calculatePortionNutrition(food: any, unit: string, quantity: number) {
   else if (unitLower.includes('slice (80g)')) multiplier = quantity * 0.8;  // Large cake slice
   // General unit calculations for backward compatibility
   else if (unitLower.includes('slice')) multiplier = quantity * 0.6;
+  // SPECIFIC PORK CURRY PIECE CALCULATIONS  
+  else if (food.name.toLowerCase().includes('pork') && food.name.toLowerCase().includes('curry')) {
+    if (unitLower.includes('small piece')) multiplier = quantity * 0.25; // 25g = 0.25 * 100g base
+    else if (unitLower.includes('medium piece')) multiplier = quantity * 0.50; // 50g = 0.50 * 100g base
+    else if (unitLower.includes('piece') || unitLower.includes('pieces')) multiplier = quantity * 0.8; // Default piece
+  }
   else if (unitLower.includes('piece') || unitLower.includes('pieces')) {
     // Context-sensitive piece calculations
     if (food.name.toLowerCase().includes('bread') || food.name.toLowerCase().includes('roti')) {
@@ -1076,6 +1082,29 @@ function getLocalUnitSelection(foodName: string, category: string = "") {
   // Curry and liquid dishes - enhanced with bowl options
   if (name.includes("curry") || name.includes("dal") || name.includes("soup") || name.includes("stew")) {
     const isDal = name.includes("dal");
+    const isPorkCurry = name.includes("pork") && name.includes("curry");
+    
+    // Specific unit options for pork curry with piece measurements
+    if (isPorkCurry) {
+      return {
+        unit: "serving (100g)",
+        unitOptions: [
+          "small piece (25g)",
+          "medium piece (50g)", 
+          "serving (100g)",
+          "bowl (150ml)",
+          "large bowl (200ml)",
+          "25g",
+          "50g",
+          "75g",
+          "100g",
+          "150g",
+          "200g",
+          "grams"
+        ],
+      };
+    }
+    
     return {
       unit: isDal ? "bowl (150g)" : "bowl (150ml)",
       unitOptions: [
@@ -2230,6 +2259,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             else if (name.includes("walnut")) return 0.025;
             else return 0.015;
           }
+        }
+
+        // SPECIFIC PORK CURRY PIECE MEASUREMENTS
+        if (name.includes("pork") && name.includes("curry")) {
+          if (unitLower.includes("small piece")) return 0.25; // 25g = 0.25 * 100g base
+          else if (unitLower.includes("medium piece")) return 0.50; // 50g = 0.50 * 100g base
         }
 
         // MEAT & PROTEIN - Enhanced piece-based calculations for consistent portioning
