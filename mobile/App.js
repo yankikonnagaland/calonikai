@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
 import { 
   StyleSheet, 
   Text, 
@@ -7,16 +9,24 @@ import {
   SafeAreaView, 
   TouchableOpacity,
   ActivityIndicator,
-  Linking,
   Alert
 } from 'react-native';
+
+// Import screens
+import HomeScreen from './src/screens/HomeScreen';
+import CameraScreen from './src/screens/CameraScreen';
+import ExerciseScreen from './src/screens/ExerciseScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
+import DashboardScreen from './src/screens/DashboardScreen';
 import SubscriptionModal from './components/SubscriptionModal';
-// WebView removed due to dependency conflicts
+
+const Stack = createStackNavigator();
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
+  const [navigationReady, setNavigationReady] = useState(false);
   const [showSubscription, setShowSubscription] = useState(false);
-  const [userId] = useState('mobile_user_123'); // In a real app, this would come from authentication
+  const [userId] = useState('mobile_user_123');
 
   // Simulate app initialization
   useEffect(() => {
@@ -27,36 +37,33 @@ export default function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  const openWebApp = () => {
-    // Open directly in browser since WebView has dependency conflicts
-    openInBrowser();
-  };
-
-  const openInBrowser = () => {
-    const url = 'https://951c9b0b-a7e6-4243-ad92-b80de619ea52-00-2w9g548p0tyi.worf.replit.dev';
-    Linking.openURL(url).catch(err => {
-      Alert.alert('Error', 'Could not open web browser');
-      console.error('Error opening URL:', err);
-    });
-  };
-
-  // Removed WebView functionality due to dependency conflicts
-
+  // Loading screen
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.splashContent}>
           <View style={styles.header}>
             <Text style={styles.title}>Calonik.ai</Text>
-            <Text style={styles.subtitle}>Smart Calorie Tracker</Text>
+            <Text style={styles.subtitle}>AI Nutrition Tracker</Text>
             <Text style={styles.description}>
-              Track your nutrition and reach your health goals with AI-powered food recognition
+              Full native mobile app with AI-powered food recognition, nutrition tracking, 
+              exercise logging, and personalized health insights
             </Text>
           </View>
           
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#3B82F6" />
-            <Text style={styles.loadingText}>Initializing...</Text>
+            <Text style={styles.loadingText}>Initializing native app...</Text>
+          </View>
+          
+          <View style={styles.featuresPreview}>
+            <Text style={styles.featuresTitle}>Native Mobile Features:</Text>
+            <Text style={styles.featureItem}>📱 Full offline functionality</Text>
+            <Text style={styles.featureItem}>📷 Native camera integration</Text>
+            <Text style={styles.featureItem}>🤖 AI food recognition</Text>
+            <Text style={styles.featureItem}>📊 Real-time nutrition tracking</Text>
+            <Text style={styles.featureItem}>💪 Exercise timer & logging</Text>
+            <Text style={styles.featureItem}>👤 Profile & goal management</Text>
           </View>
         </View>
         <StatusBar style="light" />
@@ -64,69 +71,75 @@ export default function App() {
     );
   }
 
-  // WebView functionality removed due to dependency conflicts
-  // Direct browser opening is the primary method
-
+  // Main app with navigation
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Calonik.ai</Text>
-          <Text style={styles.subtitle}>Mobile Access</Text>
-          <Text style={styles.description}>
-            Access your full Calonik.ai experience with all features including AI food analysis, 
-            nutrition tracking, exercise logging, and detailed health dashboards.
-          </Text>
-        </View>
-
-        <View style={styles.optionsContainer}>
-          <TouchableOpacity style={styles.primaryButton} onPress={openWebApp}>
-            <Text style={styles.primaryButtonText}>Launch Calonik.ai</Text>
-            <Text style={styles.buttonSubtext}>Open your full nutrition tracker</Text>
-          </TouchableOpacity>
-
-          <View style={styles.infoCard}>
-            <Text style={styles.infoText}>
-              This mobile app launcher opens your complete Calonik.ai web application with all features:
-            </Text>
-            <Text style={styles.infoSubtext}>
-              • AI food camera and search{'\n'}
-              • Nutrition tracking and analytics{'\n'}
-              • Exercise logging{'\n'}
-              • Health dashboards and goals
-            </Text>
+    <NavigationContainer 
+      onReady={() => setNavigationReady(true)}
+      fallback={
+        <SafeAreaView style={styles.container}>
+          <View style={styles.splashContent}>
+            <ActivityIndicator size="large" color="#3B82F6" />
+            <Text style={styles.loadingText}>Loading navigation...</Text>
           </View>
-        </View>
-
-        <View style={styles.featuresPreview}>
-          <Text style={styles.featuresTitle}>Full Features Available:</Text>
-          <View style={styles.featuresList}>
-            <Text style={styles.featureItem}>🔍 AI-powered food search & analysis</Text>
-            <Text style={styles.featureItem}>📷 Smart food camera recognition</Text>
-            <Text style={styles.featureItem}>📊 Detailed nutrition tracking</Text>
-            <Text style={styles.featureItem}>💪 Exercise & workout logging</Text>
-            <Text style={styles.featureItem}>📈 Health progress dashboards</Text>
-            <Text style={styles.featureItem}>🎯 Personalized nutrition goals</Text>
-          </View>
-          
-          <TouchableOpacity 
-            style={styles.subscriptionButton}
-            onPress={() => setShowSubscription(true)}
-          >
-            <Text style={styles.subscriptionButtonText}>
-              View Subscription Plans
-            </Text>
-          </TouchableOpacity>
-        </View>
-        
-        <SubscriptionModal
-          visible={showSubscription}
-          onClose={() => setShowSubscription(false)}
-          userId={userId}
+        </SafeAreaView>
+      }
+    >
+      <Stack.Navigator
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: '#1E293B',
+          },
+          headerTintColor: '#FFFFFF',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
+      >
+        <Stack.Screen 
+          name="Home" 
+          component={HomeScreen} 
+          options={{ 
+            title: 'Calonik.ai',
+            headerRight: () => (
+              <TouchableOpacity 
+                style={styles.headerButton}
+                onPress={() => setShowSubscription(true)}
+              >
+                <Text style={styles.headerButtonText}>👑 Pro</Text>
+              </TouchableOpacity>
+            )
+          }} 
         />
-      </View>
+        <Stack.Screen 
+          name="Camera" 
+          component={CameraScreen} 
+          options={{ title: 'AI Food Camera' }} 
+        />
+        <Stack.Screen 
+          name="Exercise" 
+          component={ExerciseScreen} 
+          options={{ title: 'Exercise Tracker' }} 
+        />
+        <Stack.Screen 
+          name="Profile" 
+          component={ProfileScreen} 
+          options={{ title: 'Profile & Goals' }} 
+        />
+        <Stack.Screen 
+          name="Dashboard" 
+          component={DashboardScreen} 
+          options={{ title: 'Health Dashboard' }} 
+        />
+      </Stack.Navigator>
+      
+      <SubscriptionModal
+        visible={showSubscription}
+        onClose={() => setShowSubscription(false)}
+        userId={userId}
+      />
+      
       <StatusBar style="light" />
-    </SafeAreaView>
+    </NavigationContainer>
   );
 }
 
