@@ -683,7 +683,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       clearTimeout(suggestionTimeoutRef.current);
     }
     
-    // OPTIMIZATION: Check for pre-loaded AI analysis first
+    // PRIORITY 1: Check for pre-loaded AI analysis first (INSTANT)
     const enhancedFood = food as any;
     if (enhancedFood.aiAnalysis) {
       console.log("🚀 INSTANT UNIT SELECTION: Using pre-loaded AI analysis for", food.name, enhancedFood.aiAnalysis);
@@ -695,22 +695,34 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
       return; // Skip all API calls since we have instant data
     }
     
-    // Set immediate default values using local intelligence for instant display
-    const localSuggestion = getIntelligentUnits(food);
+    // PRIORITY 2: Use enhanced search defaultUnit (AI-enhanced)
+    if (enhancedFood.defaultUnit && enhancedFood.unitOptions) {
+      console.log("🎯 Using AI-enhanced defaultUnit from search for", food.name, ":", enhancedFood.defaultUnit);
+      setUnit(enhancedFood.defaultUnit);
+      setQuantity(1);
+      setUnitOptions(enhancedFood.unitOptions);
+      setIsAnalyzing(false);
+      return; // Skip Smart suggestions and use AI-enhanced data
+    }
     
-    // Use enhanced portion data if available from AI detection
+    // PRIORITY 3: Use enhanced portion data if available from AI detection
     if ((food as any).smartUnit && (food as any).smartQuantity) {
       console.log(`Using enhanced portion data for ${food.name}: ${(food as any).smartQuantity} ${(food as any).smartUnit}`);
       setUnit((food as any).smartUnit);
       setQuantity(1); // Always reset to 1
-      setUnitOptions([(food as any).smartUnit, ...localSuggestion.unitOptions.filter(opt => opt !== (food as any).smartUnit)]);
-    } else {
-      setUnit(localSuggestion.unit);
-      setQuantity(1); // Always reset to 1
-      setUnitOptions(localSuggestion.unitOptions);
+      setUnitOptions([(food as any).smartUnit, "serving (100g)", "grams", "pieces"]);
+      setIsAnalyzing(false);
+      return; // Skip Smart suggestions
     }
     
-    // Start AI analysis in the background only if not pre-loaded
+    // PRIORITY 4: Fallback to Smart suggestions only if no AI data available
+    const localSuggestion = getIntelligentUnits(food);
+    setUnit(localSuggestion.unit);
+    setQuantity(1); // Always reset to 1
+    setUnitOptions(localSuggestion.unitOptions);
+    
+    // ONLY run background AI analysis if no AI data was provided from search
+    console.log("⚙️ Running background AI analysis since no pre-loaded data available");
     setIsAnalyzing(true);
     setAiAnalysis(null);
     
@@ -720,38 +732,19 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
         setAiAnalysis(aiResult);
         console.log(`AI Enhanced Analysis for ${food.name}:`, aiResult);
         
-        // Update unit options with AI suggestions if better than local
+        // Update unit options with AI suggestions if better than Smart suggestions
         if (aiResult.aiConfidence > 0.7) {
+          console.log("🤖 Applying background AI analysis (high confidence)");
           setUnit(aiResult.smartUnit);
           setQuantity(aiResult.smartQuantity);
           setUnitOptions(aiResult.unitOptions);
         }
       }
     } catch (error) {
-      console.log("AI analysis failed, using local suggestions");
+      console.log("AI analysis failed, using Smart suggestions fallback");
     } finally {
       setIsAnalyzing(false);
     }
-    
-    // Fetch backend unit options asynchronously (non-blocking for better UX)
-    fetch(`/api/unit-selection/${encodeURIComponent(food.name)}?category=${encodeURIComponent(food.category)}`)
-      .then(response => {
-        if (response.ok) {
-          return response.json();
-        }
-        throw new Error('Backend unit selection failed');
-      })
-      .then(unitData => {
-        // Only update if we don't have enhanced portion data already
-        if (!(food as any).smartUnit || !(food as any).smartQuantity) {
-          setUnitOptions(unitData.unitOptions);
-          setUnit(unitData.unit);
-        }
-      })
-      .catch(error => {
-        console.log("Backend unit selection failed, using local data:", error);
-        // Local data already set above - no action needed
-      });
     
   }, [onFoodSelect, analyzeFood]);
 
