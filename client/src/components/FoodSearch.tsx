@@ -1148,61 +1148,7 @@ export default function FoodSearch({ sessionId, selectedDate, onFoodSelect, onMe
               <Badge variant="outline" className="bg-white/50">{selectedFood.category}</Badge>
             </div>
             
-            {/* AI Analysis Display */}
-            {isAnalyzing && (
-              <div className="mb-4 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-md border border-purple-200 dark:border-purple-800">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="w-4 h-4 text-purple-500 animate-pulse" />
-                  <span className="text-sm font-medium text-purple-700 dark:text-purple-300">AI Analysis in progress...</span>
-                </div>
-                <div className="text-xs text-purple-600 dark:text-purple-400">
-                  Analyzing food category and optimal serving suggestions
-                </div>
-              </div>
-            )}
-            
-            {aiAnalysis && (
-              <div className="mb-4 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-md border border-purple-200 dark:border-purple-800">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="w-4 h-4 text-purple-500" />
-                  <span className="text-sm font-medium text-purple-700 dark:text-purple-300">AI Enhanced Analysis</span>
-                  <Badge variant="outline" className="text-xs bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300">
-                    {Math.round(aiAnalysis.aiConfidence * 100)}% confidence
-                  </Badge>
-                </div>
-                <div className="text-sm text-purple-600 dark:text-purple-400">
-                  <div className="mb-1">
-                    <span className="font-medium">Category:</span> {aiAnalysis.enhancedCategory}
-                  </div>
-                  <div className="mb-1">
-                    <span className="font-medium">Recommended:</span> {aiAnalysis.smartQuantity} {aiAnalysis.smartUnit}
-                  </div>
-
-                </div>
-              </div>
-            )}
-
-            {/* Intelligent Suggestion Display */}
-            <div className="mb-4 p-3 bg-white/60 dark:bg-gray-800/60 rounded-md border border-blue-100 dark:border-blue-900">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Smart Suggestion</span>
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                {(selectedFood as any).portionExplanation ? (
-                  <>
-                    <span className="font-medium">{(selectedFood as any).portionExplanation}</span>
-                    <br />
-                    <span className="text-xs italic">Smart portion size for realistic tracking</span>
-                  </>
-                ) : (
-                  <>
-                    Recommended: <span className="font-medium">{quantity} {unit}</span> - 
-                    {getIntelligentUnits(selectedFood).reasoning}
-                  </>
-                )}
-              </div>
-            </div>
+            {/* AI Analysis and Smart Suggestions working in background but hidden from UI */}
             
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
