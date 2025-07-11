@@ -139,22 +139,31 @@ export async function enhancedFoodSearch(query: string, limit: number = 10, user
     }
   }
 
-  // 4. Sort by accuracy and relevance
+  // 4. Sort by relevance first, then accuracy
   results.sort((a, b) => {
-    // Prioritize accuracy
-    const accuracyWeight = { 'high': 3, 'medium': 2, 'low': 1 };
-    const aScore = accuracyWeight[a.accuracy];
-    const bScore = accuracyWeight[b.accuracy];
-    
-    if (aScore !== bScore) return bScore - aScore;
-    
-    // Then by relevance (exact match > partial match)
-    const aExact = a.name.toLowerCase() === normalizedQuery ? 1 : 0;
-    const bExact = b.name.toLowerCase() === normalizedQuery ? 1 : 0;
-    
+    // 1. HIGHEST PRIORITY: Exact full string match
+    const aExact = a.name.toLowerCase() === normalizedQuery ? 100 : 0;
+    const bExact = b.name.toLowerCase() === normalizedQuery ? 100 : 0;
     if (aExact !== bExact) return bExact - aExact;
     
-    // Finally by name length (shorter = more specific)
+    // 2. HIGH PRIORITY: Contains all words from query in order
+    const queryWords = normalizedQuery.split(' ').filter(w => w.length > 1);
+    const aContainsAll = queryWords.every(word => a.name.toLowerCase().includes(word)) ? 50 : 0;
+    const bContainsAll = queryWords.every(word => b.name.toLowerCase().includes(word)) ? 50 : 0;
+    if (aContainsAll !== bContainsAll) return bContainsAll - aContainsAll;
+    
+    // 3. MEDIUM PRIORITY: String similarity score (how many query words match)
+    const aMatchCount = queryWords.filter(word => a.name.toLowerCase().includes(word)).length;
+    const bMatchCount = queryWords.filter(word => b.name.toLowerCase().includes(word)).length;
+    if (aMatchCount !== bMatchCount) return bMatchCount - aMatchCount;
+    
+    // 4. ACCURACY: Only as tiebreaker after relevance
+    const accuracyWeight = { 'high': 3, 'medium': 2, 'low': 1 };
+    const aAccuracy = accuracyWeight[a.accuracy];
+    const bAccuracy = accuracyWeight[b.accuracy];
+    if (aAccuracy !== bAccuracy) return bAccuracy - aAccuracy;
+    
+    // 5. Finally by name length (shorter = more specific)
     return a.name.length - b.name.length;
   });
 
