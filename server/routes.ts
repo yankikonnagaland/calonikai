@@ -2237,54 +2237,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Meal not found" });
       }
 
-      // If removal was successful and we found the meal item, update the daily summary
-      if (mealItemToRemove.length > 0) {
-        const removedItem = mealItemToRemove[0];
-        const sessionId = removedItem.sessionId;
-        const date = removedItem.date || new Date().toISOString().split('T')[0];
-        
-        console.log(`Updating daily summary for session ${sessionId} on date ${date} after meal removal`);
-        
-        // Get all remaining meal items for this session and date
-        const remainingMealItems = await storage.getMealItems(sessionId, date);
-        
-        // Get existing daily summary
-        const existingSummary = await storage.getDailySummary(sessionId, date);
-        
-        if (existingSummary) {
-          // Calculate new totals from remaining meal items
-          const newTotals = remainingMealItems.reduce((acc, item) => {
-            const multiplier = getMultiplier(item.unit, item.food);
-            const calories = (item.food?.calories || 0) * (item.quantity || 1) * multiplier;
-            const protein = (item.food?.protein || 0) * (item.quantity || 1) * multiplier;
-            const carbs = (item.food?.carbs || 0) * (item.quantity || 1) * multiplier;
-            const fat = (item.food?.fat || 0) * (item.quantity || 1) * multiplier;
-            
-            return {
-              calories: acc.calories + calories,
-              protein: acc.protein + protein,
-              carbs: acc.carbs + carbs,
-              fat: acc.fat + fat
-            };
-          }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
-          
-          // Update the daily summary with new totals and meal data
-          const updatedSummary = {
-            sessionId,
-            date,
-            totalCalories: Math.round(newTotals.calories * 100) / 100,
-            totalProtein: Math.round(newTotals.protein * 100) / 100,
-            totalCarbs: Math.round(newTotals.carbs * 100) / 100,
-            totalFat: Math.round(newTotals.fat * 100) / 100,
-            caloriesBurned: existingSummary.caloriesBurned || 0,
-            netCalories: Math.round((newTotals.calories - (existingSummary.caloriesBurned || 0)) * 100) / 100,
-            mealData: JSON.stringify(remainingMealItems)
-          };
-          
-          await storage.saveDailySummary(updatedSummary);
-          console.log(`Daily summary updated successfully after meal removal`);
-        }
-      }
+      // FIXED: Only remove items from current meal - DO NOT touch daily summary
+      // The daily summary should only be updated when meals are submitted, not when current meal items are removed
+      console.log(`✅ CRITICAL BUG FIX: Meal item ${id} removed from current meal only. Daily summary preserved.`);
+      console.log(`⚠️  Previous bug: Removing current meal items incorrectly recalculated daily summary from remaining current items`);
+      console.log(`✓  New behavior: Current meal items are separate from submitted daily summary data`);
 
       res.json({ message: "Meal removed successfully" });
     } catch (error) {

@@ -664,6 +664,16 @@ The application follows a client-server architecture with clear separation of co
 - MAINTAINED: All subscription features and functionality remain unchanged
 - OPTIMIZED: Pricing strategy for broader user adoption while maintaining value proposition
 
+**July 11, 2025 - CRITICAL BUG FIX: Meal Removal Architecture & Data Integrity:**
+- ✅ RESOLVED: Critical bug where removing current meal items incorrectly cleared entire daily summary instead of just removing specific items
+- ✅ ARCHITECTURAL FIX: Properly separated meal_items table (temporary current meal) from daily_summaries table (permanent accumulated data)
+- ✅ BACKEND FIX: DELETE /api/meal/:id route now only removes items from current meal without touching daily summary
+- ✅ DATA INTEGRITY: Daily summary preservation ensures previously submitted meals are never lost during current meal item removal
+- ✅ DEBUGGING: Added comprehensive logging to track meal removal operations and prevent future data loss
+- ✅ ARCHITECTURE CLARITY: Current meal items are temporary building blocks, daily summaries are permanent historical records
+- ✅ USER EXPERIENCE: Removing foods from current meal no longer wipes out breakfast when building lunch
+- ✅ DASHBOARD LOGIC: Dashboard removal correctly removes from daily summary (for submitted meals), current meal removal only affects current meal
+
 **July 11, 2025 - OPTIMIZED: AI API Performance & Reduced Token Usage:**
 - ✅ Streamlined AI prompts to reduce unnecessary descriptive text generation
 - ✅ Removed verbose reasoning fields from AI analysis responses (e.g., "Samosa is a very common fried pastry...")
