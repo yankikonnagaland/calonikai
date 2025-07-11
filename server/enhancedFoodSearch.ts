@@ -411,13 +411,20 @@ async function generateAIFoodResults(query: string, limit: number, userId?: stri
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
     
-    const prompt = `Generate ${limit} foods for "${query}":
+    const prompt = `Generate ${limit} foods that match the search term "${query}". Only include foods whose names contain or are directly related to "${query}".
+
+IMPORTANT: Only generate foods that are actually called "${query}" or contain "${query}" in their name. Do NOT generate foods that merely go well with "${query}".
+
+Examples:
+- For "beer": Generate "Beer", "Light Beer", "Craft Beer", "Non-alcoholic Beer" - NOT pizza or snacks
+- For "chicken": Generate "Chicken Breast", "Chicken Thigh", "Grilled Chicken" - NOT side dishes
+- For "rice": Generate "White Rice", "Brown Rice", "Basmati Rice" - NOT curry or dal
 
 JSON array format:
-[{"name":"Food Name","calories":X,"protein":Y,"carbs":Z,"fat":W,"category":"Snacks","defaultUnit":"piece","smartPortion":"piece (50g)"}]
+[{"name":"Food Name","calories":X,"protein":Y,"carbs":Z,"fat":W,"category":"Beverages","defaultUnit":"bottle","smartPortion":"bottle (330ml)"}]
 
 Categories: Snacks, Grains, Protein, Dairy, Fruits, Vegetables, Beverages, Desserts
-Values per 100g. Keep concise.`;
+Values per 100g. Keep concise. Only return foods that match the search term directly.
 
     const response = await ai.models.generateContent({
       model: "gemini-1.5-flash",
@@ -470,6 +477,21 @@ Values per 100g. Keep concise.`;
     
     for (const item of aiData) {
       if (!item.name || !item.calories) continue;
+      
+      // Filter out irrelevant AI results that don't match the search query
+      const itemNameLower = item.name.toLowerCase();
+      const queryLower = query.toLowerCase();
+      const queryWords = queryLower.split(' ').filter(w => w.length > 1);
+      
+      // Check if the AI result actually relates to the search query
+      const isRelevant = queryWords.some(word => itemNameLower.includes(word)) || 
+                        itemNameLower.includes(queryLower) ||
+                        queryLower.includes(itemNameLower);
+      
+      if (!isRelevant) {
+        console.log(`Filtering out irrelevant AI result: "${item.name}" for query "${query}"`);
+        continue;
+      }
       
       const enhancedResult: EnhancedFoodResult = {
         id: Math.floor(Math.random() * 1000000) + 8000000, // Unique ID for AI foods
