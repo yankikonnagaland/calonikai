@@ -699,6 +699,9 @@ The application follows a client-server architecture with clear separation of co
 - ✅ Updated both AI-enhanced search route and local unit selection function for consistent user experience
 - ✅ Improved user experience with portion-based measurements that match actual consumption patterns
 - ✅ Applied specialized unit logic in routes.ts for biscuit/cookie category with 🍪 logging indicator
+- ✅ FIXED: Added missing biscuit/cookie logic to unit selection API endpoint (/api/unit-selection) for complete implementation
+- ✅ RESOLVED: Enhanced unit options now properly appear in frontend dropdown for all biscuit/cookie searches
+- ✅ HIDDEN: Calorie validation warning messages ("⚠️ Calories seem too high") removed from user interface for cleaner experience
 
 **July 10, 2025 - RESOLVED: AI Unit Selection Override Bug & Smart Recommendations System:**
 - ✅ FIXED critical bug where AI-recommended units (e.g., "8 pieces" for momos) were overridden by local fallback logic defaulting to "cup(200ml)"

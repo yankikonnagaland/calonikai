@@ -382,14 +382,14 @@ export const validateCalorieCalculation = (
   if (caloriesPerGram < expectedRange.min) {
     return {
       isValid: false,
-      warning: `Calories seem too low (${Math.round(caloriesPerGram * 100)} cal/100g). Expected ${Math.round(expectedRange.min * 100)}-${Math.round(expectedRange.max * 100)} cal/100g.`
+      warning: "" // Hidden warning
     };
   }
   
   if (caloriesPerGram > expectedRange.max) {
     return {
       isValid: false,
-      warning: `Calories seem too high (${Math.round(caloriesPerGram * 100)} cal/100g). Expected ${Math.round(expectedRange.min * 100)}-${Math.round(expectedRange.max * 100)} cal/100g.`
+      warning: "" // Hidden warning
     };
   }
   

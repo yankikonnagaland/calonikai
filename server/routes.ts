@@ -1566,6 +1566,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ? ["2 pieces", "3 pieces", "4 pieces", "piece (30g)", "grams"]
             : ["1 piece", "half piece", "piece (100g)", "grams"]
         });
+      } else if (name.includes("biscuit") || name.includes("cookie") || name.includes("cracker")) {
+        console.log(`🍪 Applying biscuit/cookie specific units for unit selection: ${foodName}`);
+        return res.json({
+          unit: "piece",
+          unitOptions: ["piece (15g)", "2 pieces (30g)", "3 pieces (45g)", "4 pieces (60g)", "5 pieces (75g)", "medium portion (50g)", "grams"]
+        });
       }
       
       // PRIORITY 2: Use local unit selection for other foods
