@@ -37,6 +37,7 @@ interface AnalysisResult {
     confidence: number;
     estimatedQuantity: string;
   }>;
+  suggestions: string[];
 }
 
 export default function FoodCamera({
@@ -1317,7 +1318,21 @@ export default function FoodCamera({
                     </div>
                   )}
 
-                  {/* AI Suggestions section removed for optimized performance */}
+                  {analysisResult.suggestions &&
+                    analysisResult.suggestions.length > 0 && (
+                      <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <h4 className="font-medium text-blue-700 dark:text-blue-300 mb-2">
+                          AI Suggestions:
+                        </h4>
+                        <ul className="text-sm text-blue-600 dark:text-blue-400 space-y-1">
+                          {analysisResult.suggestions.map(
+                            (suggestion, index) => (
+                              <li key={index}>• {suggestion}</li>
+                            ),
+                          )}
+                        </ul>
+                      </div>
+                    )}
                 </div>
               )}
             </div>
