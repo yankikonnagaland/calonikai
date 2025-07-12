@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Calonik.ai - Smart Nutrition Tracker</title>
+    <meta name="description" content="AI-powered nutrition tracking and health management app" />
+    
+    <base href="/" />
+    
+    <meta name="color-scheme" content="light dark" />
+    <meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    
+    <!-- iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    
+    <!-- Theme -->
+    <meta name="theme-color" content="#111827" />
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" href="/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Ionic CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core@7/css/ionic.bundle.css" />
+    
+    <!-- Custom CSS -->
+    <style>
+      :root {
+        --ion-background-color: #111827;
+        --ion-background-color-rgb: 17, 24, 39;
+        --ion-text-color: #ffffff;
+        --ion-text-color-rgb: 255, 255, 255;
+        --ion-color-primary: #10b981;
+        --ion-color-primary-rgb: 16, 185, 129;
+        --ion-color-secondary: #f97316;
+        --ion-color-secondary-rgb: 249, 115, 22;
+        --ion-toolbar-background: #1f2937;
+        --ion-toolbar-color: #ffffff;
+        --ion-item-background: #1f2937;
+        --ion-card-background: #1f2937;
+      }
+      
+      body {
+        background: #111827;
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      }
+      
+      ion-content {
+        --background: #111827;
+      }
+      
+      .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background: #111827;
+        color: #ffffff;
+      }
+      
+      .loading-logo {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #10b981, #f97316);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #374151;
+        border-top: 4px solid #10b981;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  
+  <body>
+    <div id="root">
+      <div class="loading-container">
+        <div class="loading-logo">Calonik.ai</div>
+        <div class="loading-spinner"></div>
+      </div>
+    </div>
+    
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
