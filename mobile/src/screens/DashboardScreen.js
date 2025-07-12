@@ -1,66 +1,48 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
   TouchableOpacity,
-  ActivityIndicator,
-  Dimensions
+  RefreshControl,
+  Dimensions 
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
+import { ApiService } from '../services/ApiService';
 
 const { width } = Dimensions.get('window');
 
-const DashboardScreen = ({ navigation }) => {
-  const [isLoading, setIsLoading] = useState(true);
+export default function DashboardScreen({ user, sessionId }) {
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [dailySummary, setDailySummary] = useState(null);
+  const [dailyWeight, setDailyWeight] = useState(null);
   const [weeklyData, setWeeklyData] = useState([]);
-  const [profile, setProfile] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const API_BASE = 'https://951c9b0b-a7e6-4243-ad92-b80de619ea52-00-2w9g548p0tyi.worf.replit.dev/api';
+  const dateString = selectedDate.toISOString().split('T')[0];
+  const isToday = selectedDate.toDateString() === new Date().toDateString();
 
   useEffect(() => {
     loadDashboardData();
-  }, []);
-
-  const getSessionId = async () => {
-    let sessionId = await AsyncStorage.getItem('sessionId');
-    if (!sessionId) {
-      sessionId = `mobile_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      await AsyncStorage.setItem('sessionId', sessionId);
-    }
-    return sessionId;
-  };
+  }, [selectedDate, sessionId]);
 
   const loadDashboardData = async () => {
-    setIsLoading(true);
     try {
-      const sessionId = await getSessionId();
-      const today = new Date().toISOString().split('T')[0];
-
+      setIsLoading(true);
+      
       // Load daily summary
-      const summaryResponse = await fetch(`${API_BASE}/daily-summary/${sessionId}/${today}`);
-      if (summaryResponse.ok) {
-        const summaryData = await summaryResponse.json();
-        setDailySummary(summaryData);
-      }
-
-      // Load profile
-      const profileResponse = await fetch(`${API_BASE}/profile/${sessionId}`);
-      if (profileResponse.ok) {
-        const profileData = await profileResponse.json();
-        setProfile(profileData);
-      }
-
-      // Load weekly data for trends
-      const weeklyResponse = await fetch(`${API_BASE}/daily-summaries/${sessionId}`);
-      if (weeklyResponse.ok) {
-        const weeklyData = await weeklyResponse.json();
-        setWeeklyData(weeklyData.slice(-7)); // Last 7 days
-      }
-
+      const summary = await ApiService.getDailySummary(sessionId, dateString);
+      setDailySummary(summary);
+      
+      // Load daily weight
+      const weight = await ApiService.getDailyWeight(sessionId, dateString);
+      setDailyWeight(weight);
+      
+      // Load weekly data for trends (last 7 days)
+      await loadWeeklyTrends();
+      
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
@@ -68,406 +50,462 @@ const DashboardScreen = ({ navigation }) => {
     }
   };
 
-  const renderProgressBar = (current, target, color = '#3B82F6') => {
-    const percentage = target > 0 ? Math.min((current / target) * 100, 100) : 0;
-    
-    return (
-      <View style={styles.progressBarContainer}>
-        <View style={styles.progressBarBackground}>
-          <View 
-            style={[
-              styles.progressBarFill, 
-              { width: `${percentage}%`, backgroundColor: color }
-            ]} 
-          />
-        </View>
-        <Text style={styles.progressText}>{Math.round(percentage)}%</Text>
-      </View>
-    );
+  const loadWeeklyTrends = async () => {
+    try {
+      const trends = [];
+      const today = new Date();
+      
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        try {
+          const [summary, weight] = await Promise.all([
+            ApiService.getDailySummary(sessionId, dateStr).catch(() => null),
+            ApiService.getDailyWeight(sessionId, dateStr).catch(() => null)
+          ]);
+          
+          trends.push({
+            date: dateStr,
+            shortDate: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            calories: summary?.totalCalories || 0,
+            caloriesBurned: summary?.caloriesBurned || 0,
+            weight: weight?.weight || null,
+          });
+        } catch (error) {
+          trends.push({
+            date: dateStr,
+            shortDate: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            calories: 0,
+            caloriesBurned: 0,
+            weight: null,
+          });
+        }
+      }
+      
+      setWeeklyData(trends);
+    } catch (error) {
+      console.error('Error loading weekly trends:', error);
+    }
   };
 
-  const renderWeeklyChart = () => {
-    const maxCalories = Math.max(...weeklyData.map(day => day.calories || 0), 1);
-    
-    return (
-      <View style={styles.chartContainer}>
-        <Text style={styles.chartTitle}>Weekly Calorie Intake</Text>
-        <View style={styles.chartBars}>
-          {weeklyData.map((day, index) => {
-            const height = ((day.calories || 0) / maxCalories) * 100;
-            const date = new Date(day.date);
-            const dayName = date.toLocaleDateString('en', { weekday: 'short' });
-            
-            return (
-              <View key={index} style={styles.chartBar}>
-                <View style={styles.barContainer}>
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadDashboardData();
+    setRefreshing(false);
+  };
+
+  const navigateDate = (direction) => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(selectedDate.getDate() + direction);
+    setSelectedDate(newDate);
+  };
+
+  // Calculate nutrition metrics
+  const caloriesIn = dailySummary?.totalCalories || 0;
+  const caloriesOut = dailySummary?.caloriesBurned || 0;
+  const netCalories = caloriesIn - caloriesOut;
+  const protein = dailySummary?.totalProtein || 0;
+  const carbs = dailySummary?.totalCarbs || 0;
+  const fat = dailySummary?.totalFat || 0;
+
+  // Get max values for chart scaling
+  const maxCalories = Math.max(...weeklyData.map(d => Math.max(d.calories, d.caloriesBurned)), 1);
+  const maxWeight = Math.max(...weeklyData.map(d => d.weight || 0), 1);
+
+  return (
+    <ScrollView 
+      style={styles.container}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
+      {/* Date Navigation */}
+      <View style={styles.dateNavigation}>
+        <TouchableOpacity onPress={() => navigateDate(-1)} style={styles.navButton}>
+          <Ionicons name="chevron-back" size={24} color="#ffffff" />
+        </TouchableOpacity>
+        <View style={styles.dateDisplay}>
+          <Text style={styles.dateText}>
+            {isToday ? 'Today' : selectedDate.toLocaleDateString()}
+          </Text>
+          <Text style={styles.dateSubtext}>
+            {selectedDate.toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              month: 'long', 
+              day: 'numeric' 
+            })}
+          </Text>
+        </View>
+        <TouchableOpacity onPress={() => navigateDate(1)} style={styles.navButton}>
+          <Ionicons name="chevron-forward" size={24} color="#ffffff" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Daily Summary Cards */}
+      <View style={styles.summaryContainer}>
+        <Text style={styles.sectionTitle}>
+          {isToday ? "Today's Summary" : "Daily Summary"}
+        </Text>
+        
+        <View style={styles.metricsGrid}>
+          <View style={styles.metricCard}>
+            <View style={styles.metricHeader}>
+              <Ionicons name="arrow-down" size={20} color="#10b981" />
+              <Text style={styles.metricLabel}>Calories In</Text>
+            </View>
+            <Text style={styles.metricValue}>{caloriesIn}</Text>
+          </View>
+
+          <View style={styles.metricCard}>
+            <View style={styles.metricHeader}>
+              <Ionicons name="arrow-up" size={20} color="#ef4444" />
+              <Text style={styles.metricLabel}>Calories Out</Text>
+            </View>
+            <Text style={styles.metricValue}>{caloriesOut}</Text>
+          </View>
+
+          <View style={styles.metricCard}>
+            <View style={styles.metricHeader}>
+              <Ionicons name="calculator" size={20} color="#3b82f6" />
+              <Text style={styles.metricLabel}>Net Calories</Text>
+            </View>
+            <Text style={[styles.metricValue, { color: netCalories > 0 ? '#10b981' : '#ef4444' }]}>
+              {netCalories > 0 ? '+' : ''}{netCalories}
+            </Text>
+          </View>
+
+          {dailyWeight && (
+            <View style={styles.metricCard}>
+              <View style={styles.metricHeader}>
+                <Ionicons name="fitness" size={20} color="#f59e0b" />
+                <Text style={styles.metricLabel}>Weight</Text>
+              </View>
+              <Text style={styles.metricValue}>{dailyWeight.weight} kg</Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* Macronutrients */}
+      {(protein > 0 || carbs > 0 || fat > 0) && (
+        <View style={styles.macrosContainer}>
+          <Text style={styles.sectionTitle}>Macronutrients</Text>
+          <View style={styles.macrosGrid}>
+            <View style={styles.macroCard}>
+              <Text style={styles.macroValue}>{protein.toFixed(1)}g</Text>
+              <Text style={styles.macroLabel}>Protein</Text>
+              <View style={[styles.macroBar, { backgroundColor: '#10b981' }]} />
+            </View>
+            <View style={styles.macroCard}>
+              <Text style={styles.macroValue}>{carbs.toFixed(1)}g</Text>
+              <Text style={styles.macroLabel}>Carbs</Text>
+              <View style={[styles.macroBar, { backgroundColor: '#3b82f6' }]} />
+            </View>
+            <View style={styles.macroCard}>
+              <Text style={styles.macroValue}>{fat.toFixed(1)}g</Text>
+              <Text style={styles.macroLabel}>Fat</Text>
+              <View style={[styles.macroBar, { backgroundColor: '#f59e0b' }]} />
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Weekly Trends Chart */}
+      <View style={styles.trendsContainer}>
+        <Text style={styles.sectionTitle}>7-Day Trends</Text>
+        
+        {/* Calories Chart */}
+        <View style={styles.chartContainer}>
+          <Text style={styles.chartTitle}>Calories In vs Out</Text>
+          <View style={styles.chart}>
+            {weeklyData.map((day, index) => (
+              <View key={index} style={styles.chartDay}>
+                <View style={styles.chartBars}>
+                  {/* Calories In Bar */}
                   <View 
                     style={[
-                      styles.bar, 
-                      { height: `${height}%` }
+                      styles.chartBar,
+                      styles.caloriesInBar,
+                      { 
+                        height: Math.max((day.calories / maxCalories) * 80, 2),
+                      }
+                    ]} 
+                  />
+                  {/* Calories Out Bar */}
+                  <View 
+                    style={[
+                      styles.chartBar,
+                      styles.caloriesOutBar,
+                      { 
+                        height: Math.max((day.caloriesBurned / maxCalories) * 80, 2),
+                      }
                     ]} 
                   />
                 </View>
-                <Text style={styles.barLabel}>{dayName}</Text>
-                <Text style={styles.barValue}>{Math.round(day.calories || 0)}</Text>
+                <Text style={styles.chartDayLabel}>{day.shortDate}</Text>
               </View>
-            );
-          })}
+            ))}
+          </View>
+          <View style={styles.chartLegend}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendColor, { backgroundColor: '#10b981' }]} />
+              <Text style={styles.legendText}>Calories In</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendColor, { backgroundColor: '#ef4444' }]} />
+              <Text style={styles.legendText}>Calories Out</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Weight Chart */}
+        {weeklyData.some(day => day.weight) && (
+          <View style={styles.chartContainer}>
+            <Text style={styles.chartTitle}>Weight Trend</Text>
+            <View style={styles.chart}>
+              {weeklyData.map((day, index) => (
+                <View key={index} style={styles.chartDay}>
+                  <View style={styles.chartBars}>
+                    {day.weight && (
+                      <View 
+                        style={[
+                          styles.chartBar,
+                          styles.weightBar,
+                          { 
+                            height: Math.max((day.weight / maxWeight) * 80, 2),
+                          }
+                        ]} 
+                      />
+                    )}
+                  </View>
+                  <Text style={styles.chartDayLabel}>{day.shortDate}</Text>
+                  {day.weight && (
+                    <Text style={styles.chartDayValue}>{day.weight.toFixed(1)}</Text>
+                  )}
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+      </View>
+
+      {/* Quick Actions */}
+      <View style={styles.actionsContainer}>
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <View style={styles.actionsGrid}>
+          <TouchableOpacity style={styles.actionButton}>
+            <Ionicons name="restaurant" size={24} color="#10b981" />
+            <Text style={styles.actionButtonText}>Add Meal</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton}>
+            <Ionicons name="fitness" size={24} color="#f59e0b" />
+            <Text style={styles.actionButtonText}>Log Exercise</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton}>
+            <Ionicons name="scale" size={24} color="#3b82f6" />
+            <Text style={styles.actionButtonText}>Update Weight</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton}>
+            <Ionicons name="camera" size={24} color="#8b5cf6" />
+            <Text style={styles.actionButtonText}>Scan Food</Text>
+          </TouchableOpacity>
         </View>
       </View>
-    );
-  };
-
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={styles.loadingText}>Loading your dashboard...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Health Dashboard</Text>
-          <Text style={styles.subtitle}>Track your nutrition progress</Text>
-        </View>
-
-        {/* Today's Overview */}
-        <View style={styles.overviewCard}>
-          <Text style={styles.cardTitle}>Today's Progress</Text>
-          
-          {dailySummary ? (
-            <View style={styles.overviewGrid}>
-              <View style={styles.overviewItem}>
-                <Text style={styles.overviewNumber}>{Math.round(dailySummary.calories || 0)}</Text>
-                <Text style={styles.overviewLabel}>Calories In</Text>
-              </View>
-              <View style={styles.overviewItem}>
-                <Text style={styles.overviewNumber}>{Math.round(dailySummary.caloriesBurned || 0)}</Text>
-                <Text style={styles.overviewLabel}>Calories Out</Text>
-              </View>
-              <View style={styles.overviewItem}>
-                <Text style={styles.overviewNumber}>{Math.round((dailySummary.calories || 0) - (dailySummary.caloriesBurned || 0))}</Text>
-                <Text style={styles.overviewLabel}>Net Calories</Text>
-              </View>
-              <View style={styles.overviewItem}>
-                <Text style={styles.overviewNumber}>{Math.round(dailySummary.protein || 0)}g</Text>
-                <Text style={styles.overviewLabel}>Protein</Text>
-              </View>
-            </View>
-          ) : (
-            <Text style={styles.emptyText}>No data for today yet. Start tracking!</Text>
-          )}
-        </View>
-
-        {/* Goals Progress */}
-        {profile && (
-          <View style={styles.goalsCard}>
-            <Text style={styles.cardTitle}>Goal Progress</Text>
-            
-            <View style={styles.goalItem}>
-              <View style={styles.goalHeader}>
-                <Text style={styles.goalLabel}>Daily Calories</Text>
-                <Text style={styles.goalValues}>
-                  {Math.round(dailySummary?.calories || 0)} / {Math.round(profile.targetCalories || 0)}
-                </Text>
-              </View>
-              {renderProgressBar(dailySummary?.calories || 0, profile.targetCalories || 0)}
-            </View>
-
-            {profile.dailyProteinTarget && (
-              <View style={styles.goalItem}>
-                <View style={styles.goalHeader}>
-                  <Text style={styles.goalLabel}>Daily Protein</Text>
-                  <Text style={styles.goalValues}>
-                    {Math.round(dailySummary?.protein || 0)}g / {Math.round(profile.dailyProteinTarget)}g
-                  </Text>
-                </View>
-                {renderProgressBar(dailySummary?.protein || 0, profile.dailyProteinTarget, '#22C55E')}
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* Weekly Trends */}
-        {weeklyData.length > 0 && (
-          <View style={styles.trendsCard}>
-            {renderWeeklyChart()}
-          </View>
-        )}
-
-        {/* Quick Actions */}
-        <View style={styles.actionsCard}>
-          <Text style={styles.cardTitle}>Quick Actions</Text>
-          
-          <View style={styles.actionGrid}>
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={() => navigation.navigate('Home')}
-            >
-              <Text style={styles.actionEmoji}>🍽️</Text>
-              <Text style={styles.actionText}>Add Food</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={() => navigation.navigate('Camera')}
-            >
-              <Text style={styles.actionEmoji}>📷</Text>
-              <Text style={styles.actionText}>AI Camera</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={() => navigation.navigate('Exercise')}
-            >
-              <Text style={styles.actionEmoji}>💪</Text>
-              <Text style={styles.actionText}>Log Exercise</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={() => navigation.navigate('Profile')}
-            >
-              <Text style={styles.actionEmoji}>👤</Text>
-              <Text style={styles.actionText}>Profile</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Motivational Section */}
-        <View style={styles.motivationCard}>
-          <Text style={styles.motivationTitle}>Keep Going! 💪</Text>
-          <Text style={styles.motivationText}>
-            {dailySummary?.calories > 0 
-              ? "Great job tracking your nutrition today! Every healthy choice counts." 
-              : "Start your day right by logging your first meal. You've got this!"
-            }
-          </Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    </ScrollView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#111827',
   },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  dateNavigation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    backgroundColor: '#1f2937',
+    borderBottomWidth: 1,
+    borderBottomColor: '#374151',
+  },
+  navButton: {
+    padding: 8,
+  },
+  dateDisplay: {
     alignItems: 'center',
   },
-  scrollView: {
-    flex: 1,
+  dateText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  dateSubtext: {
+    color: '#9ca3af',
+    fontSize: 14,
+  },
+  summaryContainer: {
     padding: 16,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 28,
+  sectionTitle: {
+    color: '#ffffff',
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#94A3B8',
-  },
-  overviewCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
     marginBottom: 16,
   },
-  overviewGrid: {
+  metricsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    gap: 12,
   },
-  overviewItem: {
-    width: '48%',
-    backgroundColor: '#334155',
-    borderRadius: 8,
+  metricCard: {
+    backgroundColor: '#1f2937',
     padding: 16,
-    marginBottom: 12,
-    alignItems: 'center',
-  },
-  overviewNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#3B82F6',
-    marginBottom: 4,
-  },
-  overviewLabel: {
-    fontSize: 14,
-    color: '#94A3B8',
-  },
-  goalsCard: {
-    backgroundColor: '#1E293B',
     borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
+    width: (width - 44) / 2,
+    minHeight: 80,
   },
-  goalItem: {
-    marginBottom: 16,
-  },
-  goalHeader: {
+  metricHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-  goalLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  goalValues: {
+  metricLabel: {
+    color: '#9ca3af',
     fontSize: 14,
-    color: '#94A3B8',
+    marginLeft: 8,
   },
-  progressBarContainer: {
+  metricValue: {
+    color: '#ffffff',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  macrosContainer: {
+    padding: 16,
+  },
+  macrosGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
     gap: 12,
   },
-  progressBarBackground: {
+  macroCard: {
     flex: 1,
-    height: 8,
-    backgroundColor: '#334155',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  progressText: {
-    fontSize: 12,
-    color: '#94A3B8',
-    fontWeight: '600',
-    minWidth: 35,
-  },
-  trendsCard: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#1f2937',
+    padding: 16,
     borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-  },
-  chartContainer: {
     alignItems: 'center',
   },
+  macroValue: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  macroLabel: {
+    color: '#9ca3af',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  macroBar: {
+    width: '100%',
+    height: 4,
+    borderRadius: 2,
+    marginTop: 8,
+  },
+  trendsContainer: {
+    padding: 16,
+  },
+  chartContainer: {
+    backgroundColor: '#1f2937',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
   chartTitle: {
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
     marginBottom: 16,
+  },
+  chart: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    height: 100,
+    marginBottom: 16,
+  },
+  chartDay: {
+    flex: 1,
+    alignItems: 'center',
   },
   chartBars: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
     alignItems: 'flex-end',
-    height: 120,
-    width: '100%',
+    gap: 2,
+    marginBottom: 8,
   },
   chartBar: {
-    alignItems: 'center',
-    width: 35,
-  },
-  barContainer: {
-    height: 80,
-    justifyContent: 'flex-end',
-    marginBottom: 8,
-  },
-  bar: {
-    width: 20,
-    backgroundColor: '#3B82F6',
+    width: 8,
     borderRadius: 2,
-    minHeight: 4,
+    minHeight: 2,
   },
-  barLabel: {
-    fontSize: 12,
-    color: '#94A3B8',
-    marginBottom: 2,
+  caloriesInBar: {
+    backgroundColor: '#10b981',
   },
-  barValue: {
+  caloriesOutBar: {
+    backgroundColor: '#ef4444',
+  },
+  weightBar: {
+    backgroundColor: '#3b82f6',
+    width: 12,
+  },
+  chartDayLabel: {
+    color: '#9ca3af',
     fontSize: 10,
-    color: '#64748B',
   },
-  actionsCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
+  chartDayValue: {
+    color: '#ffffff',
+    fontSize: 10,
+    marginTop: 2,
   },
-  actionGrid: {
+  chartLegend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  legendColor: {
+    width: 12,
+    height: 12,
+    borderRadius: 2,
+    marginRight: 6,
+  },
+  legendText: {
+    color: '#9ca3af',
+    fontSize: 12,
+  },
+  actionsContainer: {
+    padding: 16,
+  },
+  actionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    gap: 12,
   },
   actionButton: {
-    width: '48%',
-    backgroundColor: '#334155',
-    borderRadius: 8,
+    backgroundColor: '#1f2937',
     padding: 16,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  actionEmoji: {
-    fontSize: 24,
-    marginBottom: 8,
-  },
-  actionText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  motivationCard: {
-    backgroundColor: '#1E293B',
     borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
     alignItems: 'center',
+    width: (width - 44) / 2,
+    borderWidth: 1,
+    borderColor: '#374151',
   },
-  motivationTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 12,
-  },
-  motivationText: {
+  actionButtonText: {
+    color: '#ffffff',
+    marginTop: 8,
     fontSize: 14,
-    color: '#94A3B8',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  emptyText: {
-    color: '#64748B',
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-  loadingText: {
-    color: '#94A3B8',
-    fontSize: 16,
-    marginTop: 12,
+    fontWeight: '500',
   },
 });
-
-export default DashboardScreen;

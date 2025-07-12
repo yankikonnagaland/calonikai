@@ -1,274 +1,191 @@
 import React, { useState, useEffect } from 'react';
-import { StatusBar } from 'expo-status-bar';
+import { View, Text, StyleSheet, SafeAreaView, StatusBar, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  SafeAreaView, 
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert
-} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 
 // Import screens
-import HomeScreen from './src/screens/HomeScreen';
-import CameraScreen from './src/screens/CameraScreen';
-import ExerciseScreen from './src/screens/ExerciseScreen';
+import TrackerScreen from './src/screens/TrackerScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import ExerciseScreen from './src/screens/ExerciseScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
-import SubscriptionModal from './components/SubscriptionModal';
+import AuthScreen from './src/screens/AuthScreen';
+import LoadingScreen from './src/screens/LoadingScreen';
 
+// Import services
+import { AuthService } from './src/services/AuthService';
+
+const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-export default function App() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [navigationReady, setNavigationReady] = useState(false);
-  const [showSubscription, setShowSubscription] = useState(false);
-  const [userId] = useState('mobile_user_123');
-
-  // Simulate app initialization
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
-    
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Loading screen
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.splashContent}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Calonik.ai</Text>
-            <Text style={styles.subtitle}>AI Nutrition Tracker</Text>
-            <Text style={styles.description}>
-              Full native mobile app with AI-powered food recognition, nutrition tracking, 
-              exercise logging, and personalized health insights
-            </Text>
-          </View>
-          
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#3B82F6" />
-            <Text style={styles.loadingText}>Initializing native app...</Text>
-          </View>
-          
-          <View style={styles.featuresPreview}>
-            <Text style={styles.featuresTitle}>Native Mobile Features:</Text>
-            <Text style={styles.featureItem}>📱 Full offline functionality</Text>
-            <Text style={styles.featureItem}>📷 Native camera integration</Text>
-            <Text style={styles.featureItem}>🤖 AI food recognition</Text>
-            <Text style={styles.featureItem}>📊 Real-time nutrition tracking</Text>
-            <Text style={styles.featureItem}>💪 Exercise timer & logging</Text>
-            <Text style={styles.featureItem}>👤 Profile & goal management</Text>
-          </View>
-        </View>
-        <StatusBar style="light" />
-      </SafeAreaView>
-    );
-  }
-
-  // Main app with navigation
+function TabNavigator({ user, sessionId, onLogout }) {
   return (
-    <NavigationContainer 
-      onReady={() => setNavigationReady(true)}
-      fallback={
-        <SafeAreaView style={styles.container}>
-          <View style={styles.splashContent}>
-            <ActivityIndicator size="large" color="#3B82F6" />
-            <Text style={styles.loadingText}>Loading navigation...</Text>
-          </View>
-        </SafeAreaView>
-      }
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName;
+
+          if (route.name === 'Tracker') {
+            iconName = focused ? 'restaurant' : 'restaurant-outline';
+          } else if (route.name === 'Profile') {
+            iconName = focused ? 'person' : 'person-outline';
+          } else if (route.name === 'Exercise') {
+            iconName = focused ? 'fitness' : 'fitness-outline';
+          } else if (route.name === 'Dashboard') {
+            iconName = focused ? 'analytics' : 'analytics-outline';
+          }
+
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: '#10b981',
+        tabBarInactiveTintColor: '#6b7280',
+        tabBarStyle: {
+          backgroundColor: '#1f2937',
+          borderTopColor: '#374151',
+          paddingBottom: 5,
+          height: 60,
+        },
+        headerStyle: {
+          backgroundColor: '#1f2937',
+        },
+        headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+      })}
     >
-      <Stack.Navigator
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: '#1E293B',
-          },
-          headerTintColor: '#FFFFFF',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
+      <Tab.Screen 
+        name="Tracker" 
+        options={{ 
+          title: 'Food Tracker',
+          headerTitle: `Calonik.ai${user?.subscriptionStatus === 'premium' ? ' 👑' : user?.subscriptionStatus === 'basic' ? ' 🔰' : ''}`
         }}
       >
-        <Stack.Screen 
-          name="Home" 
-          component={HomeScreen} 
-          options={{ 
-            title: 'Calonik.ai',
-            headerRight: () => (
-              <TouchableOpacity 
-                style={styles.headerButton}
-                onPress={() => setShowSubscription(true)}
-              >
-                <Text style={styles.headerButtonText}>👑 Pro</Text>
-              </TouchableOpacity>
-            )
-          }} 
-        />
-        <Stack.Screen 
-          name="Camera" 
-          component={CameraScreen} 
-          options={{ title: 'AI Food Camera' }} 
-        />
-        <Stack.Screen 
-          name="Exercise" 
-          component={ExerciseScreen} 
-          options={{ title: 'Exercise Tracker' }} 
-        />
-        <Stack.Screen 
-          name="Profile" 
-          component={ProfileScreen} 
-          options={{ title: 'Profile & Goals' }} 
-        />
-        <Stack.Screen 
-          name="Dashboard" 
-          component={DashboardScreen} 
-          options={{ title: 'Health Dashboard' }} 
-        />
-      </Stack.Navigator>
+        {(props) => <TrackerScreen {...props} user={user} sessionId={sessionId} />}
+      </Tab.Screen>
+      <Tab.Screen 
+        name="Profile" 
+        options={{ title: 'Profile' }}
+      >
+        {(props) => <ProfileScreen {...props} user={user} sessionId={sessionId} onLogout={onLogout} />}
+      </Tab.Screen>
+      <Tab.Screen 
+        name="Exercise" 
+        options={{ title: 'Exercise' }}
+      >
+        {(props) => <ExerciseScreen {...props} user={user} sessionId={sessionId} />}
+      </Tab.Screen>
+      <Tab.Screen 
+        name="Dashboard" 
+        options={{ title: 'Dashboard' }}
+      >
+        {(props) => <DashboardScreen {...props} user={user} sessionId={sessionId} />}
+      </Tab.Screen>
+    </Tab.Navigator>
+  );
+}
+
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [sessionId, setSessionId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    initializeApp();
+  }, []);
+
+  const initializeApp = async () => {
+    try {
+      setIsLoading(true);
       
-      <SubscriptionModal
-        visible={showSubscription}
-        onClose={() => setShowSubscription(false)}
-        userId={userId}
-      />
+      // Initialize session
+      let storedSessionId = await AsyncStorage.getItem('sessionId');
+      if (!storedSessionId) {
+        storedSessionId = 'mobile_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        await AsyncStorage.setItem('sessionId', storedSessionId);
+      }
+      setSessionId(storedSessionId);
       
-      <StatusBar style="light" />
-    </NavigationContainer>
+      // Check authentication status
+      const authData = await AuthService.checkAuthStatus();
+      if (authData && authData.user) {
+        setUser(authData.user);
+        setIsAuthenticated(true);
+        // Update session to use authenticated user ID
+        setSessionId(authData.user.id);
+      }
+      
+    } catch (error) {
+      console.error('Error initializing app:', error);
+      Alert.alert('Error', 'Failed to initialize app. Please restart.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLoginSuccess = (userData) => {
+    setUser(userData);
+    setIsAuthenticated(true);
+    setSessionId(userData.id);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await AuthService.logout();
+      setUser(null);
+      setIsAuthenticated(false);
+      // Reset to guest session
+      const guestSessionId = 'mobile_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      await AsyncStorage.setItem('sessionId', guestSessionId);
+      setSessionId(guestSessionId);
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#1f2937" />
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {!isAuthenticated ? (
+            <Stack.Screen name="Auth">
+              {(props) => (
+                <AuthScreen 
+                  {...props} 
+                  onLoginSuccess={handleLoginSuccess}
+                  sessionId={sessionId}
+                />
+              )}
+            </Stack.Screen>
+          ) : (
+            <Stack.Screen name="Main">
+              {(props) => (
+                <TabNavigator 
+                  {...props} 
+                  user={user} 
+                  sessionId={sessionId}
+                  onLogout={handleLogout}
+                />
+              )}
+            </Stack.Screen>
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#111827',
   },
-  splashContent: {
-    flex: 1,
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 60,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 40,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#94A3B8',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  description: {
-    fontSize: 16,
-    color: '#64748B',
-    textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: 10,
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    paddingBottom: 40,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#94A3B8',
-    marginTop: 10,
-  },
-  optionsContainer: {
-    marginBottom: 40,
-  },
-  primaryButton: {
-    backgroundColor: '#3B82F6',
-    borderRadius: 12,
-    paddingVertical: 18,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    marginBottom: 16,
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  infoCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  infoText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  infoSubtext: {
-    color: '#94A3B8',
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  buttonSubtext: {
-    color: '#94A3B8',
-    fontSize: 14,
-  },
-  featuresPreview: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 20,
-  },
-  featuresTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  featuresList: {
-    gap: 8,
-  },
-  featureItem: {
-    fontSize: 14,
-    color: '#94A3B8',
-    lineHeight: 20,
-  },
-  subscriptionButton: {
-    backgroundColor: '#3B82F6',
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  subscriptionButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  // Removed WebView-related styles due to dependency conflicts
 });

@@ -1,54 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  TouchableOpacity, 
   TextInput,
   Alert,
-  ActivityIndicator
+  RefreshControl 
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
+import { ApiService } from '../services/ApiService';
 
-const ProfileScreen = ({ navigation }) => {
+export default function ProfileScreen({ user, sessionId, onLogout }) {
   const [profile, setProfile] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  
+  // Form state
   const [formData, setFormData] = useState({
     age: '',
     gender: 'male',
     height: '',
     weight: '',
     activityLevel: 'moderate',
-    goal: 'lose',
-    targetWeight: '',
-    proteinTarget: ''
+    goal: 'maintain',
+    proteinTarget: '',
+    weightTarget: '',
   });
-  const [calculations, setCalculations] = useState(null);
 
-  const API_BASE = 'https://951c9b0b-a7e6-4243-ad92-b80de619ea52-00-2w9g548p0tyi.worf.replit.dev/api';
+  // Calculation results
+  const [calculations, setCalculations] = useState(null);
 
   useEffect(() => {
     loadProfile();
-  }, []);
-
-  const getSessionId = async () => {
-    let sessionId = await AsyncStorage.getItem('sessionId');
-    if (!sessionId) {
-      sessionId = `mobile_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      await AsyncStorage.setItem('sessionId', sessionId);
-    }
-    return sessionId;
-  };
+  }, [sessionId]);
 
   const loadProfile = async () => {
     try {
-      const sessionId = await getSessionId();
-      const response = await fetch(`${API_BASE}/profile/${sessionId}`);
-      
-      if (response.ok) {
-        const profileData = await response.json();
+      setIsLoading(true);
+      const profileData = await ApiService.getUserProfile(sessionId);
+      if (profileData) {
         setProfile(profileData);
         setFormData({
           age: profileData.age?.toString() || '',
@@ -56,350 +49,564 @@ const ProfileScreen = ({ navigation }) => {
           height: profileData.height?.toString() || '',
           weight: profileData.weight?.toString() || '',
           activityLevel: profileData.activityLevel || 'moderate',
-          goal: profileData.goal || 'lose',
-          targetWeight: profileData.targetWeight?.toString() || '',
-          proteinTarget: profileData.proteinTarget?.toString() || ''
+          goal: profileData.goal || 'maintain',
+          proteinTarget: profileData.proteinTarget?.toString() || '',
+          weightTarget: profileData.weightTarget?.toString() || '',
         });
-        
-        if (profileData.bmr && profileData.tdee) {
+        if (profileData.bmr && profileData.tdee && profileData.targetCalories) {
           setCalculations({
             bmr: profileData.bmr,
             tdee: profileData.tdee,
             targetCalories: profileData.targetCalories,
-            dailyProteinTarget: profileData.dailyProteinTarget
+            proteinTarget: profileData.proteinTarget,
           });
         }
       }
     } catch (error) {
       console.error('Error loading profile:', error);
-    }
-  };
-
-  const calculateProfile = async () => {
-    const { age, gender, height, weight, activityLevel, goal, targetWeight, proteinTarget } = formData;
-    
-    if (!age || !height || !weight) {
-      Alert.alert('Error', 'Please fill in age, height, and weight');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const sessionId = await getSessionId();
-      const response = await fetch(`${API_BASE}/profile`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-session-id': sessionId,
-        },
-        body: JSON.stringify({
-          sessionId,
-          age: parseInt(age),
-          gender,
-          height: parseFloat(height),
-          weight: parseFloat(weight),
-          activityLevel,
-          goal,
-          targetWeight: targetWeight ? parseFloat(targetWeight) : null,
-          proteinTarget: proteinTarget ? parseFloat(proteinTarget) : null
-        }),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setCalculations({
-          bmr: result.bmr,
-          tdee: result.tdee,
-          targetCalories: result.targetCalories,
-          dailyProteinTarget: result.dailyProteinTarget
-        });
-        setProfile(result);
-        Alert.alert('Success', 'Profile calculated and saved!');
-      } else {
-        Alert.alert('Error', 'Failed to calculate profile');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to calculate profile');
-      console.error('Profile calculation error:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const updateFormData = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const calculateProfile = () => {
+    const age = parseInt(formData.age);
+    const height = parseFloat(formData.height);
+    const weight = parseFloat(formData.weight);
+
+    if (!age || !height || !weight) {
+      Alert.alert('Error', 'Please fill in age, height, and weight');
+      return;
+    }
+
+    // BMR calculation (Mifflin-St Jeor Equation)
+    let bmr;
+    if (formData.gender === 'male') {
+      bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+    } else {
+      bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+    }
+
+    // TDEE calculation
+    const activityMultipliers = {
+      sedentary: 1.2,
+      light: 1.375,
+      moderate: 1.55,
+      active: 1.725,
+      veryActive: 1.9,
+    };
+    const tdee = bmr * activityMultipliers[formData.activityLevel];
+
+    // Target calories based on goal
+    let targetCalories;
+    switch (formData.goal) {
+      case 'lose':
+        targetCalories = tdee - 500; // 500 calorie deficit
+        break;
+      case 'gain':
+        targetCalories = tdee + 500; // 500 calorie surplus
+        break;
+      case 'muscle':
+        targetCalories = tdee + 300; // Moderate surplus for muscle building
+        break;
+      default:
+        targetCalories = tdee; // Maintain weight
+    }
+
+    // Protein target (default 0.8g per kg body weight, or 2.0g for muscle building)
+    const defaultProteinTarget = formData.goal === 'muscle' ? weight * 2.0 : weight * 0.8;
+    const proteinTarget = parseFloat(formData.proteinTarget) || defaultProteinTarget;
+
+    setCalculations({
+      bmr: Math.round(bmr),
+      tdee: Math.round(tdee),
+      targetCalories: Math.round(targetCalories),
+      proteinTarget: Math.round(proteinTarget),
+    });
   };
 
-  const getGoalDescription = (goal) => {
-    switch (goal) {
-      case 'lose': return 'Lose Weight';
-      case 'gain': return 'Gain Weight';
-      case 'muscle': return 'Build Muscle';
-      default: return 'Maintain Weight';
+  const saveProfile = async () => {
+    if (!calculations) {
+      Alert.alert('Error', 'Please calculate your profile first');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const profileData = {
+        sessionId,
+        age: parseInt(formData.age),
+        gender: formData.gender,
+        height: parseFloat(formData.height),
+        weight: parseFloat(formData.weight),
+        activityLevel: formData.activityLevel,
+        goal: formData.goal,
+        proteinTarget: calculations.proteinTarget,
+        weightTarget: parseFloat(formData.weightTarget) || null,
+        bmr: calculations.bmr,
+        tdee: calculations.tdee,
+        targetCalories: calculations.targetCalories,
+      };
+
+      await ApiService.saveUserProfile(profileData);
+      await loadProfile();
+      setIsEditing(false);
+      Alert.alert('Success', 'Profile saved successfully!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save profile');
+      console.error('Save profile error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getActivityDescription = (level) => {
-    switch (level) {
-      case 'sedentary': return 'Sedentary (Little/no exercise)';
-      case 'light': return 'Light (Light exercise 1-3 days/week)';
-      case 'moderate': return 'Moderate (Moderate exercise 3-5 days/week)';
-      case 'active': return 'Active (Hard exercise 6-7 days/week)';
-      case 'extra': return 'Very Active (Very hard exercise/physical job)';
-      default: return 'Moderate';
-    }
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadProfile();
+    setRefreshing(false);
+  };
+
+  const handleLogoutPress = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Logout', onPress: onLogout, style: 'destructive' },
+      ]
+    );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Your Profile</Text>
-          <Text style={styles.subtitle}>Set up your nutrition goals</Text>
+    <ScrollView 
+      style={styles.container}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
+      {/* User Info Header */}
+      <View style={styles.userHeader}>
+        <View style={styles.userInfo}>
+          <Text style={styles.userName}>{user?.name || user?.email?.split('@')[0] || 'User'}</Text>
+          <Text style={styles.userEmail}>{user?.email}</Text>
+          <View style={styles.subscriptionBadge}>
+            <Text style={styles.subscriptionText}>
+              {user?.subscriptionStatus === 'premium' ? '👑 Premium' : 
+               user?.subscriptionStatus === 'basic' ? '🔰 Basic' : 
+               '🆓 Free'}
+            </Text>
+          </View>
+        </View>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogoutPress}>
+          <Ionicons name="log-out-outline" size={24} color="#ef4444" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Profile Form */}
+      <View style={styles.formContainer}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Health Profile</Text>
+          <TouchableOpacity 
+            style={styles.editButton}
+            onPress={() => setIsEditing(!isEditing)}
+          >
+            <Ionicons 
+              name={isEditing ? "close" : "create-outline"} 
+              size={20} 
+              color="#10b981" 
+            />
+            <Text style={styles.editButtonText}>
+              {isEditing ? 'Cancel' : 'Edit'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Current Results */}
-        {calculations && (
-          <View style={styles.resultsCard}>
-            <Text style={styles.resultsTitle}>Your Targets</Text>
-            <View style={styles.resultsGrid}>
-              <View style={styles.resultItem}>
-                <Text style={styles.resultNumber}>{Math.round(calculations.bmr)}</Text>
-                <Text style={styles.resultLabel}>BMR</Text>
-                <Text style={styles.resultSubtext}>Base metabolic rate</Text>
-              </View>
-              <View style={styles.resultItem}>
-                <Text style={styles.resultNumber}>{Math.round(calculations.tdee)}</Text>
-                <Text style={styles.resultLabel}>TDEE</Text>
-                <Text style={styles.resultSubtext}>Daily energy expenditure</Text>
-              </View>
-              <View style={styles.resultItem}>
-                <Text style={styles.resultNumber}>{Math.round(calculations.targetCalories)}</Text>
-                <Text style={styles.resultLabel}>Target Calories</Text>
-                <Text style={styles.resultSubtext}>Daily calorie goal</Text>
-              </View>
-              {calculations.dailyProteinTarget && (
-                <View style={styles.resultItem}>
-                  <Text style={styles.resultNumber}>{Math.round(calculations.dailyProteinTarget)}g</Text>
-                  <Text style={styles.resultLabel}>Protein</Text>
-                  <Text style={styles.resultSubtext}>Daily protein target</Text>
-                </View>
-              )}
-            </View>
+        {/* Basic Info */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Age</Text>
+          <TextInput
+            style={[styles.textInput, !isEditing && styles.disabledInput]}
+            value={formData.age}
+            onChangeText={(text) => setFormData({...formData, age: text})}
+            placeholder="Enter your age"
+            placeholderTextColor="#6b7280"
+            keyboardType="numeric"
+            editable={isEditing}
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Gender</Text>
+          <View style={styles.genderContainer}>
+            {['male', 'female'].map((gender) => (
+              <TouchableOpacity
+                key={gender}
+                style={[
+                  styles.genderButton,
+                  formData.gender === gender && styles.genderButtonActive,
+                  !isEditing && styles.disabledButton
+                ]}
+                onPress={() => isEditing && setFormData({...formData, gender})}
+                disabled={!isEditing}
+              >
+                <Text style={[
+                  styles.genderButtonText,
+                  formData.gender === gender && styles.genderButtonTextActive
+                ]}>
+                  {gender.charAt(0).toUpperCase() + gender.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Height (cm)</Text>
+          <TextInput
+            style={[styles.textInput, !isEditing && styles.disabledInput]}
+            value={formData.height}
+            onChangeText={(text) => setFormData({...formData, height: text})}
+            placeholder="Enter height in cm"
+            placeholderTextColor="#6b7280"
+            keyboardType="numeric"
+            editable={isEditing}
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Weight (kg)</Text>
+          <TextInput
+            style={[styles.textInput, !isEditing && styles.disabledInput]}
+            value={formData.weight}
+            onChangeText={(text) => setFormData({...formData, weight: text})}
+            placeholder="Enter weight in kg"
+            placeholderTextColor="#6b7280"
+            keyboardType="numeric"
+            editable={isEditing}
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Activity Level</Text>
+          <View style={styles.activityContainer}>
+            {[
+              { key: 'sedentary', label: 'Sedentary' },
+              { key: 'light', label: 'Light' },
+              { key: 'moderate', label: 'Moderate' },
+              { key: 'active', label: 'Active' },
+              { key: 'veryActive', label: 'Very Active' },
+            ].map((activity) => (
+              <TouchableOpacity
+                key={activity.key}
+                style={[
+                  styles.activityButton,
+                  formData.activityLevel === activity.key && styles.activityButtonActive,
+                  !isEditing && styles.disabledButton
+                ]}
+                onPress={() => isEditing && setFormData({...formData, activityLevel: activity.key})}
+                disabled={!isEditing}
+              >
+                <Text style={[
+                  styles.activityButtonText,
+                  formData.activityLevel === activity.key && styles.activityButtonTextActive
+                ]}>
+                  {activity.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Goal</Text>
+          <View style={styles.goalContainer}>
+            {[
+              { key: 'lose', label: 'Lose Weight', icon: '⬇️' },
+              { key: 'maintain', label: 'Maintain', icon: '➡️' },
+              { key: 'gain', label: 'Gain Weight', icon: '⬆️' },
+              { key: 'muscle', label: 'Build Muscle', icon: '💪' },
+            ].map((goal) => (
+              <TouchableOpacity
+                key={goal.key}
+                style={[
+                  styles.goalButton,
+                  formData.goal === goal.key && styles.goalButtonActive,
+                  !isEditing && styles.disabledButton
+                ]}
+                onPress={() => isEditing && setFormData({...formData, goal: goal.key})}
+                disabled={!isEditing}
+              >
+                <Text style={styles.goalIcon}>{goal.icon}</Text>
+                <Text style={[
+                  styles.goalButtonText,
+                  formData.goal === goal.key && styles.goalButtonTextActive
+                ]}>
+                  {goal.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {isEditing && (
+          <View style={styles.actionButtons}>
+            <TouchableOpacity style={styles.calculateButton} onPress={calculateProfile}>
+              <Text style={styles.calculateButtonText}>Calculate Profile</Text>
+            </TouchableOpacity>
+            
+            {calculations && (
+              <TouchableOpacity 
+                style={styles.saveButton} 
+                onPress={saveProfile}
+                disabled={isLoading}
+              >
+                <Text style={styles.saveButtonText}>
+                  {isLoading ? 'Saving...' : 'Save Profile'}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
-        {/* Profile Form */}
-        <View style={styles.formCard}>
-          <Text style={styles.sectionTitle}>Personal Information</Text>
-          
-          {/* Basic Info */}
-          <View style={styles.inputRow}>
-            <View style={styles.inputHalf}>
-              <Text style={styles.inputLabel}>Age</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Enter age"
-                placeholderTextColor="#94A3B8"
-                value={formData.age}
-                onChangeText={(value) => updateFormData('age', value)}
-                keyboardType="numeric"
-              />
-            </View>
-            <View style={styles.inputHalf}>
-              <Text style={styles.inputLabel}>Gender</Text>
-              <View style={styles.toggleContainer}>
-                <TouchableOpacity
-                  style={[styles.toggleButton, formData.gender === 'male' && styles.toggleButtonActive]}
-                  onPress={() => updateFormData('gender', 'male')}
-                >
-                  <Text style={[styles.toggleText, formData.gender === 'male' && styles.toggleTextActive]}>
-                    Male
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.toggleButton, formData.gender === 'female' && styles.toggleButtonActive]}
-                  onPress={() => updateFormData('gender', 'female')}
-                >
-                  <Text style={[styles.toggleText, formData.gender === 'female' && styles.toggleTextActive]}>
-                    Female
-                  </Text>
-                </TouchableOpacity>
+        {/* Results */}
+        {calculations && (
+          <View style={styles.resultsContainer}>
+            <Text style={styles.resultsTitle}>Your Nutrition Targets</Text>
+            <View style={styles.resultsGrid}>
+              <View style={styles.resultItem}>
+                <Text style={styles.resultValue}>{calculations.bmr}</Text>
+                <Text style={styles.resultLabel}>BMR (cal/day)</Text>
+              </View>
+              <View style={styles.resultItem}>
+                <Text style={styles.resultValue}>{calculations.tdee}</Text>
+                <Text style={styles.resultLabel}>TDEE (cal/day)</Text>
+              </View>
+              <View style={styles.resultItem}>
+                <Text style={styles.resultValue}>{calculations.targetCalories}</Text>
+                <Text style={styles.resultLabel}>Target Calories</Text>
+              </View>
+              <View style={styles.resultItem}>
+                <Text style={styles.resultValue}>{calculations.proteinTarget}</Text>
+                <Text style={styles.resultLabel}>Protein (g/day)</Text>
               </View>
             </View>
           </View>
-
-          <View style={styles.inputRow}>
-            <View style={styles.inputHalf}>
-              <Text style={styles.inputLabel}>Height (cm)</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Enter height"
-                placeholderTextColor="#94A3B8"
-                value={formData.height}
-                onChangeText={(value) => updateFormData('height', value)}
-                keyboardType="numeric"
-              />
-            </View>
-            <View style={styles.inputHalf}>
-              <Text style={styles.inputLabel}>Weight (kg)</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Enter weight"
-                placeholderTextColor="#94A3B8"
-                value={formData.weight}
-                onChangeText={(value) => updateFormData('weight', value)}
-                keyboardType="numeric"
-              />
-            </View>
-          </View>
-
-          {/* Goal Selection */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Goal</Text>
-            <View style={styles.goalGrid}>
-              {[
-                { value: 'lose', icon: '📉', label: 'Lose Weight' },
-                { value: 'gain', icon: '📈', label: 'Gain Weight' },
-                { value: 'muscle', icon: '💪', label: 'Build Muscle' }
-              ].map((goal) => (
-                <TouchableOpacity
-                  key={goal.value}
-                  style={[styles.goalButton, formData.goal === goal.value && styles.goalButtonActive]}
-                  onPress={() => updateFormData('goal', goal.value)}
-                >
-                  <Text style={styles.goalIcon}>{goal.icon}</Text>
-                  <Text style={[styles.goalText, formData.goal === goal.value && styles.goalTextActive]}>
-                    {goal.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* Target Weight */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Target Weight (kg) - Optional</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Enter target weight"
-              placeholderTextColor="#94A3B8"
-              value={formData.targetWeight}
-              onChangeText={(value) => updateFormData('targetWeight', value)}
-              keyboardType="numeric"
-            />
-          </View>
-
-          {/* Activity Level */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Activity Level</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.activityScroll}>
-              {[
-                { value: 'sedentary', label: 'Sedentary' },
-                { value: 'light', label: 'Light' },
-                { value: 'moderate', label: 'Moderate' },
-                { value: 'active', label: 'Active' },
-                { value: 'extra', label: 'Very Active' }
-              ].map((activity) => (
-                <TouchableOpacity
-                  key={activity.value}
-                  style={[styles.activityButton, formData.activityLevel === activity.value && styles.activityButtonActive]}
-                  onPress={() => updateFormData('activityLevel', activity.value)}
-                >
-                  <Text style={[styles.activityText, formData.activityLevel === activity.value && styles.activityTextActive]}>
-                    {activity.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-
-          {/* Protein Target */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Custom Protein Target (g/day) - Optional</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Auto-calculated if empty"
-              placeholderTextColor="#94A3B8"
-              value={formData.proteinTarget}
-              onChangeText={(value) => updateFormData('proteinTarget', value)}
-              keyboardType="numeric"
-            />
-          </View>
-
-          {/* Calculate Button */}
-          <TouchableOpacity
-            style={[styles.calculateButton, isLoading && styles.calculateButtonDisabled]}
-            onPress={calculateProfile}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Text style={styles.calculateButtonText}>Calculate My Profile</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.actionsCard}>
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('Dashboard')}
-          >
-            <Text style={styles.actionButtonText}>📊 View Dashboard</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.actionButtonText}>← Back to Home</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        )}
+      </View>
+    </ScrollView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#111827',
   },
-  scrollView: {
-    flex: 1,
-    padding: 16,
-  },
-  header: {
+  userHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#94A3B8',
-  },
-  resultsCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
     padding: 20,
+    backgroundColor: '#1f2937',
+    borderBottomWidth: 1,
+    borderBottomColor: '#374151',
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  userEmail: {
+    color: '#9ca3af',
+    fontSize: 14,
+    marginTop: 2,
+  },
+  subscriptionBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#374151',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginTop: 8,
+  },
+  subscriptionText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  logoutButton: {
+    padding: 8,
+  },
+  formContainer: {
+    padding: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
   },
-  resultsTitle: {
-    fontSize: 18,
+  sectionTitle: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1f2937',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  editButtonText: {
+    color: '#10b981',
+    marginLeft: 4,
     fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 16,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  textInput: {
+    backgroundColor: '#1f2937',
+    color: '#ffffff',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#374151',
+    fontSize: 16,
+  },
+  disabledInput: {
+    backgroundColor: '#111827',
+    color: '#9ca3af',
+  },
+  genderContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  genderButton: {
+    flex: 1,
+    backgroundColor: '#1f2937',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#374151',
+    alignItems: 'center',
+  },
+  genderButtonActive: {
+    backgroundColor: '#10b981',
+    borderColor: '#10b981',
+  },
+  genderButtonText: {
+    color: '#ffffff',
+    fontWeight: '600',
+  },
+  genderButtonTextActive: {
+    color: '#ffffff',
+  },
+  activityContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  activityButton: {
+    backgroundColor: '#1f2937',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#374151',
+  },
+  activityButtonActive: {
+    backgroundColor: '#10b981',
+    borderColor: '#10b981',
+  },
+  activityButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  activityButtonTextActive: {
+    color: '#ffffff',
+  },
+  goalContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  goalButton: {
+    backgroundColor: '#1f2937',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#374151',
+    alignItems: 'center',
+    minWidth: '45%',
+  },
+  goalButtonActive: {
+    backgroundColor: '#10b981',
+    borderColor: '#10b981',
+  },
+  goalIcon: {
+    fontSize: 20,
+    marginBottom: 4,
+  },
+  goalButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  goalButtonTextActive: {
+    color: '#ffffff',
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
+  actionButtons: {
+    gap: 12,
+    marginTop: 20,
+  },
+  calculateButton: {
+    backgroundColor: '#3b82f6',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  calculateButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  saveButton: {
+    backgroundColor: '#10b981',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  resultsContainer: {
+    marginTop: 30,
+    backgroundColor: '#1f2937',
+    padding: 20,
+    borderRadius: 12,
+  },
+  resultsTitle: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: 'bold',
     textAlign: 'center',
+    marginBottom: 20,
   },
   resultsGrid: {
     flexDirection: 'row',
@@ -408,168 +615,18 @@ const styles = StyleSheet.create({
   },
   resultItem: {
     width: '48%',
-    backgroundColor: '#334155',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
     alignItems: 'center',
+    marginBottom: 16,
   },
-  resultNumber: {
-    fontSize: 20,
+  resultValue: {
+    color: '#10b981',
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#3B82F6',
-    marginBottom: 4,
   },
   resultLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 2,
-  },
-  resultSubtext: {
-    fontSize: 11,
-    color: '#94A3B8',
-    textAlign: 'center',
-  },
-  formCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 16,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
-  },
-  inputHalf: {
-    flex: 1,
-  },
-  inputLabel: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  textInput: {
-    backgroundColor: '#334155',
-    borderRadius: 8,
-    padding: 12,
-    color: '#FFFFFF',
-    fontSize: 16,
-  },
-  toggleContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#334155',
-    borderRadius: 8,
-    padding: 2,
-  },
-  toggleButton: {
-    flex: 1,
-    padding: 10,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  toggleButtonActive: {
-    backgroundColor: '#3B82F6',
-  },
-  toggleText: {
-    color: '#94A3B8',
-    fontWeight: '600',
-  },
-  toggleTextActive: {
-    color: '#FFFFFF',
-  },
-  goalGrid: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  goalButton: {
-    flex: 1,
-    backgroundColor: '#334155',
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-  },
-  goalButtonActive: {
-    backgroundColor: '#3B82F6',
-  },
-  goalIcon: {
-    fontSize: 20,
-    marginBottom: 4,
-  },
-  goalText: {
-    color: '#94A3B8',
+    color: '#9ca3af',
     fontSize: 12,
-    fontWeight: '600',
+    marginTop: 4,
     textAlign: 'center',
-  },
-  goalTextActive: {
-    color: '#FFFFFF',
-  },
-  activityScroll: {
-    marginVertical: 4,
-  },
-  activityButton: {
-    backgroundColor: '#334155',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginRight: 8,
-  },
-  activityButtonActive: {
-    backgroundColor: '#3B82F6',
-  },
-  activityText: {
-    color: '#94A3B8',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  activityTextActive: {
-    color: '#FFFFFF',
-  },
-  calculateButton: {
-    backgroundColor: '#3B82F6',
-    borderRadius: 8,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  calculateButtonDisabled: {
-    backgroundColor: '#64748B',
-  },
-  calculateButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  actionsCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-  },
-  actionButton: {
-    backgroundColor: '#334155',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-    alignItems: 'center',
-  },
-  actionButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });
-
-export default ProfileScreen;

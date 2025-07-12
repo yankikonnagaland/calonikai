@@ -1,430 +1,427 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  TouchableOpacity, 
   TextInput,
   Alert,
-  ActivityIndicator
+  Modal,
+  RefreshControl 
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
+import { ApiService } from '../services/ApiService';
+import CalendarPicker from '../components/CalendarPicker';
 
-const ExerciseScreen = ({ navigation }) => {
+export default function ExerciseScreen({ user, sessionId }) {
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [exercises, setExercises] = useState([]);
-  const [activityName, setActivityName] = useState('');
-  const [duration, setDuration] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [totalCaloriesBurned, setTotalCaloriesBurned] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  
+  // Exercise form state
+  const [exerciseForm, setExerciseForm] = useState({
+    name: '',
+    duration: '',
+    intensity: 'moderate',
+    calories: 0,
+  });
+  
+  // Timer state
   const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [timerDuration, setTimerDuration] = useState(0);
-  const [timerInterval, setTimerInterval] = useState(null);
+  const [timerStartTime, setTimerStartTime] = useState(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
-  const API_BASE = 'https://951c9b0b-a7e6-4243-ad92-b80de619ea52-00-2w9g548p0tyi.worf.replit.dev/api';
-
-  const commonActivities = [
-    { name: 'Walking', caloriesPerMinute: 4 },
-    { name: 'Running', caloriesPerMinute: 10 },
-    { name: 'Cycling', caloriesPerMinute: 8 },
-    { name: 'Swimming', caloriesPerMinute: 12 },
-    { name: 'Weight Training', caloriesPerMinute: 6 },
-    { name: 'Yoga', caloriesPerMinute: 3 },
-    { name: 'Dancing', caloriesPerMinute: 5 },
-    { name: 'Basketball', caloriesPerMinute: 9 },
-  ];
+  const dateString = selectedDate.toISOString().split('T')[0];
 
   useEffect(() => {
-    loadTodaysExercises();
-    
-    return () => {
-      if (timerInterval) {
-        clearInterval(timerInterval);
-      }
-    };
-  }, []);
+    loadExercises();
+  }, [selectedDate, sessionId]);
 
-  const getSessionId = async () => {
-    let sessionId = await AsyncStorage.getItem('sessionId');
-    if (!sessionId) {
-      sessionId = `mobile_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      await AsyncStorage.setItem('sessionId', sessionId);
+  // Timer effect
+  useEffect(() => {
+    let interval;
+    if (isTimerRunning && timerStartTime) {
+      interval = setInterval(() => {
+        setElapsedTime(Date.now() - timerStartTime);
+      }, 1000);
     }
-    return sessionId;
-  };
+    return () => clearInterval(interval);
+  }, [isTimerRunning, timerStartTime]);
 
-  const loadTodaysExercises = async () => {
+  const loadExercises = async () => {
     try {
-      const sessionId = await getSessionId();
-      const response = await fetch(`${API_BASE}/exercise/${sessionId}`);
-      const exercisesData = await response.json();
-      
-      // Filter for today's exercises
-      const today = new Date().toISOString().split('T')[0];
-      const todaysExercises = exercisesData.filter(exercise => {
-        const exerciseDate = new Date(exercise.createdAt).toISOString().split('T')[0];
-        return exerciseDate === today;
-      });
-      
-      setExercises(todaysExercises);
-      
-      // Calculate total calories burned
-      const totalCalories = todaysExercises.reduce((sum, exercise) => {
-        return sum + (exercise.caloriesBurned || 0);
-      }, 0);
-      setTotalCaloriesBurned(totalCalories);
+      setIsLoading(true);
+      const exerciseData = await ApiService.getExercises(sessionId, dateString);
+      setExercises(exerciseData || []);
     } catch (error) {
       console.error('Error loading exercises:', error);
-    }
-  };
-
-  const startTimer = () => {
-    setIsTimerRunning(true);
-    setTimerDuration(0);
-    
-    const interval = setInterval(() => {
-      setTimerDuration(prev => prev + 1);
-    }, 1000);
-    
-    setTimerInterval(interval);
-  };
-
-  const stopTimer = () => {
-    setIsTimerRunning(false);
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      setTimerInterval(null);
-    }
-    
-    // Set duration from timer
-    const minutes = Math.floor(timerDuration / 60);
-    setDuration(minutes.toString());
-  };
-
-  const resetTimer = () => {
-    setIsTimerRunning(false);
-    setTimerDuration(0);
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      setTimerInterval(null);
-    }
-  };
-
-  const formatTime = (seconds) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const calculateCalories = (activity, duration) => {
-    const activityData = commonActivities.find(a => a.name === activity);
-    if (activityData && duration) {
-      return Math.round(activityData.caloriesPerMinute * parseFloat(duration));
-    }
-    return 0;
-  };
-
-  const logExercise = async () => {
-    if (!activityName || !duration) {
-      Alert.alert('Error', 'Please enter activity name and duration');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const sessionId = await getSessionId();
-      const caloriesBurned = calculateCalories(activityName, duration);
-      
-      const response = await fetch(`${API_BASE}/exercise`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-session-id': sessionId,
-        },
-        body: JSON.stringify({
-          sessionId,
-          exerciseName: activityName,
-          duration: parseInt(duration),
-          caloriesBurned,
-          date: new Date().toISOString().split('T')[0]
-        }),
-      });
-
-      if (response.ok) {
-        Alert.alert('Success', `${activityName} logged! You burned ${caloriesBurned} calories.`);
-        setActivityName('');
-        setDuration('');
-        resetTimer();
-        loadTodaysExercises();
-      } else {
-        Alert.alert('Error', 'Failed to log exercise');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to log exercise');
-      console.error('Exercise log error:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const deleteExercise = async (exerciseId) => {
-    try {
-      const response = await fetch(`${API_BASE}/exercise/${exerciseId}`, {
-        method: 'DELETE',
-      });
+  const startTimer = () => {
+    setTimerStartTime(Date.now());
+    setIsTimerRunning(true);
+  };
 
-      if (response.ok) {
-        Alert.alert('Success', 'Exercise deleted');
-        loadTodaysExercises();
-      } else {
-        Alert.alert('Error', 'Failed to delete exercise');
-      }
+  const stopTimer = () => {
+    if (timerStartTime) {
+      const finalDuration = Math.round(elapsedTime / 1000 / 60); // Convert to minutes
+      setExerciseForm({
+        ...exerciseForm,
+        duration: finalDuration.toString()
+      });
+      calculateCalories(exerciseForm.name, finalDuration, exerciseForm.intensity);
+    }
+    setIsTimerRunning(false);
+    setTimerStartTime(null);
+    setElapsedTime(0);
+  };
+
+  const resetTimer = () => {
+    setIsTimerRunning(false);
+    setTimerStartTime(null);
+    setElapsedTime(0);
+    setExerciseForm({
+      ...exerciseForm,
+      duration: '',
+      calories: 0
+    });
+  };
+
+  const calculateCalories = (activity, durationMinutes, intensity) => {
+    // Basic calorie calculation (can be enhanced with more specific data)
+    const baseCaloriesPerMinute = {
+      'walking': 5,
+      'running': 12,
+      'cycling': 8,
+      'swimming': 10,
+      'weight training': 6,
+      'yoga': 3,
+      'gym workout': 8,
+      'cardio': 10,
+      'strength training': 6,
+    };
+
+    const intensityMultipliers = {
+      'low': 0.7,
+      'moderate': 1.0,
+      'high': 1.3,
+    };
+
+    const activityKey = Object.keys(baseCaloriesPerMinute).find(key => 
+      activity.toLowerCase().includes(key)
+    ) || 'gym workout';
+
+    const baseCalories = baseCaloriesPerMinute[activityKey] || 6;
+    const multiplier = intensityMultipliers[intensity] || 1.0;
+    const totalCalories = Math.round(baseCalories * durationMinutes * multiplier);
+
+    setExerciseForm({
+      ...exerciseForm,
+      calories: totalCalories
+    });
+  };
+
+  const addExercise = async () => {
+    if (!exerciseForm.name.trim() || !exerciseForm.duration) {
+      Alert.alert('Error', 'Please fill in exercise name and duration');
+      return;
+    }
+
+    try {
+      const exerciseData = {
+        sessionId,
+        date: dateString,
+        exerciseName: exerciseForm.name,
+        duration: parseInt(exerciseForm.duration),
+        intensity: exerciseForm.intensity,
+        caloriesBurned: exerciseForm.calories,
+      };
+
+      await ApiService.addExercise(exerciseData);
+      await loadExercises();
+      
+      // Reset form
+      setExerciseForm({
+        name: '',
+        duration: '',
+        intensity: 'moderate',
+        calories: 0,
+      });
+      
+      Alert.alert('Success', 'Exercise added successfully!');
     } catch (error) {
-      Alert.alert('Error', 'Failed to delete exercise');
-      console.error('Delete exercise error:', error);
+      Alert.alert('Error', 'Failed to add exercise');
+      console.error('Add exercise error:', error);
     }
   };
 
-  const selectActivity = (activity) => {
-    setActivityName(activity.name);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadExercises();
+    setRefreshing(false);
   };
 
+  const formatTime = (milliseconds) => {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // Calculate total calories burned today
+  const totalCaloriesBurned = exercises.reduce((total, exercise) => 
+    total + (exercise.caloriesBurned || 0), 0
+  );
+
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Exercise Tracker</Text>
-          <Text style={styles.subtitle}>Log your workouts and activities</Text>
-        </View>
+    <ScrollView 
+      style={styles.container}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
+      {/* Date Picker */}
+      <View style={styles.dateContainer}>
+        <TouchableOpacity 
+          style={styles.dateButton}
+          onPress={() => setShowCalendar(true)}
+        >
+          <Ionicons name="calendar" size={20} color="#f97316" />
+          <Text style={styles.dateText}>
+            {selectedDate.toLocaleDateString()}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
-        {/* Today's Summary */}
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Today's Activity</Text>
-          <View style={styles.summaryStats}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{exercises.length}</Text>
-              <Text style={styles.statLabel}>Exercises</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{totalCaloriesBurned}</Text>
-              <Text style={styles.statLabel}>Calories Burned</Text>
-            </View>
-          </View>
+      {/* Exercise Timer */}
+      <View style={styles.timerContainer}>
+        <Text style={styles.timerTitle}>Exercise Timer</Text>
+        <View style={styles.timerDisplay}>
+          <Text style={styles.timerText}>
+            {isTimerRunning ? formatTime(elapsedTime) : '00:00'}
+          </Text>
         </View>
-
-        {/* Timer Card */}
-        <View style={styles.timerCard}>
-          <Text style={styles.sectionTitle}>Workout Timer</Text>
-          <View style={styles.timerDisplay}>
-            <Text style={styles.timerText}>{formatTime(timerDuration)}</Text>
-          </View>
-          <View style={styles.timerControls}>
-            {!isTimerRunning ? (
-              <TouchableOpacity style={styles.startButton} onPress={startTimer}>
-                <Text style={styles.startButtonText}>Start Timer</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity style={styles.stopButton} onPress={stopTimer}>
-                <Text style={styles.stopButtonText}>Stop Timer</Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity style={styles.resetButton} onPress={resetTimer}>
-              <Text style={styles.resetButtonText}>Reset</Text>
+        <View style={styles.timerControls}>
+          {!isTimerRunning ? (
+            <TouchableOpacity style={styles.startButton} onPress={startTimer}>
+              <Ionicons name="play" size={24} color="#ffffff" />
+              <Text style={styles.timerButtonText}>Start</Text>
             </TouchableOpacity>
-          </View>
+          ) : (
+            <TouchableOpacity style={styles.stopButton} onPress={stopTimer}>
+              <Ionicons name="stop" size={24} color="#ffffff" />
+              <Text style={styles.timerButtonText}>Stop</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.resetButton} onPress={resetTimer}>
+            <Ionicons name="refresh" size={24} color="#ffffff" />
+            <Text style={styles.timerButtonText}>Reset</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Add Exercise Form */}
+      <View style={styles.formContainer}>
+        <Text style={styles.formTitle}>Log Exercise</Text>
+        
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Exercise Name</Text>
+          <TextInput
+            style={styles.textInput}
+            value={exerciseForm.name}
+            onChangeText={(text) => {
+              setExerciseForm({...exerciseForm, name: text});
+              if (exerciseForm.duration) {
+                calculateCalories(text, parseInt(exerciseForm.duration), exerciseForm.intensity);
+              }
+            }}
+            placeholder="e.g., Running, Gym workout, Yoga"
+            placeholderTextColor="#6b7280"
+          />
         </View>
 
-        {/* Quick Activities */}
-        <View style={styles.activitiesCard}>
-          <Text style={styles.sectionTitle}>Quick Select</Text>
-          <View style={styles.activitiesGrid}>
-            {commonActivities.map((activity, index) => (
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Duration (minutes)</Text>
+          <TextInput
+            style={styles.textInput}
+            value={exerciseForm.duration}
+            onChangeText={(text) => {
+              setExerciseForm({...exerciseForm, duration: text});
+              if (text && exerciseForm.name) {
+                calculateCalories(exerciseForm.name, parseInt(text), exerciseForm.intensity);
+              }
+            }}
+            placeholder="Enter duration in minutes"
+            placeholderTextColor="#6b7280"
+            keyboardType="numeric"
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Intensity Level</Text>
+          <View style={styles.intensityContainer}>
+            {[
+              { key: 'low', label: 'Low 😌', color: '#10b981' },
+              { key: 'moderate', label: 'Moderate 💪', color: '#f59e0b' },
+              { key: 'high', label: 'High 🔥', color: '#ef4444' },
+            ].map((intensity) => (
               <TouchableOpacity
-                key={index}
+                key={intensity.key}
                 style={[
-                  styles.activityButton,
-                  activityName === activity.name && styles.activityButtonSelected
+                  styles.intensityButton,
+                  { borderColor: intensity.color },
+                  exerciseForm.intensity === intensity.key && { backgroundColor: intensity.color }
                 ]}
-                onPress={() => selectActivity(activity)}
+                onPress={() => {
+                  setExerciseForm({...exerciseForm, intensity: intensity.key});
+                  if (exerciseForm.name && exerciseForm.duration) {
+                    calculateCalories(exerciseForm.name, parseInt(exerciseForm.duration), intensity.key);
+                  }
+                }}
               >
                 <Text style={[
-                  styles.activityButtonText,
-                  activityName === activity.name && styles.activityButtonTextSelected
+                  styles.intensityButtonText,
+                  exerciseForm.intensity === intensity.key && styles.intensityButtonTextActive
                 ]}>
-                  {activity.name}
-                </Text>
-                <Text style={styles.activityCalories}>
-                  {activity.caloriesPerMinute} cal/min
+                  {intensity.label}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Log Exercise Form */}
-        <View style={styles.formCard}>
-          <Text style={styles.sectionTitle}>Log Exercise</Text>
-          
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Activity</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Enter activity name..."
-              placeholderTextColor="#94A3B8"
-              value={activityName}
-              onChangeText={setActivityName}
-            />
+        {exerciseForm.calories > 0 && (
+          <View style={styles.caloriesPreview}>
+            <Text style={styles.caloriesText}>
+              Estimated calories burned: {exerciseForm.calories} cal
+            </Text>
           </View>
+        )}
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Duration (minutes)</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Enter duration..."
-              placeholderTextColor="#94A3B8"
-              value={duration}
-              onChangeText={setDuration}
-              keyboardType="numeric"
-            />
+        <TouchableOpacity style={styles.addButton} onPress={addExercise}>
+          <Ionicons name="add" size={20} color="#ffffff" />
+          <Text style={styles.addButtonText}>Add Exercise</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Today's Summary */}
+      <View style={styles.summaryContainer}>
+        <Text style={styles.summaryTitle}>
+          {selectedDate.toDateString() === new Date().toDateString() ? 
+            "Today's Activity" : 
+            `${selectedDate.toLocaleDateString()} Activity`}
+        </Text>
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryValue}>{exercises.length}</Text>
+            <Text style={styles.summaryLabel}>Exercises</Text>
           </View>
-
-          {activityName && duration && (
-            <View style={styles.estimateCard}>
-              <Text style={styles.estimateText}>
-                Estimated calories: {calculateCalories(activityName, duration)} cal
-              </Text>
-            </View>
-          )}
-
-          <TouchableOpacity
-            style={[styles.logButton, isLoading && styles.logButtonDisabled]}
-            onPress={logExercise}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Text style={styles.logButtonText}>Log Exercise</Text>
-            )}
-          </TouchableOpacity>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryValue}>
+              {exercises.reduce((total, ex) => total + (ex.duration || 0), 0)}
+            </Text>
+            <Text style={styles.summaryLabel}>Minutes</Text>
+          </View>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryValue}>{totalCaloriesBurned}</Text>
+            <Text style={styles.summaryLabel}>Calories Burned</Text>
+          </View>
         </View>
+      </View>
 
-        {/* Today's Exercises */}
-        <View style={styles.exercisesCard}>
-          <Text style={styles.sectionTitle}>Today's Exercises</Text>
-          {exercises.length === 0 ? (
-            <Text style={styles.emptyText}>No exercises logged today</Text>
-          ) : (
-            exercises.map((exercise, index) => (
-              <View key={index} style={styles.exerciseItem}>
-                <View style={styles.exerciseInfo}>
-                  <Text style={styles.exerciseName}>{exercise.exerciseName}</Text>
-                  <Text style={styles.exerciseDetails}>
-                    {exercise.duration} min • {exercise.caloriesBurned} cal burned
-                  </Text>
-                  <Text style={styles.exerciseTime}>
-                    {new Date(exercise.createdAt).toLocaleTimeString()}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => deleteExercise(exercise.id)}
-                >
-                  <Text style={styles.deleteButtonText}>×</Text>
-                </TouchableOpacity>
+      {/* Exercise History */}
+      <View style={styles.historyContainer}>
+        <Text style={styles.historyTitle}>Exercise History</Text>
+        {isLoading ? (
+          <Text style={styles.loadingText}>Loading exercises...</Text>
+        ) : exercises.length === 0 ? (
+          <Text style={styles.emptyText}>No exercises logged for this date</Text>
+        ) : (
+          exercises.map((exercise, index) => (
+            <View key={index} style={styles.exerciseItem}>
+              <View style={styles.exerciseIcon}>
+                <Ionicons name="fitness" size={24} color="#f97316" />
               </View>
-            ))
-          )}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+              <View style={styles.exerciseInfo}>
+                <Text style={styles.exerciseName}>{exercise.exerciseName || exercise.name}</Text>
+                <Text style={styles.exerciseDetails}>
+                  {exercise.duration} min • {exercise.intensity} intensity • {exercise.caloriesBurned} cal
+                </Text>
+              </View>
+            </View>
+          ))
+        )}
+      </View>
+
+      {/* Calendar Modal */}
+      <Modal visible={showCalendar} animationType="slide">
+        <CalendarPicker
+          selectedDate={selectedDate}
+          onDateSelect={(date) => {
+            setSelectedDate(date);
+            setShowCalendar(false);
+          }}
+          onClose={() => setShowCalendar(false)}
+        />
+      </Modal>
+    </ScrollView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#111827',
   },
-  scrollView: {
-    flex: 1,
+  dateContainer: {
     padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#374151',
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#94A3B8',
-  },
-  summaryCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-  },
-  summaryTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  summaryStats: {
+  dateButton: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statItem: {
     alignItems: 'center',
+    backgroundColor: '#1f2937',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#374151',
   },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#F97316',
-    marginBottom: 4,
+  dateText: {
+    color: '#ffffff',
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: '500',
   },
-  statLabel: {
-    fontSize: 12,
-    color: '#94A3B8',
-  },
-  timerCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
+  timerContainer: {
     padding: 20,
-    marginBottom: 20,
+    backgroundColor: '#1f2937',
+    margin: 16,
+    borderRadius: 12,
     alignItems: 'center',
   },
-  sectionTitle: {
+  timerTitle: {
+    color: '#ffffff',
     fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    fontWeight: 'bold',
     marginBottom: 16,
   },
   timerDisplay: {
-    backgroundColor: '#334155',
+    backgroundColor: '#111827',
+    padding: 20,
     borderRadius: 12,
-    paddingVertical: 20,
-    paddingHorizontal: 40,
-    marginBottom: 20,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#f97316',
   },
   timerText: {
-    fontSize: 36,
+    color: '#f97316',
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#FFFFFF',
     fontFamily: 'monospace',
   },
   timerControls: {
@@ -432,166 +429,182 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   startButton: {
-    backgroundColor: '#22C55E',
-    borderRadius: 8,
+    backgroundColor: '#10b981',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
     paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
-  startButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+    borderRadius: 8,
   },
   stopButton: {
-    backgroundColor: '#EF4444',
-    borderRadius: 8,
+    backgroundColor: '#ef4444',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
     paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
-  stopButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+    borderRadius: 8,
   },
   resetButton: {
-    backgroundColor: '#64748B',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
-  resetButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  activitiesCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-  },
-  activitiesGrid: {
+    backgroundColor: '#6b7280',
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  activityButton: {
-    backgroundColor: '#334155',
-    borderRadius: 8,
-    padding: 12,
-    minWidth: '45%',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
   },
-  activityButtonSelected: {
-    backgroundColor: '#F97316',
-  },
-  activityButtonText: {
-    color: '#FFFFFF',
+  timerButtonText: {
+    color: '#ffffff',
+    marginLeft: 8,
     fontWeight: '600',
-    marginBottom: 4,
   },
-  activityButtonTextSelected: {
-    color: '#FFFFFF',
-  },
-  activityCalories: {
-    color: '#94A3B8',
-    fontSize: 12,
-  },
-  formCard: {
-    backgroundColor: '#1E293B',
+  formContainer: {
+    padding: 16,
+    backgroundColor: '#1f2937',
+    margin: 16,
     borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
+  },
+  formTitle: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
   },
   inputGroup: {
     marginBottom: 16,
   },
   inputLabel: {
-    color: '#FFFFFF',
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
   },
   textInput: {
-    backgroundColor: '#334155',
-    borderRadius: 8,
+    backgroundColor: '#111827',
+    color: '#ffffff',
     padding: 12,
-    color: '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#374151',
     fontSize: 16,
   },
-  estimateCard: {
-    backgroundColor: '#334155',
-    borderRadius: 8,
+  intensityContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  intensityButton: {
+    flex: 1,
+    backgroundColor: '#111827',
     padding: 12,
+    borderRadius: 8,
+    borderWidth: 2,
+    alignItems: 'center',
+  },
+  intensityButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  intensityButtonTextActive: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+  },
+  caloriesPreview: {
+    backgroundColor: '#111827',
+    padding: 12,
+    borderRadius: 8,
     marginBottom: 16,
     alignItems: 'center',
   },
-  estimateText: {
-    color: '#F97316',
-    fontWeight: '600',
-  },
-  logButton: {
-    backgroundColor: '#F97316',
-    borderRadius: 8,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  logButtonDisabled: {
-    backgroundColor: '#64748B',
-  },
-  logButtonText: {
-    color: '#FFFFFF',
+  caloriesText: {
+    color: '#f97316',
     fontSize: 16,
     fontWeight: '600',
   },
-  exercisesCard: {
-    backgroundColor: '#1E293B',
+  addButton: {
+    backgroundColor: '#f97316',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 8,
+  },
+  addButtonText: {
+    color: '#ffffff',
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  summaryContainer: {
+    padding: 16,
+  },
+  summaryTitle: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  summaryCard: {
+    backgroundColor: '#1f2937',
+    padding: 16,
     borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  summaryItem: {
+    alignItems: 'center',
+  },
+  summaryValue: {
+    color: '#f97316',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  summaryLabel: {
+    color: '#9ca3af',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  historyContainer: {
+    padding: 16,
+  },
+  historyTitle: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  loadingText: {
+    color: '#9ca3af',
+    textAlign: 'center',
     padding: 20,
-    marginBottom: 20,
   },
   emptyText: {
-    color: '#64748B',
+    color: '#6b7280',
     textAlign: 'center',
+    padding: 20,
     fontStyle: 'italic',
   },
   exerciseItem: {
-    backgroundColor: '#334155',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    backgroundColor: '#1f2937',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  exerciseIcon: {
+    marginRight: 12,
   },
   exerciseInfo: {
     flex: 1,
   },
   exerciseName: {
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 4,
   },
   exerciseDetails: {
+    color: '#9ca3af',
     fontSize: 14,
-    color: '#94A3B8',
-    marginBottom: 2,
-  },
-  exerciseTime: {
-    fontSize: 12,
-    color: '#64748B',
-  },
-  deleteButton: {
-    backgroundColor: '#EF4444',
-    borderRadius: 16,
-    width: 28,
-    height: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  deleteButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
+    marginTop: 2,
   },
 });
-
-export default ExerciseScreen;
